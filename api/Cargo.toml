@@ -1,0 +1,12 @@
+[package]
+authors = ["Lucas Pickering <lucas@lucaspickering.me>"]
+edition = "2018"
+license = "MIT"
+name = "laulud-api"
+version = "0.1.0"
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+tide = "0.14"
+tokio = {version = "0.3", features = ["full"]}
