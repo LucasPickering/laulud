@@ -25,6 +25,8 @@ services:
     environment:
       RUST_BACKTRACE: 1
       RUST_LOG: ${RUST_LOG:-info}
+      ROCKET_SPOTIFY_CLIENT_ID:
+      ROCKET_SPOTIFY_CLIENT_SECRET:
     ports:
       - "8000:8000"
 

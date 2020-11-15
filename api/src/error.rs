@@ -41,6 +41,7 @@ impl<'r> Responder<'r, 'static> for ApiError {
         self,
         _: &'r Request<'_>,
     ) -> rocket::response::Result<'static> {
+        println!("{:?}", self);
         Err(self.to_status())
     }
 }

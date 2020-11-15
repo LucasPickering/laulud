@@ -1,6 +1,10 @@
-use mongodb::bson::{self, doc, Bson};
+use mongodb::{
+    bson::{self, doc, Bson},
+    options::UpdateOptions,
+};
 use rocket::{get, post, routes, Route, State};
 use rocket_contrib::json::Json;
+use rspotify::client::Spotify;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -34,7 +38,9 @@ pub fn all_routes() -> Vec<Route> {
 async fn route_get_track(
     track_id: String,
     db_handler: State<'_, DbHandler>,
+    spotify: State<'_, Spotify>,
 ) -> ApiResult<Json<Option<Track>>> {
+    dbg!(spotify.track(&track_id).await.unwrap());
     let coll = db_handler.collection(CollectionName::Tracks);
     let track_doc = coll.find_one(doc! { "track_id": &track_id }, None).await?;
 
@@ -56,12 +62,13 @@ async fn route_create_tag(
     let CreateTagBody { tags } = body.to_owned();
 
     let coll = db_handler.collection(CollectionName::Tracks);
-    coll.insert_one(
+    coll.update_one(
+        doc! {"track_id": &track_id},
         doc! {
             "track_id": &track_id,
-            "tags": &tags,
+            "$push": {"tags": {"$each": &tags}},
         },
-        None,
+        Some(UpdateOptions::builder().upsert(true).build()),
     )
     .await?;
 
