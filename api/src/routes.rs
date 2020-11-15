@@ -3,7 +3,10 @@ use rocket::{get, post, routes, Route, State};
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 
-use crate::db::{CollectionName, DbHandler};
+use crate::{
+    db::{CollectionName, DbHandler},
+    error::{ApiError, ApiResult},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Track {
@@ -31,16 +34,17 @@ pub fn all_routes() -> Vec<Route> {
 async fn route_get_track(
     track_id: String,
     db_handler: State<'_, DbHandler>,
-) -> Json<Option<Track>> {
+) -> ApiResult<Json<Option<Track>>> {
     let coll = db_handler.collection(CollectionName::Tracks);
-    let track_doc = coll
-        .find_one(dbg!(doc! { "track_id": &track_id }), None)
-        .await
-        .unwrap();
+    let track_doc = coll.find_one(doc! { "track_id": &track_id }, None).await?;
 
-    let track =
-        track_doc.map(|doc| bson::from_bson(Bson::Document(doc)).unwrap());
-    Json(track)
+    match track_doc {
+        None => Err(ApiError::NotFound(track_id)),
+        Some(doc) => {
+            let track = bson::from_bson(Bson::Document(doc))?;
+            Ok(Json(track))
+        }
+    }
 }
 
 #[post("/tracks/<track_id>/tags", format = "json", data = "<body>")]
@@ -48,7 +52,7 @@ async fn route_create_tag(
     track_id: String,
     body: Json<CreateTagBody>,
     db_handler: State<'_, DbHandler>,
-) -> Json<Track> {
+) -> ApiResult<Json<Track>> {
     let CreateTagBody { tags } = body.to_owned();
 
     let coll = db_handler.collection(CollectionName::Tracks);
@@ -59,9 +63,8 @@ async fn route_create_tag(
         },
         None,
     )
-    .await
-    .unwrap();
+    .await?;
 
     let track = Track { track_id, tags };
-    Json(track)
+    Ok(Json(track))
 }

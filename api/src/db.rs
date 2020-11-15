@@ -1,4 +1,4 @@
-use crate::config::LauludConfig;
+use crate::{error::ApiResult, LauludConfig};
 use mongodb::{options::ClientOptions, Client, Collection, Database};
 use strum::IntoStaticStr;
 
@@ -15,9 +15,7 @@ pub struct DbHandler {
 }
 
 impl DbHandler {
-    pub async fn connect(
-        config: &LauludConfig,
-    ) -> mongodb::error::Result<Self> {
+    pub async fn connect(config: &LauludConfig) -> ApiResult<Self> {
         let options = ClientOptions::parse(&config.database_url).await?;
         let client = Client::with_options(options).unwrap();
         Ok(Self { client })
@@ -28,6 +26,6 @@ impl DbHandler {
     }
 
     pub fn collection(&self, collection_name: CollectionName) -> Collection {
-        self.database().collection(dbg!(collection_name.into()))
+        self.database().collection(collection_name.into())
     }
 }
