@@ -9,7 +9,7 @@ use mongodb::{
 };
 use rocket::{get, post, routes, Route, State};
 use rocket_contrib::json::Json;
-use rspotify::client::Spotify;
+use rspotify::{client::Spotify, senum::SearchType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,16 +25,14 @@ struct CreateTagBody {
 
 /// Function that exports all routes in this file
 pub fn all_routes() -> Vec<Route> {
-    routes![route_get_track, route_create_tag]
+    routes![route_get_track, route_search_tracks, route_create_tag]
 }
 
 #[get("/tracks/<track_id>", format = "json")]
 async fn route_get_track(
     track_id: String,
     db_handler: State<'_, DbHandler>,
-    spotify: State<'_, Spotify>,
 ) -> ApiResult<Json<Option<Track>>> {
-    dbg!(spotify.track(&track_id).await.unwrap());
     let coll = db_handler.collection(CollectionName::Tracks);
     let track_doc = coll.find_one(doc! { "track_id": &track_id }, None).await?;
 
@@ -45,6 +43,20 @@ async fn route_get_track(
             Ok(Json(track))
         }
     }
+}
+
+#[get("/tracks/search/<query>", format = "json")]
+async fn route_search_tracks(
+    query: String,
+    db_handler: State<'_, DbHandler>,
+    spotify: State<'_, Spotify>,
+) -> ApiResult<Json<Vec<Track>>> {
+    let search_results = spotify
+        .search(&query, SearchType::Track, 0, 0, None, None)
+        .await
+        .map_err(ApiError::Spotify)?;
+    dbg!(search_results);
+    Ok(Json(Vec::new()))
 }
 
 #[post("/tracks/<track_id>/tags", format = "json", data = "<body>")]

@@ -22,6 +22,7 @@ pub struct LauludConfig {
 
 #[rocket::main]
 async fn main() {
+    env_logger::init();
     let rocket = rocket::ignite();
 
     // Load custom config and set up the DB connection

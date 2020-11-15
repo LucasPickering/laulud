@@ -1,9 +1,12 @@
+use log::error;
 use mongodb::bson;
 use rocket::{http::Status, response::Responder, Request};
 use thiserror::Error;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
+/// Type to capture all errors that can happen throughout the app.
+/// TODO add backtrace
 #[derive(Debug, Error)]
 pub enum ApiError {
     /// Error deserializing BSON data, which most likely came from the DB. This
@@ -15,6 +18,10 @@ pub enum ApiError {
     /// Mongo DB error
     #[error("Database error: {0}")]
     Mongo(#[from] mongodb::error::Error),
+
+    /// Spotify API error
+    #[error("Spotify error: {0}")]
+    Spotify(failure::Error),
 
     /// User requested a resource that doesn't exist. String is the unknown
     /// identifier.
@@ -33,9 +40,10 @@ impl ApiError {
             // 404
             Self::NotFound(_) => Status::NotFound,
             // 500
-            Self::BsonDeserialize(_) | Self::Mongo(_) | Self::Unknown(_) => {
-                Status::InternalServerError
-            }
+            Self::BsonDeserialize(_)
+            | Self::Mongo(_)
+            | Self::Spotify(_)
+            | Self::Unknown(_) => Status::InternalServerError,
         }
     }
 }
@@ -45,7 +53,13 @@ impl<'r> Responder<'r, 'static> for ApiError {
         self,
         _: &'r Request<'_>,
     ) -> rocket::response::Result<'static> {
-        println!("{:?}", self);
-        Err(self.to_status())
+        let status = self.to_status();
+
+        // Log 5xx error messages
+        if status.code >= 500 {
+            error!("HTTP {}: {}", status, self);
+        }
+
+        Err(status)
     }
 }
