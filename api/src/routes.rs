@@ -1,16 +1,16 @@
+use crate::{
+    db::{CollectionName, DbHandler},
+    error::{ApiError, ApiResult},
+    util,
+};
 use mongodb::{
-    bson::{self, doc, Bson},
-    options::UpdateOptions,
+    bson::doc,
+    options::{FindOneAndUpdateOptions, ReturnDocument},
 };
 use rocket::{get, post, routes, Route, State};
 use rocket_contrib::json::Json;
 use rspotify::client::Spotify;
 use serde::{Deserialize, Serialize};
-
-use crate::{
-    db::{CollectionName, DbHandler},
-    error::{ApiError, ApiResult},
-};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Track {
@@ -20,12 +20,6 @@ struct Track {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CreateTagBody {
-    tags: Vec<String>,
-}
-
-struct UserTrackTags {
-    user_id: String,
-    track_id: String,
     tags: Vec<String>,
 }
 
@@ -47,7 +41,7 @@ async fn route_get_track(
     match track_doc {
         None => Err(ApiError::NotFound(track_id)),
         Some(doc) => {
-            let track = bson::from_bson(Bson::Document(doc))?;
+            let track = util::from_doc(doc)?;
             Ok(Json(track))
         }
     }
@@ -62,16 +56,29 @@ async fn route_create_tag(
     let CreateTagBody { tags } = body.to_owned();
 
     let coll = db_handler.collection(CollectionName::Tracks);
-    coll.update_one(
-        doc! {"track_id": &track_id},
-        doc! {
-            "track_id": &track_id,
-            "$push": {"tags": {"$each": &tags}},
-        },
-        Some(UpdateOptions::builder().upsert(true).build()),
-    )
-    .await?;
+    let update_doc = coll
+        .find_one_and_update(
+            doc! {"track_id": &track_id},
+            // Add each tag to the doc if it isn't present already
+            doc! {"$addToSet": {"tags": {"$each": &tags}}},
+            Some(
+                FindOneAndUpdateOptions::builder()
+                    .upsert(true)
+                    .return_document(ReturnDocument::After)
+                    .build(),
+            ),
+        )
+        .await?;
 
-    let track = Track { track_id, tags };
-    Ok(Json(track))
+    match update_doc {
+        // This shouldn't be possible because we have upsert=true, but let's
+        // handle it just to be safe
+        None => {
+            Err(ApiError::Unknown("No result from findOneAndUpdate".into()))
+        }
+        Some(doc) => {
+            let track = util::from_doc(doc)?;
+            Ok(Json(track))
+        }
+    }
 }

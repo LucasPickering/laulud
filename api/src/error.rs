@@ -20,6 +20,10 @@ pub enum ApiError {
     /// identifier.
     #[error("Resource not found: {0}")]
     NotFound(String),
+
+    /// Catch-all error, should have a descriptive message
+    #[error("Unknown error: {0}")]
+    Unknown(String),
 }
 
 impl ApiError {
@@ -29,7 +33,7 @@ impl ApiError {
             // 404
             Self::NotFound(_) => Status::NotFound,
             // 500
-            Self::BsonDeserialize(_) | Self::Mongo(_) => {
+            Self::BsonDeserialize(_) | Self::Mongo(_) | Self::Unknown(_) => {
                 Status::InternalServerError
             }
         }

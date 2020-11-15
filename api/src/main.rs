@@ -1,6 +1,7 @@
 mod db;
 mod error;
 mod routes;
+mod util;
 
 use crate::db::DbHandler;
 use rspotify::{client::Spotify, oauth2::SpotifyClientCredentials};
