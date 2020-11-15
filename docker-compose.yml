@@ -8,15 +8,9 @@ volumes:
 
 services:
   db:
-    # DB: gdlk; creds: root/root
-    image: postgres:12-alpine
-    command: postgres -c log_statement=all
-    environment:
-      POSTGRES_DB: laulud
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
+    image: mongo:4.4
     ports:
-      - "5432:5432"
+      - "27017:27017"
 
   api:
     build: api/

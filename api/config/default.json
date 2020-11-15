@@ -1,4 +1,4 @@
 {
-  "database_url": "postgres://root:root@db/laulud",
+  "database_url": "mongodb://db:27017/?appname=laulud",
   "server_host": "http://api:8000"
 }

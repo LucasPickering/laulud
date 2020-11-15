@@ -1,11 +1,13 @@
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 
+pub const DATABASE_NAME: &str = "laulud";
+
 /// App-wide configuration settings
 #[derive(Debug, Deserialize)]
 pub struct LauludConfig {
-    /// The URL of the DB that we connect to, as a Postgres URL.
-    /// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
+    /// The URL of the DB that we connect to, as a Mongo URI.
+    /// https://docs.mongodb.com/manual/reference/connection-string/
     pub database_url: String,
     /// The hostname for the HTTP server to bind to.
     pub server_host: String,
