@@ -1,8 +1,6 @@
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 
-pub const DATABASE_NAME: &str = "laulud";
-
 /// App-wide configuration settings
 #[derive(Debug, Deserialize)]
 pub struct LauludConfig {
