@@ -1,0 +1,4 @@
+{
+  "database_url": "postgres://root:root@db/laulud",
+  "server_host": "http://api:8000"
+}

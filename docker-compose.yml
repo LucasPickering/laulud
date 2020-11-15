@@ -7,11 +7,16 @@ volumes:
   ui_node_modules:
 
 services:
-  mongo:
-    image: mongo:4
-    command: --quiet
+  db:
+    # DB: gdlk; creds: root/root
+    image: postgres:12-alpine
+    command: postgres -c log_statement=all
+    environment:
+      POSTGRES_DB: laulud
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
     ports:
-      - "27017:27017"
+      - "5432:5432"
 
   api:
     build: api/
@@ -22,7 +27,7 @@ services:
       - ./api:/app:rw
       - api_build:/app/target
     depends_on:
-      - mongo
+      - db
     environment:
       RUST_BACKTRACE: 1
       RUST_LOG: ${RUST_LOG:-info}
