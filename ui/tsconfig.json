@@ -20,6 +20,9 @@
     "noEmit": true,
     "jsx": "react"
   },
+  "rules": {
+    "no-unused-vars": "off"
+  },
   "include": [
     "src"
   ]
