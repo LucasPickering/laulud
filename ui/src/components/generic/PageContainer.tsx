@@ -1,7 +1,7 @@
 import { makeStyles, Typography } from "@material-ui/core";
 import React from "react";
 
-import Link from "./common/Link";
+import Link from "./Link";
 
 const useLocalStyles = makeStyles(({ palette, spacing }) => ({
   pageContainer: {
