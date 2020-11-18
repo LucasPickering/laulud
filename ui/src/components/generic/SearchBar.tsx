@@ -3,15 +3,16 @@ import { Search as SearchIcon } from "@material-ui/icons";
 import { IconButton, InputBase } from "@material-ui/core";
 
 interface Props {
+  className?: string;
   onSearch?: (query: string) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ onSearch }) => {
-  // const localClasses = useLocalStyles();
+const SearchBar: React.FC<Props> = ({ className, onSearch }) => {
   const [query, setQuery] = useState<string>("");
 
   return (
     <form
+      className={className}
       onSubmit={(e) => {
         e.preventDefault(); // Don't reload the page
         if (onSearch) {
@@ -20,7 +21,6 @@ const SearchBar: React.FC<Props> = ({ onSearch }) => {
       }}
     >
       <InputBase
-        // className={classes.input}
         required
         placeholder="Search"
         value={query}

@@ -5,7 +5,6 @@ import { BrowserRouter, Route, Switch } from "react-router-dom";
 import { QueryCache, ReactQueryCacheProvider } from "react-query";
 
 import HomePage from "pages/Home/HomePage";
-import TrackSearchPage from "pages/TrackSearch/TrackSearchPage";
 import NotFoundPage from "pages/NotFound/NotFoundPage";
 import PageContainer from "./components/generic/PageContainer";
 import theme from "./theme";
@@ -22,10 +21,6 @@ const App: React.FC = () => {
             <Switch>
               <Route path="/" exact>
                 <HomePage />
-              </Route>
-
-              <Route path="/tracks/search/:query" exact>
-                <TrackSearchPage />
               </Route>
 
               {/* Fallback route */}

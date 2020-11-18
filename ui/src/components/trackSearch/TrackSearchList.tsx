@@ -1,18 +1,15 @@
 import React from "react";
 import { CircularProgress } from "@material-ui/core";
 import { useQuery } from "react-query";
-import { useParams } from "react-router-dom";
 
 import fd from "api/fd";
 import { Track } from "api/types";
 
-// Route params
-interface Params {
+interface Props {
   query: string;
 }
 
-const TrackSearchPage: React.FC = () => {
-  const { query } = useParams<Params>();
+const TrackSearchList: React.FC<Props> = ({ query }) => {
   const { isLoading, data: tracks } = useQuery("track-search", () =>
     fd<Track[]>(`/api/tracks/search/${query}`)
   );
@@ -34,4 +31,4 @@ const TrackSearchPage: React.FC = () => {
   );
 };
 
-export default TrackSearchPage;
+export default TrackSearchList;

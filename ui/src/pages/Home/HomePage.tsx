@@ -1,9 +1,9 @@
 import React from "react";
 
-import TrackSearchBar from "../../components/TrackSearchBar";
+import TrackSearchView from "components/trackSearch/TrackSearchView";
 
 const HomePage: React.FC = () => {
-  return <TrackSearchBar />;
+  return <TrackSearchView />;
 };
 
 export default HomePage;
