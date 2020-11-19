@@ -2,22 +2,13 @@ import React from "react";
 import { CssBaseline } from "@material-ui/core";
 import { ThemeProvider } from "@material-ui/styles";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
-import { QueryCache, ReactQueryCacheProvider } from "react-query";
+import { ReactQueryCacheProvider } from "react-query";
 
 import HomePage from "pages/Home/HomePage";
 import NotFoundPage from "pages/NotFound/NotFoundPage";
 import PageContainer from "./components/generic/PageContainer";
 import theme from "./theme";
-
-const queryCache = new QueryCache({
-  defaultConfig: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 0,
-      // TODO add queryFn here
-    },
-  },
-});
+import queryCache from "./api/queryCache";
 
 const App: React.FC = () => {
   return (
