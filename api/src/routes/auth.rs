@@ -1,3 +1,5 @@
+use std::backtrace::Backtrace;
+
 use crate::{
     error::{ApiError, ApiResult},
     util::{IdentityState, OAUTH_COOKIE_NAME},
@@ -50,8 +52,12 @@ pub async fn route_auth_callback(
 ) -> ApiResult<Redirect> {
     // Read identity/state data that stored in an encrypted+signed cookie. We
     // know this data is safe, we wrote it and it hasn't been modified.
-    let identity_state = IdentityState::from_cookies(cookies)
-        .ok_or(ApiError::Unauthenticated)?;
+    let identity_state =
+        IdentityState::from_cookies(cookies).ok_or_else(|| {
+            ApiError::Unauthenticated {
+                backtrace: Backtrace::capture(),
+            }
+        })?;
 
     // VERY IMPORTANT - read the CSRF token from the state param, and compare it
     // to the token we stored in the cookie. The cookie is encrypted+signed,

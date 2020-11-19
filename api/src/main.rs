@@ -1,3 +1,5 @@
+#![feature(backtrace)]
+
 mod db;
 mod error;
 mod routes;

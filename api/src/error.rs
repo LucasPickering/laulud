@@ -2,65 +2,82 @@ use log::error;
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
+use std::backtrace::Backtrace;
 use thiserror::Error;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
 /// Type to capture all errors that can happen throughout the app.
-/// TODO add backtrace
 #[derive(Debug, Error)]
 pub enum ApiError {
     /// Error deserializing BSON data, which most likely came from the DB. This
     /// is a server error because it indicates a mismatch between what's store
     /// in the DB and what we expected.
-    #[error("BSON serialization error: {0}")]
-    BsonDeserialize(#[from] bson::de::Error),
+    #[error("BSON serialization error: {source}")]
+    BsonDeserialize {
+        #[from]
+        source: bson::de::Error,
+        backtrace: Backtrace,
+    },
 
     /// Mongo DB error
-    #[error("Database error: {0}")]
-    Mongo(#[from] mongodb::error::Error),
+    #[error("Database error: {source}")]
+    Mongo {
+        #[from]
+        source: mongodb::error::Error,
+        backtrace: Backtrace,
+    },
 
     /// Reqwest error
-    #[error("{0}")]
-    Reqwest(#[from] reqwest::Error),
+    #[error("{source}")]
+    Reqwest {
+        #[from]
+        source: reqwest::Error,
+        backtrace: Backtrace,
+    },
 
     /// Reqwest error while creating a request header
-    #[error("{0}")]
-    InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue),
-
-    /// Action cannot be performed because the user is not authenticated.
-    #[error("Not logged in")]
-    Unauthenticated,
-
-    /// CSRF failure during auth
-    #[error("CSRF token was not provided or did not match the expected value")]
-    CsrfError,
+    #[error("{source}")]
+    InvalidHeaderValue {
+        #[from]
+        source: reqwest::header::InvalidHeaderValue,
+        backtrace: Backtrace,
+    },
 
     /// Wrapper for an OpenID token error, which can occur while validating a
     /// token submitted by a user.
-    #[error("{0}")]
-    OauthErrorResponse(
+    #[error("{source}")]
+    OauthErrorResponse {
         #[from]
-        oauth2::RequestTokenError<
+        source: oauth2::RequestTokenError<
             oauth2::reqwest::Error<reqwest::Error>,
             BasicErrorResponse,
         >,
-    ),
+        backtrace: Backtrace,
+    },
 
-    /// When we do token exchange with an OpenID provider, we always expect to
-    /// get an `id_token` field back in the response. If we don't for some
-    /// reason (either we fucked up or the provider fucked up), use this error.
-    #[error("id_token field was not in OpenID response")]
-    MissingIdToken,
+    /// Action cannot be performed because the user is not authenticated.
+    #[error("Not logged in")]
+    Unauthenticated { backtrace: Backtrace },
 
-    /// User requested a resource that doesn't exist. String is the unknown
+    /// CSRF failure during auth
+    #[error("CSRF token was not provided or did not match the expected value")]
+    CsrfError { backtrace: Backtrace },
+
+    /// User requested a resource that doesn't exist. `resource` is the unknown
     /// identifier.
-    #[error("Resource not found: {0}")]
-    NotFound(String),
+    #[error("Resource not found: {resource}")]
+    NotFound {
+        resource: String,
+        backtrace: Backtrace,
+    },
 
     /// Catch-all error, should have a descriptive message
-    #[error("Unknown error: {0}")]
-    Unknown(String),
+    #[error("Unknown error: {message}")]
+    Unknown {
+        message: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl ApiError {
@@ -68,20 +85,19 @@ impl ApiError {
     pub fn to_status(&self) -> Status {
         match self {
             // 401
-            Self::Unauthenticated
-            | Self::CsrfError
-            | Self::OauthErrorResponse(_) => Status::Unauthorized,
+            Self::Unauthenticated { .. }
+            | Self::CsrfError { .. }
+            | Self::OauthErrorResponse { .. } => Status::Unauthorized,
 
             // 404
-            Self::NotFound(_) => Status::NotFound,
+            Self::NotFound { .. } => Status::NotFound,
 
             // 500
-            Self::BsonDeserialize(_)
-            | Self::Mongo(_)
-            | Self::Reqwest(_)
-            | Self::MissingIdToken
-            | Self::InvalidHeaderValue(_)
-            | Self::Unknown(_) => Status::InternalServerError,
+            Self::BsonDeserialize { .. }
+            | Self::Mongo { .. }
+            | Self::Reqwest { .. }
+            | Self::InvalidHeaderValue { .. }
+            | Self::Unknown { .. } => Status::InternalServerError,
         }
     }
 }

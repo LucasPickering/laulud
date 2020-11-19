@@ -10,6 +10,7 @@ use reqwest::{
 };
 use rocket::{http::CookieJar, request::FromRequest};
 use serde::{de::DeserializeOwned, Deserialize};
+use std::backtrace::Backtrace;
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
 
@@ -118,7 +119,9 @@ impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
                 Some(IdentityState::PostAuth { token_response }) => {
                     Ok(token_response)
                 }
-                _ => Err(ApiError::Unauthenticated),
+                _ => Err(ApiError::Unauthenticated {
+                    backtrace: Backtrace::capture(),
+                }),
             }?;
 
             let spotify = Spotify::new(token_response)?;

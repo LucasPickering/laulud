@@ -1,3 +1,5 @@
+use std::backtrace::Backtrace;
+
 use crate::error::{ApiError, ApiResult};
 use mongodb::bson::{self, Bson, Document};
 use oauth2::{basic::BasicTokenResponse, CsrfToken};
@@ -71,7 +73,9 @@ impl IdentityState {
             {
                 Ok(())
             }
-            _ => Err(ApiError::CsrfError),
+            _ => Err(ApiError::CsrfError {
+                backtrace: Backtrace::capture(),
+            }),
         }
     }
 

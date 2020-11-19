@@ -1,3 +1,5 @@
+use std::backtrace::Backtrace;
+
 use crate::{
     db::{CollectionName, DbHandler},
     error::{ApiError, ApiResult},
@@ -32,7 +34,10 @@ pub async fn route_get_track(
     let track_doc = coll.find_one(doc! { "track_id": &track_id }, None).await?;
 
     match track_doc {
-        None => Err(ApiError::NotFound(track_id)),
+        None => Err(ApiError::NotFound {
+            resource: (track_id),
+            backtrace: Backtrace::capture(),
+        }),
         Some(doc) => {
             let track = util::from_doc(doc)?;
             Ok(Json(track))
@@ -76,9 +81,10 @@ pub async fn route_create_tag(
     match update_doc {
         // This shouldn't be possible because we have upsert=true, but let's
         // handle it just to be safe
-        None => {
-            Err(ApiError::Unknown("No result from findOneAndUpdate".into()))
-        }
+        None => Err(ApiError::Unknown {
+            message: ("No result from findOneAndUpdate".into()),
+            backtrace: Backtrace::capture(),
+        }),
         Some(doc) => {
             let track = util::from_doc(doc)?;
             Ok(Json(track))

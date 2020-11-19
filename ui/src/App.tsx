@@ -9,7 +9,15 @@ import NotFoundPage from "pages/NotFound/NotFoundPage";
 import PageContainer from "./components/generic/PageContainer";
 import theme from "./theme";
 
-const queryCache = new QueryCache();
+const queryCache = new QueryCache({
+  defaultConfig: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 0,
+      // TODO add queryFn here
+    },
+  },
+});
 
 const App: React.FC = () => {
   return (
