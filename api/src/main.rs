@@ -4,7 +4,10 @@ mod routes;
 mod util;
 
 use crate::db::DbHandler;
-use rspotify::{client::Spotify, oauth2::SpotifyClientCredentials};
+use oauth2::{
+    basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl,
+};
+use rocket::routes;
 use serde::Deserialize;
 
 /// App-wide configuration settings
@@ -14,10 +17,35 @@ pub struct LauludConfig {
     /// https://docs.mongodb.com/manual/reference/connection-string/
     pub database_url: String,
 
+    /// The host server, for use with the OAuth flow
+    pub hostname: String,
     /// ID for our Spotify app
     pub spotify_client_id: String,
     /// Secret for our Spotify app
     pub spotify_client_secret: String,
+}
+
+/// Initialize the Spotify OAuth client. Any failures in here will cause a
+/// panic, so this should only be called during server startup.
+pub async fn init_spotify_client(config: &LauludConfig) -> BasicClient {
+    // Create an OAuth2 client by specifying the client ID, client
+    // secret, authorization URL and token URL.
+    BasicClient::new(
+        ClientId::new(config.spotify_client_id.to_string()),
+        Some(ClientSecret::new(config.spotify_client_secret.to_string())),
+        AuthUrl::new("https://accounts.spotify.com/authorize".to_string())
+            .unwrap(),
+        Some(
+            TokenUrl::new("https://accounts.spotify.com/api/token".to_string())
+                .unwrap(),
+        ),
+    )
+    // Set the URL the user will be redirected to after the authorization
+    // process.
+    .set_redirect_url(
+        RedirectUrl::new(format!("{}/api/oauth/callback", config.hostname))
+            .unwrap(),
+    )
 }
 
 #[rocket::main]
@@ -28,18 +56,25 @@ async fn main() {
     // Load custom config and set up the DB connection
     let config: LauludConfig = rocket.figment().extract().unwrap();
     let db_handler = DbHandler::connect(&config).await.unwrap();
-    let spotify_creds = SpotifyClientCredentials::default()
-        .client_id(&config.spotify_client_id)
-        .client_secret(&config.spotify_client_secret)
-        .build();
-    let spotify = Spotify::default()
-        .client_credentials_manager(spotify_creds)
-        .build();
+
+    let spotify_oauth_client = init_spotify_client(&config).await;
 
     rocket
-        .mount("/api", routes::all_routes())
+        .mount(
+            "/api",
+            routes![
+                // auth
+                routes::route_auth_redirect,
+                routes::route_auth_callback,
+                routes::route_logout,
+                // tracks
+                routes::route_get_track,
+                routes::route_search_tracks,
+                routes::route_create_tag
+            ],
+        )
         .manage(db_handler)
-        .manage(spotify)
+        .manage(spotify_oauth_client)
         .launch()
         .await
         .unwrap();

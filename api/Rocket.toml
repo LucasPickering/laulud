@@ -4,3 +4,4 @@ port = 8000
 
 [debug]
 database_url = "mongodb://db:27017/?appname=laulud"
+hostname = "https://localhost:3000"
