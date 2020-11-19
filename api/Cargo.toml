@@ -6,6 +6,7 @@ name = "laulud-api"
 version = "0.1.0"
 
 [dependencies]
+async-trait = "0.1" 
 env_logger = "0.8" 
 failure = "0.1" # Used just for compatibility with the spotify crate
 log = "0.4" 
@@ -14,7 +15,6 @@ oauth2 = "4.0.0-alpha.2"
 reqwest = "0.10" 
 rocket = {git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["secrets"]} 
 rocket_contrib = {git = "https://github.com/SergioBenitez/Rocket.git", branch = "master"} 
-rspotify = "0.10" 
 serde = {version = "1.0", features = ["derive"]} 
 serde_json = "1.0" 
 strum = {version = "0.19", features = ["derive"]} 

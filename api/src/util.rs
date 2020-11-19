@@ -1,8 +1,12 @@
 use crate::error::{ApiError, ApiResult};
 use mongodb::bson::{self, Bson, Document};
 use oauth2::{basic::BasicTokenResponse, CsrfToken};
-use rocket::http::Cookie;
+use rocket::http::{Cookie, CookieJar, SameSite};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use time::Duration;
+
+/// The name of the cookie that we store auth data in
+pub const OAUTH_COOKIE_NAME: &str = "oauth-state";
 
 /// Deserialize a [Document] into a specific type
 pub fn from_doc<T: DeserializeOwned>(doc: Document) -> ApiResult<T> {
@@ -36,9 +40,18 @@ pub enum IdentityState {
 impl IdentityState {
     /// Read the identity state from the identity cookie. If the cookie isn't
     /// present/valid, or if the contents aren't deserializable, return `None`.
-    pub fn from_cookie(cookie: Option<&Cookie<'_>>) -> Option<Self> {
-        let id_string = cookie.map(Cookie::value)?;
-        serde_json::from_str(id_string).ok()
+    pub fn from_cookies(cookies: &CookieJar<'_>) -> Option<Self> {
+        let cookie = cookies.get_private(OAUTH_COOKIE_NAME)?;
+        serde_json::from_str(cookie.value()).ok()
+    }
+
+    /// Serialize the identity state into a private auth cookie
+    pub fn to_cookie(&self) -> Cookie<'static> {
+        Cookie::build(OAUTH_COOKIE_NAME, self.serialize())
+            .same_site(SameSite::Lax)
+            .secure(true)
+            .max_age(Duration::days(1))
+            .finish()
     }
 
     /// Serialize this object into a string. Used to store the value in the

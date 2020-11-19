@@ -1,6 +1,7 @@
 mod db;
 mod error;
 mod routes;
+mod spotify;
 mod util;
 
 use crate::db::DbHandler;

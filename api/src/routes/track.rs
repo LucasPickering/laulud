@@ -1,6 +1,7 @@
 use crate::{
     db::{CollectionName, DbHandler},
     error::{ApiError, ApiResult},
+    spotify::Spotify,
     util,
 };
 use mongodb::{
@@ -9,7 +10,6 @@ use mongodb::{
 };
 use rocket::{get, post, State};
 use rocket_contrib::json::Json;
-use rspotify::{client::Spotify, senum::SearchType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,12 +43,9 @@ pub async fn route_get_track(
 #[get("/tracks/search/<query>", format = "json")]
 pub async fn route_search_tracks(
     query: String,
-    spotify: State<'_, Spotify>,
+    spotify: Spotify,
 ) -> ApiResult<Json<Vec<Track>>> {
-    let search_results = spotify
-        .search(&query, SearchType::Track, 0, 0, None, None)
-        .await
-        .map_err(ApiError::Spotify)?;
+    let search_results = spotify.search_tracks(&query).await?;
     dbg!(search_results);
     Ok(Json(Vec::new()))
 }

@@ -1,5 +1,6 @@
 use log::error;
 use mongodb::bson;
+use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
 use thiserror::Error;
 
@@ -19,9 +20,13 @@ pub enum ApiError {
     #[error("Database error: {0}")]
     Mongo(#[from] mongodb::error::Error),
 
-    /// Spotify API error
-    #[error("Spotify error: {0}")]
-    Spotify(failure::Error),
+    /// Reqwest error
+    #[error("{0}")]
+    Reqwest(#[from] reqwest::Error),
+
+    /// Reqwest error while creating a request header
+    #[error("{0}")]
+    InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue),
 
     /// Action cannot be performed because the user is not authenticated.
     #[error("Not logged in")]
@@ -32,10 +37,15 @@ pub enum ApiError {
     CsrfError,
 
     /// Wrapper for an OpenID token error, which can occur while validating a
-    /// token submitted by a user. BasicErrorType isn't an Error so we have
-    /// to stringify it first.
+    /// token submitted by a user.
     #[error("{0}")]
-    OauthErrorResponse(String),
+    OauthErrorResponse(
+        #[from]
+        oauth2::RequestTokenError<
+            oauth2::reqwest::Error<reqwest::Error>,
+            BasicErrorResponse,
+        >,
+    ),
 
     /// When we do token exchange with an OpenID provider, we always expect to
     /// get an `id_token` field back in the response. If we don't for some
@@ -55,7 +65,7 @@ pub enum ApiError {
 
 impl ApiError {
     /// Convert this error to an HTTP status code
-    fn to_status(&self) -> Status {
+    pub fn to_status(&self) -> Status {
         match self {
             // 401
             Self::Unauthenticated
@@ -68,8 +78,9 @@ impl ApiError {
             // 500
             Self::BsonDeserialize(_)
             | Self::Mongo(_)
-            | Self::Spotify(_)
+            | Self::Reqwest(_)
             | Self::MissingIdToken
+            | Self::InvalidHeaderValue(_)
             | Self::Unknown(_) => Status::InternalServerError,
         }
     }
