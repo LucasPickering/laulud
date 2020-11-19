@@ -9,6 +9,7 @@
  * @returns Same as fetch, except the data has been parsed as JSON and type-coerced
  */
 const fd = <T>(input: RequestInfo, init?: RequestInit): Promise<T> =>
+  // todo set Accept: application/json
   fetch(input, init).then((response) => response.json());
 
 export default fd;

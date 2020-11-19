@@ -1,10 +1,9 @@
-use std::backtrace::Backtrace;
-
 use crate::error::{ApiError, ApiResult};
 use mongodb::bson::{self, Bson, Document};
 use oauth2::{basic::BasicTokenResponse, CsrfToken};
 use rocket::http::{Cookie, CookieJar, SameSite};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::backtrace::Backtrace;
 use time::Duration;
 
 /// The name of the cookie that we store auth data in

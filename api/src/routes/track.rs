@@ -3,7 +3,7 @@ use std::backtrace::Backtrace;
 use crate::{
     db::{CollectionName, DbHandler},
     error::{ApiError, ApiResult},
-    spotify::Spotify,
+    spotify::{self, Spotify},
     util,
 };
 use mongodb::{
@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Track {
-    track_id: String,
+    track: spotify::Track,
     tags: Vec<String>,
 }
 
@@ -50,9 +50,16 @@ pub async fn route_search_tracks(
     query: String,
     spotify: Spotify,
 ) -> ApiResult<Json<Vec<Track>>> {
-    let search_results = spotify.search_tracks(&query).await?;
-    dbg!(search_results);
-    Ok(Json(Vec::new()))
+    let data = spotify
+        .search_tracks(&query)
+        .await?
+        .into_iter()
+        .map(|track| Track {
+            track,
+            tags: Vec::new(),
+        })
+        .collect();
+    Ok(Json(data))
 }
 
 #[post("/tracks/<track_id>/tags", format = "json", data = "<body>")]

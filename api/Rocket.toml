@@ -5,3 +5,5 @@ port = 8000
 [debug]
 database_url = "mongodb://db:27017/?appname=laulud"
 hostname = "https://localhost:3000"
+# I know security, I have the best security
+secret_key = "D4Xag/vs2ctcwya7bPTcCxMrwEH/cHESEu7mJiCwvvM="

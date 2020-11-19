@@ -1,8 +1,8 @@
-use log::error;
+use log::{log, Level};
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
-use std::backtrace::Backtrace;
+use std::{backtrace::Backtrace, error::Error};
 use thiserror::Error;
 
 pub type ApiResult<T> = Result<T, ApiError>;
@@ -33,6 +33,22 @@ pub enum ApiError {
     Reqwest {
         #[from]
         source: reqwest::Error,
+        backtrace: Backtrace,
+    },
+
+    /// HTTP error from the Spotify API
+    #[error("Spotify HTTP error: {source}; Body: {body}")]
+    SpotifyApiHttp {
+        source: reqwest::Error,
+        body: String,
+        backtrace: Backtrace,
+    },
+
+    /// Failed to deserialize data from a Spotify APi response
+    #[error("Spotify deserialization error: {source}; Body: {body}")]
+    SpotifyApiDeserialization {
+        source: serde_json::Error,
+        body: String,
         backtrace: Backtrace,
     },
 
@@ -96,9 +112,27 @@ impl ApiError {
             Self::BsonDeserialize { .. }
             | Self::Mongo { .. }
             | Self::Reqwest { .. }
+            | Self::SpotifyApiHttp { .. }
+            | Self::SpotifyApiDeserialization { .. }
             | Self::InvalidHeaderValue { .. }
             | Self::Unknown { .. } => Status::InternalServerError,
         }
+    }
+
+    /// Log this error. Logging level will be based on the status code
+    pub fn log(&self) {
+        let log_level = if self.to_status().code >= 500 {
+            Level::Error
+        } else {
+            Level::Debug
+        };
+
+        log!(
+            log_level,
+            "API Error: {}\n{}",
+            self,
+            self.backtrace().expect("No backtrace available :(")
+        );
     }
 }
 
@@ -107,13 +141,7 @@ impl<'r> Responder<'r, 'static> for ApiError {
         self,
         _: &'r Request<'_>,
     ) -> rocket::response::Result<'static> {
-        let status = self.to_status();
-
-        // Log 5xx error messages
-        if status.code >= 500 {
-            error!("HTTP {}: {}", status, self);
-        }
-
-        Err(status)
+        self.log();
+        Err(self.to_status())
     }
 }
