@@ -1,18 +1,15 @@
 use crate::error::{ApiError, ApiResult};
-use mongodb::bson::{self, Bson, Document};
-use oauth2::{basic::BasicTokenResponse, CsrfToken};
+use oauth2::{
+    basic::{BasicClient, BasicTokenResponse},
+    CsrfToken, TokenResponse,
+};
 use rocket::http::{Cookie, CookieJar, SameSite};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::backtrace::Backtrace;
-use time::Duration;
+use serde::{Deserialize, Serialize};
+use std::{backtrace::Backtrace, sync::Arc};
+use time::{Duration, OffsetDateTime};
 
 /// The name of the cookie that we store auth data in
 pub const OAUTH_COOKIE_NAME: &str = "oauth-state";
-
-/// Deserialize a [Document] into a specific type
-pub fn from_doc<T: DeserializeOwned>(doc: Document) -> ApiResult<T> {
-    Ok(bson::from_bson(Bson::Document(doc))?)
-}
 
 /// Data related to a user's current auth state. This is meant to be serialized
 /// and stored within a private cookie with rocket. That cookie is encrypted, so
@@ -31,19 +28,20 @@ pub enum IdentityState {
         next: Option<String>,
     },
     /// State that we track when the user is already logged in.
-    PostAuth {
-        /// The OAuth2 token we got for the user during auth flow. We'll use
-        /// this to access the Spotify API on the user's behalf.
-        token_response: BasicTokenResponse,
-    },
+    PostAuth(Shithole),
 }
 
 impl IdentityState {
     /// Read the identity state from the identity cookie. If the cookie isn't
     /// present/valid, or if the contents aren't deserializable, return `None`.
-    pub fn from_cookies(cookies: &CookieJar<'_>) -> Option<Self> {
-        let cookie = cookies.get_private(OAUTH_COOKIE_NAME)?;
-        serde_json::from_str(cookie.value()).ok()
+    pub fn from_cookies(cookies: &CookieJar<'_>) -> ApiResult<Self> {
+        let cookie = cookies
+            .get_private(OAUTH_COOKIE_NAME)
+            .map(|cookie| serde_json::from_str(cookie.value()).ok())
+            .flatten();
+        cookie.ok_or_else(|| ApiError::Unauthenticated {
+            backtrace: Backtrace::capture(),
+        })
     }
 
     /// Serialize the identity state into a private auth cookie
@@ -88,5 +86,73 @@ impl IdentityState {
             } => next,
             _ => "/",
         }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Shithole {
+    /// The OAuth2 token we got for the user during auth flow. We'll use
+    /// this to access the Spotify API on the user's behalf.
+    token_response: BasicTokenResponse,
+    /// The date/time when this token expires.
+    expires_at: OffsetDateTime,
+}
+
+impl From<BasicTokenResponse> for Shithole {
+    fn from(token_response: BasicTokenResponse) -> Self {
+        let expires_at =
+            OffsetDateTime::now_utc() + token_response.expires_in().unwrap();
+        Self {
+            token_response,
+            expires_at,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct OAuthHandler {
+    client: Arc<BasicClient>,
+    shithole: Shithole,
+}
+
+impl OAuthHandler {
+    pub fn secret(&self) -> &str {
+        self.shithole.token_response.access_token().secret()
+    }
+
+    pub async fn from_identity_state(
+        client: Arc<BasicClient>,
+        identity_state: IdentityState,
+    ) -> ApiResult<Self> {
+        match identity_state {
+            IdentityState::PostAuth(shithole) => {
+                let mut rv = Self { client, shithole };
+                // Make sure the access token is fresh
+                rv.refresh_if_needed().await?;
+                Ok(rv)
+            }
+            _ => Err(ApiError::Unauthenticated {
+                backtrace: Backtrace::capture(),
+            }),
+        }
+    }
+
+    /// Check if the current access token is outdated, and if so, fetch a new
+    /// one from the API. In most cases this will be very cheap, and will only
+    /// make the HTTP call when necessary.
+    pub async fn refresh_if_needed(&mut self) -> ApiResult<()> {
+        // Give us a 1 minute buffer just to prevent race conditions or smth idk
+        let threshold = self.shithole.expires_at - Duration::minutes(1);
+        if OffsetDateTime::now_utc() < threshold {
+            let token_response = self
+                .client
+                .exchange_refresh_token(
+                    self.shithole.token_response.refresh_token().unwrap(),
+                )
+                .request_async(oauth2::reqwest::async_http_client)
+                .await?;
+            self.shithole = token_response.into();
+        }
+        Ok(())
     }
 }

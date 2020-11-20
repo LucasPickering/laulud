@@ -1,7 +1,5 @@
-use std::backtrace::Backtrace;
-
 use crate::{
-    error::{ApiError, ApiResult},
+    error::ApiResult,
     util::{IdentityState, OAUTH_COOKIE_NAME},
 };
 use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken};
@@ -13,6 +11,7 @@ use rocket::{
     State,
 };
 use serde::Deserialize;
+use std::sync::Arc;
 
 /// The frontend will redirect to this before being sent off to the
 /// actual openid provider
@@ -45,23 +44,20 @@ pub struct LoginQuery {
 /// Provider redirects back to this route after the login
 #[get("/oauth/callback?<code>&<state>")]
 pub async fn route_auth_callback(
-    oauth_client: State<'_, BasicClient>,
+    oauth_client: State<'_, Arc<BasicClient>>,
     cookies: &CookieJar<'_>,
     code: Option<String>,
     state: Option<String>,
 ) -> ApiResult<Redirect> {
-    // Read identity/state data that stored in an encrypted+signed cookie. We
-    // know this data is safe, we wrote it and it hasn't been modified.
-    let identity_state =
-        IdentityState::from_cookies(cookies).ok_or_else(|| {
-            ApiError::Unauthenticated {
-                backtrace: Backtrace::capture(),
-            }
-        })?;
+    // Read identity/state data that stored in an encrypted+signed cookie.
+    // We know this data is safe, we wrote it and it hasn't been
+    // modified.
+    let identity_state = IdentityState::from_cookies(cookies)?;
 
-    // VERY IMPORTANT - read the CSRF token from the state param, and compare it
-    // to the token we stored in the cookie. The cookie is encrypted+signed,
-    // Parse the state param and validate the CSRF token in there
+    // VERY IMPORTANT - read the CSRF token from the state param, and
+    // compare it to the token we stored in the cookie. The cookie
+    // is encrypted+signed, Parse the state param and validate the
+    // CSRF token in there
     identity_state.verify_csrf(state.as_deref().unwrap_or(""))?;
 
     // Exchange the temp code for a token
@@ -70,10 +66,10 @@ pub async fn route_auth_callback(
         .request_async(oauth2::reqwest::async_http_client)
         .await?;
 
-    // Replace the auth state cookie with one for permanenet auth. We use the
-    // UserProvider ID so that this works even if the User object hasn't
-    // been created yet.
-    let new_identity_state = IdentityState::PostAuth { token_response };
+    // Replace the auth state cookie with one for permanenet auth. We use
+    // the UserProvider ID so that this works even if the User
+    // object hasn't been created yet.
+    let new_identity_state = IdentityState::PostAuth(token_response.into());
     cookies.add_private(new_identity_state.to_cookie());
 
     // Redirect to the path specified in the state cookie

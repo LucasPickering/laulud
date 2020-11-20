@@ -12,6 +12,7 @@ use oauth2::{
 };
 use rocket::routes;
 use serde::Deserialize;
+use std::sync::Arc;
 
 /// App-wide configuration settings
 #[derive(Debug, Deserialize)]
@@ -56,10 +57,9 @@ async fn main() {
     env_logger::init();
     let rocket = rocket::ignite();
 
-    // Load custom config and set up the DB connection
+    // Load custom config and set up the global state
     let config: LauludConfig = rocket.figment().extract().unwrap();
     let db_handler = DbHandler::connect(&config).await.unwrap();
-
     let spotify_oauth_client = init_spotify_client(&config).await;
 
     rocket
@@ -77,7 +77,7 @@ async fn main() {
             ],
         )
         .manage(db_handler)
-        .manage(spotify_oauth_client)
+        .manage(Arc::new(spotify_oauth_client))
         .launch()
         .await
         .unwrap();

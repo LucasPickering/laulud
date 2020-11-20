@@ -48,7 +48,7 @@ pub async fn route_get_track(
 #[get("/tracks/search/<query>", format = "json")]
 pub async fn route_search_tracks(
     query: String,
-    spotify: Spotify,
+    mut spotify: Spotify,
 ) -> ApiResult<Json<Vec<Track>>> {
     let data = spotify
         .search_tracks(&query)
