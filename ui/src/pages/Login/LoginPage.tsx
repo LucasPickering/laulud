@@ -2,9 +2,14 @@ import React from "react";
 
 import UnstyledLink from "components/generic/UnstyledLink";
 import useRouteQuery from "hooks/useRouteQuery";
-import { Button, Grid, makeStyles } from "@material-ui/core";
+import { Button, makeStyles } from "@material-ui/core";
 
-const useStyles = makeStyles(({ palette, spacing }) => ({
+const useStyles = makeStyles(() => ({
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
   spotifyLoginButton: {
     // Very specific rules cause Spotify branding
     // https://developer.spotify.com/branding-guidelines/
@@ -21,17 +26,15 @@ const LoginPage: React.FC = () => {
   const { next } = useRouteQuery();
 
   return (
-    <Grid container justifyContent="center">
-      <Grid item xs={12} sm={6} md={4}>
-        <Button
-          className={classes.spotifyLoginButton}
-          component={UnstyledLink}
-          to={`/api/oauth/redirect?next=${next ?? "/"}`}
-        >
-          Log In With Spotify
-        </Button>
-      </Grid>
-    </Grid>
+    <div className={classes.container}>
+      <Button
+        className={classes.spotifyLoginButton}
+        component={UnstyledLink}
+        to={`/api/oauth/redirect?next=${next ?? "/"}`}
+      >
+        Log In With Spotify
+      </Button>
+    </div>
   );
 };
 
