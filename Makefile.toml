@@ -1,0 +1,2 @@
+[tasks.types]
+script = ["mv ./api/schema.ts ./ui/src/util/"]

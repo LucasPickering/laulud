@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 
 import { Button } from "@material-ui/core";
 import { useMutation } from "react-query";
-import { queryFn } from "api/queryCache";
+import { queryFn } from "util/queryCache";
 
 const LogOutButton: React.FC = () => {
   const [mutate, { status }] = useMutation(() =>

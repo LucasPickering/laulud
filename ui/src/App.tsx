@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import { ReactQueryCacheProvider } from "react-query";
 
 import theme from "./theme";
-import queryCache from "./api/queryCache";
+import queryCache from "./util/queryCache";
 import CoreContent from "./components/core/CoreContent";
 
 const App: React.FC = () => {

@@ -1,7 +1,8 @@
 use crate::{
     db::{CollectionName, DbHandler},
     error::{ApiError, ApiResult},
-    spotify::{self, Spotify},
+    schema::{CreateTagBody, TaggedTrack},
+    spotify::Spotify,
     util,
 };
 use mongodb::{
@@ -10,25 +11,13 @@ use mongodb::{
 };
 use rocket::{get, post, State};
 use rocket_contrib::json::Json;
-use serde::{Deserialize, Serialize};
 use std::backtrace::Backtrace;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Track {
-    track: spotify::Track,
-    tags: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateTagBody {
-    tags: Vec<String>,
-}
 
 #[get("/tracks/<track_id>", format = "json")]
 pub async fn route_get_track(
     track_id: String,
     db_handler: State<'_, DbHandler>,
-) -> ApiResult<Json<Option<Track>>> {
+) -> ApiResult<Json<Option<TaggedTrack>>> {
     let coll = db_handler.collection(CollectionName::Tracks);
     let track_doc = coll.find_one(doc! { "track_id": &track_id }, None).await?;
 
@@ -48,14 +37,14 @@ pub async fn route_get_track(
 pub async fn route_search_tracks(
     query: String,
     mut spotify: Spotify,
-) -> ApiResult<Json<Vec<Track>>> {
+) -> ApiResult<Json<Vec<TaggedTrack>>> {
     let data = spotify
         .search_tracks(&query)
         .await?
         .into_iter()
-        .map(|track| Track {
+        .map(|track| TaggedTrack {
             track,
-            tags: Vec::new(),
+            tags: Vec::new(), // TODO
         })
         .collect();
     Ok(Json(data))
@@ -66,7 +55,7 @@ pub async fn route_create_tag(
     track_id: String,
     body: Json<CreateTagBody>,
     db_handler: State<'_, DbHandler>,
-) -> ApiResult<Json<Track>> {
+) -> ApiResult<Json<TaggedTrack>> {
     let CreateTagBody { tags } = body.to_owned();
 
     let coll = db_handler.collection(CollectionName::Tracks);

@@ -6,9 +6,9 @@ import { useQuery } from "react-query";
 import HomePage from "pages/Home/HomePage";
 import NotFoundPage from "pages/NotFound/NotFoundPage";
 import PageContainer from "./PageContainer";
-import { CurrentUser } from "api/types";
 import { UserContext } from "util/UserContext";
 import LoginPage from "pages/Login/LoginPage";
+import { CurrentUser } from "util/schema";
 
 const CoreContent: React.FC = () => {
   const { isLoading, data: currentUser } = useQuery<CurrentUser>(

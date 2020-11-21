@@ -1,3 +1,4 @@
 build/
 node_modules/
 public/
+src/util/schema.ts

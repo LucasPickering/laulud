@@ -14,7 +14,7 @@ services:
 
   api:
     build: api/
-    command: cargo watch -x run
+    command: cargo watch -i *.ts -x run
     init: true # Fixes slow shutdown
     tty: true # Colorize output
     volumes:

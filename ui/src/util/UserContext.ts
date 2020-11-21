@@ -1,4 +1,4 @@
-import { CurrentUser } from "api/types";
+import { CurrentUser } from "util/schema";
 import React from "react";
 
 export const UserContext = React.createContext<CurrentUser>(

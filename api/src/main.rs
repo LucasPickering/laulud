@@ -1,8 +1,10 @@
 #![feature(backtrace)]
+#![feature(with_options)]
 
 mod db;
 mod error;
 mod routes;
+mod schema;
 mod spotify;
 mod util;
 
@@ -12,7 +14,7 @@ use oauth2::{
 };
 use rocket::routes;
 use serde::Deserialize;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 /// App-wide configuration settings
 #[derive(Debug, Deserialize)]
@@ -20,7 +22,9 @@ pub struct LauludConfig {
     /// The URL of the DB that we connect to, as a Mongo URI.
     /// https://docs.mongodb.com/manual/reference/connection-string/
     pub database_url: String,
-
+    /// If given, the API will generate TS definitions for all of the external
+    /// API types, and store them at this path
+    pub ts_definitions_file: Option<PathBuf>,
     /// The host server, for use with the OAuth flow
     pub hostname: String,
     /// ID for our Spotify app
@@ -56,9 +60,12 @@ pub async fn init_spotify_client(config: &LauludConfig) -> BasicClient {
 async fn main() {
     env_logger::init();
     let rocket = rocket::ignite();
-
-    // Load custom config and set up the global state
     let config: LauludConfig = rocket.figment().extract().unwrap();
+
+    if cfg!(debug_assertions) {
+        schema::generate_ts_definitions(&config).unwrap();
+    }
+
     let db_handler = DbHandler::connect(&config).await.unwrap();
     let spotify_oauth_client = init_spotify_client(&config).await;
 

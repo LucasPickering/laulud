@@ -1,5 +1,6 @@
 use crate::{
     error::{ApiError, ApiResult},
+    schema::{CurrentUser, Track, TracksSearchResponse},
     util::{IdentityState, OAuthHandler},
 };
 use async_trait::async_trait;
@@ -10,113 +11,12 @@ use reqwest::{
     Client,
 };
 use rocket::{http::CookieJar, request::FromRequest, State};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{backtrace::Backtrace, collections::HashMap, sync::Arc};
+use serde::de::DeserializeOwned;
+use std::{backtrace::Backtrace, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
 
 // Below are simple types mapped from the Spotify API
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PaginatedResponse<T> {
-    href: String,
-    limit: usize,
-    offset: usize,
-    total: usize,
-    next: Option<String>,
-    previos: Option<String>,
-    items: Vec<T>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Image {
-    pub url: String,
-    pub width: Option<usize>,
-    pub height: Option<usize>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/users-profile/get-current-users-profile/
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CurrentUser {
-    pub id: String,
-    pub href: String,
-    pub uri: String,
-    pub display_name: Option<String>,
-    pub images: Vec<Image>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#external-id-object
-pub type ExternalIds = HashMap<String, String>;
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#external-url-object
-pub type ExternalUrls = HashMap<String, String>;
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ArtistSimplified {
-    pub external_urls: ExternalUrls,
-    pub href: String,
-    pub id: String,
-    pub name: String,
-    pub uri: String,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#album-object-simplified
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AlbumSimplified {
-    pub album_group: Option<String>,
-    pub album_type: String,
-    pub artists: Vec<ArtistSimplified>,
-    pub available_markets: Vec<String>,
-    pub external_urls: ExternalUrls,
-    pub href: String,
-    pub id: String,
-    pub images: Vec<Image>,
-    pub name: String,
-    pub release_date: String,
-    pub release_date_precision: String,
-    // Skipping `restrictions`
-    pub uri: String,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-link
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TrackLink {
-    pub external_urls: ExternalUrls,
-    pub href: String,
-    pub id: String,
-    pub uri: String,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Track {
-    pub album: AlbumSimplified,
-    pub artists: Vec<ArtistSimplified>,
-    pub available_markets: Vec<String>,
-    pub disc_number: usize,
-    pub duration_ms: usize,
-    pub explicit: bool,
-    pub external_ids: ExternalIds,
-    pub external_urls: ExternalUrls,
-    pub href: String,
-    pub id: String,
-    pub is_playable: bool,
-    pub linked_from: Option<TrackLink>,
-    pub name: String,
-    pub popularity: usize,
-    pub preview_url: Option<String>,
-    pub track_number: usize,
-    pub uri: String,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/search/search/
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TracksSearchResponse {
-    tracks: PaginatedResponse<Track>,
-}
 
 /// A client for accessing the Spotify web API
 #[derive(Debug)]

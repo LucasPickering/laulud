@@ -1,7 +1,4 @@
-use crate::{
-    error::ApiResult,
-    spotify::{CurrentUser, Spotify},
-};
+use crate::{error::ApiResult, schema::CurrentUser, spotify::Spotify};
 use rocket::get;
 use rocket_contrib::json::Json;
 
