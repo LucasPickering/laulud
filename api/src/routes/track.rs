@@ -1,5 +1,3 @@
-use std::backtrace::Backtrace;
-
 use crate::{
     db::{CollectionName, DbHandler},
     error::{ApiError, ApiResult},
@@ -13,6 +11,7 @@ use mongodb::{
 use rocket::{get, post, State};
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
+use std::backtrace::Backtrace;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Track {

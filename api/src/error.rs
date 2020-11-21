@@ -76,6 +76,10 @@ pub enum ApiError {
     #[error("Not logged in")]
     Unauthenticated { backtrace: Backtrace },
 
+    /// We attempted to refresh the user state, but there was no refresh token
+    #[error("No refresh token")]
+    NoRefreshToken { backtrace: Backtrace },
+
     /// CSRF failure during auth
     #[error("CSRF token was not provided or did not match the expected value")]
     CsrfError { backtrace: Backtrace },
@@ -102,6 +106,7 @@ impl ApiError {
         match self {
             // 401
             Self::Unauthenticated { .. }
+            | Self::NoRefreshToken { .. }
             | Self::CsrfError { .. }
             | Self::OauthErrorResponse { .. } => Status::Unauthorized,
 

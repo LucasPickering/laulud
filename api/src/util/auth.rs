@@ -143,16 +143,24 @@ impl OAuthHandler {
     pub async fn refresh_if_needed(&mut self) -> ApiResult<()> {
         // Give us a 1 minute buffer just to prevent race conditions or smth idk
         let threshold = self.shithole.expires_at - Duration::minutes(1);
-        if OffsetDateTime::now_utc() < threshold {
-            let token_response = self
-                .client
-                .exchange_refresh_token(
-                    self.shithole.token_response.refresh_token().unwrap(),
-                )
-                .request_async(oauth2::reqwest::async_http_client)
-                .await?;
-            self.shithole = token_response.into();
+        if OffsetDateTime::now_utc() > threshold {
+            match self.shithole.token_response.refresh_token() {
+                None => Err(ApiError::NoRefreshToken {
+                    backtrace: Backtrace::capture(),
+                }),
+                Some(refresh_token) => {
+                    let token_response = self
+                        .client
+                        .exchange_refresh_token(refresh_token)
+                        .request_async(oauth2::reqwest::async_http_client)
+                        .await?;
+                    self.shithole = token_response.into();
+                    // Successful refresh
+                    Ok(())
+                }
+            }
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 }

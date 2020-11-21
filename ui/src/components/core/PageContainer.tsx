@@ -1,7 +1,8 @@
 import { makeStyles, Typography } from "@material-ui/core";
 import React from "react";
 
-import Link from "./Link";
+import Link from "../generic/Link";
+import Header from "./Header";
 
 const useLocalStyles = makeStyles(({ palette, spacing }) => ({
   pageContainer: {
@@ -41,6 +42,8 @@ const PageContainer: React.FC = ({ children }) => {
 
   return (
     <div className={localClasses.pageContainer}>
+      <Header />
+
       <div className={localClasses.pageBody}>{children}</div>
 
       <footer className={localClasses.pageFooter}>

@@ -1,14 +1,12 @@
 import React from "react";
 import { CssBaseline } from "@material-ui/core";
 import { ThemeProvider } from "@material-ui/styles";
-import { BrowserRouter, Route, Switch } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { ReactQueryCacheProvider } from "react-query";
 
-import HomePage from "pages/Home/HomePage";
-import NotFoundPage from "pages/NotFound/NotFoundPage";
-import PageContainer from "./components/generic/PageContainer";
 import theme from "./theme";
 import queryCache from "./api/queryCache";
+import CoreContent from "./components/core/CoreContent";
 
 const App: React.FC = () => {
   return (
@@ -16,18 +14,7 @@ const App: React.FC = () => {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
-          <PageContainer>
-            <Switch>
-              <Route path="/" exact>
-                <HomePage />
-              </Route>
-
-              {/* Fallback route */}
-              <Route>
-                <NotFoundPage />
-              </Route>
-            </Switch>
-          </PageContainer>
+          <CoreContent />
         </BrowserRouter>
       </ThemeProvider>
     </ReactQueryCacheProvider>

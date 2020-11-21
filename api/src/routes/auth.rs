@@ -10,6 +10,7 @@ use rocket::{
     response::Redirect,
     State,
 };
+use rocket_contrib::json::Json;
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -17,7 +18,7 @@ use std::sync::Arc;
 /// actual openid provider
 #[get("/oauth/redirect?<next>")]
 pub async fn route_auth_redirect(
-    oauth_client: State<'_, BasicClient>,
+    oauth_client: State<'_, Arc<BasicClient>>,
     cookies: &CookieJar<'_>,
     next: Option<String>,
 ) -> ApiResult<Redirect> {
@@ -77,7 +78,7 @@ pub async fn route_auth_callback(
 }
 
 #[post("/logout")]
-pub async fn route_logout(cookies: &CookieJar<'_>) -> Status {
+pub async fn route_logout(cookies: &CookieJar<'_>) -> Json<()> {
     cookies.remove_private(Cookie::named(OAUTH_COOKIE_NAME));
-    Status::Ok
+    Json(())
 }

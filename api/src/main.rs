@@ -70,7 +70,9 @@ async fn main() {
                 routes::route_auth_redirect,
                 routes::route_auth_callback,
                 routes::route_logout,
-                // tracks
+                // user
+                routes::route_get_current_user,
+                // track
                 routes::route_get_track,
                 routes::route_search_tracks,
                 routes::route_create_tag

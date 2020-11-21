@@ -1,10 +1,6 @@
 import { merge } from "lodash-es";
 import { QueryCache } from "react-query";
 
-export type HttpResult<T> =
-  | { type: "ok"; data: T }
-  | { type: "err"; code: number; reason: string; description: string };
-
 /**
  * A wrapper around the std fetch function, that parses response data as JSON
  * and returns it as a pre-determined type. Note that the response data type
@@ -15,7 +11,10 @@ export type HttpResult<T> =
  * @param init same as fetch's init param
  * @returns Same as fetch, except the data has been parsed as JSON and type-coerced
  */
-async function queryFn<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+export async function queryFn<T>(
+  input: RequestInfo,
+  init?: RequestInit
+): Promise<T> {
   const response = await fetch(
     input,
     merge(
