@@ -1,9 +1,9 @@
 import React from "react";
 
-import TrackSearchView from "components/trackSearch/TrackSearchView";
+import Link from "components/generic/Link";
 
 const HomePage: React.FC = () => {
-  return <TrackSearchView />;
+  return <Link to="/tracks">Tracks</Link>;
 };
 
 export default HomePage;

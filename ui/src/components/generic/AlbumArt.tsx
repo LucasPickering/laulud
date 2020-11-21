@@ -5,11 +5,12 @@ import { AlbumSimplified } from "util/schema";
 
 const useStyles = makeStyles(() => ({
   small: {
-    width: 64,
-    height: 64,
+    width: 48,
+    height: 48,
   },
   medium: {
-    // TODO
+    width: 96,
+    height: 96,
   },
   large: {
     // TODO
@@ -18,10 +19,10 @@ const useStyles = makeStyles(() => ({
 
 interface Props {
   album: AlbumSimplified;
-  size: "small" | "medium" | "large";
+  size?: "small" | "medium" | "large";
 }
 
-const AlbumArt: React.FC<Props> = ({ album, size }) => {
+function AlbumArt({ album, size = "medium" }: Props): React.ReactElement {
   const classes = useStyles();
 
   return (
@@ -31,6 +32,6 @@ const AlbumArt: React.FC<Props> = ({ album, size }) => {
       src={album.images[0].url}
     />
   );
-};
+}
 
 export default AlbumArt;

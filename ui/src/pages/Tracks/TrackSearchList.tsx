@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   List,
   ListItem,
@@ -9,7 +9,6 @@ import {
 } from "@material-ui/core";
 import SearchBar from "components/generic/SearchBar";
 
-import useDebouncedValue from "hooks/useDebouncedValue";
 import AlbumArt from "components/generic/AlbumArt";
 import DataContainer from "components/generic/DataContainer";
 import { useQuery } from "react-query";
@@ -18,7 +17,6 @@ import { TaggedTrack } from "util/schema";
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
     padding: spacing(1),
-    width: 400,
   },
   searchBar: {
     width: "100%",
@@ -28,28 +26,39 @@ const useStyles = makeStyles(({ spacing }) => ({
   },
 }));
 
-const TrackSearchView: React.FC = () => {
+interface Props {
+  selectedTrack: TaggedTrack | undefined;
+  setSelectedTrack: (track: TaggedTrack | undefined) => void;
+}
+
+const TrackSearchList: React.FC<Props> = ({
+  selectedTrack,
+  setSelectedTrack,
+}) => {
   const classes = useStyles();
   const [query, setQuery] = useState<string>("");
-  const debouncedQuery = useDebouncedValue(query, 1000);
-  const state = useQuery<TaggedTrack[]>(
-    `/api/tracks/search/${debouncedQuery}`,
-    { enabled: Boolean(debouncedQuery) }
-  );
+  const state = useQuery<TaggedTrack[]>(`/api/tracks/search/${query}`, {
+    enabled: Boolean(query),
+  });
+
+  useEffect(() => {
+    setSelectedTrack(undefined);
+  }, [setSelectedTrack, query]);
 
   return (
     <Paper className={classes.container}>
-      <SearchBar
-        className={classes.searchBar}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      <SearchBar className={classes.searchBar} onSearch={setQuery} />
 
       <DataContainer {...state}>
         {(tracks) => (
           <List>
             {tracks.map((track) => (
-              <ListItem key={track.track.id} button>
+              <ListItem
+                key={track.track.id}
+                button
+                selected={track.track.id === selectedTrack?.track.id}
+                onClick={() => setSelectedTrack(track)}
+              >
                 <ListItemAvatar className={classes.listItemAvatar}>
                   <AlbumArt album={track.track.album} size="small" />
                 </ListItemAvatar>
@@ -68,4 +77,4 @@ const TrackSearchView: React.FC = () => {
   );
 };
 
-export default TrackSearchView;
+export default TrackSearchList;

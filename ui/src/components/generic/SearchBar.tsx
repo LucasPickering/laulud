@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Search as SearchIcon } from "@material-ui/icons";
 import { InputBase, makeStyles } from "@material-ui/core";
 import clsx from "clsx";
+
+import useDebouncedValue from "hooks/useDebouncedValue";
 
 const useStyles = makeStyles(({ palette, shape, spacing }) => ({
   search: {
@@ -37,17 +39,26 @@ const useStyles = makeStyles(({ palette, shape, spacing }) => ({
 
 interface Props {
   className?: string;
-  value?: string;
-  onChange?: (
-    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
-  ) => void;
+  onSearch: (query: string) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ className, value, onChange }) => {
+const SearchBar: React.FC<Props> = ({ className, onSearch }) => {
   const classes = useStyles();
+  const [query, setQuery] = useState<string>("");
+  const debouncedQuery = useDebouncedValue(query, 500);
+
+  useEffect(() => {
+    onSearch(debouncedQuery);
+  }, [onSearch, debouncedQuery]);
 
   return (
-    <div className={clsx(classes.search, className)}>
+    <form
+      className={clsx(classes.search, className)}
+      onSubmit={(e) => {
+        e.preventDefault(); // No page refresh
+        onSearch(query);
+      }}
+    >
       <div className={classes.searchIcon}>
         <SearchIcon />
       </div>
@@ -58,10 +69,10 @@ const SearchBar: React.FC<Props> = ({ className, value, onChange }) => {
           input: classes.inputInput,
         }}
         inputProps={{ "aria-label": "search" }}
-        value={value}
-        onChange={onChange}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
       />
-    </div>
+    </form>
   );
 };
 

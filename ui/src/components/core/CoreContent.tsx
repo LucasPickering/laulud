@@ -9,6 +9,7 @@ import PageContainer from "./PageContainer";
 import { UserContext } from "util/UserContext";
 import LoginPage from "pages/Login/LoginPage";
 import { CurrentUser } from "util/schema";
+import TracksPage from "pages/Tracks/TracksPage";
 
 const CoreContent: React.FC = () => {
   const { isLoading, data: currentUser } = useQuery<CurrentUser>(
@@ -44,6 +45,9 @@ const CoreContent: React.FC = () => {
 
           <Route path="/" exact>
             <HomePage />
+          </Route>
+          <Route path="/tracks" exact>
+            <TracksPage />
           </Route>
 
           {/* Fallback route */}
