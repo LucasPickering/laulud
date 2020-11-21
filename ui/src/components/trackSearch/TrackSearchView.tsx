@@ -4,7 +4,7 @@ import SearchBar from "components/generic/SearchBar";
 
 import TrackSearchList from "./TrackSearchList";
 
-const useLocalStyles = makeStyles(({ spacing }) => ({
+const useStyles = makeStyles(({ spacing }) => ({
   container: {
     padding: spacing(1),
     width: 400,
@@ -15,12 +15,12 @@ const useLocalStyles = makeStyles(({ spacing }) => ({
 }));
 
 const TrackSearchContainer: React.FC = () => {
-  const localClasses = useLocalStyles();
+  const classes = useStyles();
   const [query, setQuery] = useState<string>("");
 
   return (
-    <Paper className={localClasses.container}>
-      <SearchBar className={localClasses.searchBar} onSearch={setQuery} />
+    <Paper className={classes.container}>
+      <SearchBar className={classes.searchBar} onSearch={setQuery} />
 
       {query && <TrackSearchList query={query} />}
     </Paper>

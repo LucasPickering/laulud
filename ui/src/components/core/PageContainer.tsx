@@ -4,7 +4,7 @@ import React from "react";
 import Link from "../generic/Link";
 import Header from "./Header";
 
-const useLocalStyles = makeStyles(({ palette, spacing }) => ({
+const useStyles = makeStyles(({ palette, spacing }) => ({
   pageContainer: {
     display: "flex",
     flexDirection: "column",
@@ -38,15 +38,15 @@ const useLocalStyles = makeStyles(({ palette, spacing }) => ({
  * pages.
  */
 const PageContainer: React.FC = ({ children }) => {
-  const localClasses = useLocalStyles();
+  const classes = useStyles();
 
   return (
-    <div className={localClasses.pageContainer}>
+    <div className={classes.pageContainer}>
       <Header />
 
-      <div className={localClasses.pageBody}>{children}</div>
+      <div className={classes.pageBody}>{children}</div>
 
-      <footer className={localClasses.pageFooter}>
+      <footer className={classes.pageFooter}>
         <Typography variant="body2">
           Created by <Link to="https://lucaspickering.me">Lucas Pickering</Link>
         </Typography>

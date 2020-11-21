@@ -4,7 +4,7 @@ import React, { useContext } from "react";
 import { UserContext } from "util/UserContext";
 import LogOutButton from "./LogOutButton";
 
-const useLocalStyles = makeStyles(({ spacing }) => ({
+const useStyles = makeStyles(({ spacing }) => ({
   drawer: {
     width: 150,
   },
@@ -20,14 +20,14 @@ const useLocalStyles = makeStyles(({ spacing }) => ({
  * Site-wide header bar
  */
 const Header: React.FC = () => {
-  const localClasses = useLocalStyles();
+  const classes = useStyles();
   const currentUser = useContext(UserContext);
   const showLogOut = !isEmpty(currentUser);
 
   return (
     <AppBar position="static" color="default">
       <Toolbar component="nav" variant="dense">
-        <div className={localClasses.grow} />
+        <div className={classes.grow} />
         {showLogOut && <LogOutButton />}
       </Toolbar>
     </AppBar>

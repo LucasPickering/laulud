@@ -4,7 +4,7 @@ import UnstyledLink from "components/generic/UnstyledLink";
 import useRouteQuery from "hooks/useRouteQuery";
 import { Button, Grid, makeStyles } from "@material-ui/core";
 
-const useLocalStyles = makeStyles(({ palette, spacing }) => ({
+const useStyles = makeStyles(({ palette, spacing }) => ({
   spotifyLoginButton: {
     // Very specific rules cause Spotify branding
     // https://developer.spotify.com/branding-guidelines/
@@ -17,14 +17,14 @@ const useLocalStyles = makeStyles(({ palette, spacing }) => ({
 }));
 
 const LoginPage: React.FC = () => {
-  const localClasses = useLocalStyles();
+  const classes = useStyles();
   const { next } = useRouteQuery();
 
   return (
     <Grid container justifyContent="center">
       <Grid item xs={12} sm={6} md={4}>
         <Button
-          className={localClasses.spotifyLoginButton}
+          className={classes.spotifyLoginButton}
           component={UnstyledLink}
           to={`/api/oauth/redirect?next=${next ?? "/"}`}
         >
