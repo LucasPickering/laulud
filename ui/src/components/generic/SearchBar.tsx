@@ -1,35 +1,28 @@
-import React, { useState } from "react";
+import React from "react";
 import { Search as SearchIcon } from "@material-ui/icons";
 import { IconButton, InputBase } from "@material-ui/core";
 
 interface Props {
   className?: string;
-  onSearch?: (query: string) => void;
+  value?: string;
+  onChange?: (
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ className, onSearch }) => {
-  const [query, setQuery] = useState<string>("");
-
+const SearchBar: React.FC<Props> = ({ className, value, onChange }) => {
   return (
-    <form
-      className={className}
-      onSubmit={(e) => {
-        e.preventDefault(); // Don't reload the page
-        if (onSearch) {
-          onSearch(query);
-        }
-      }}
-    >
+    <div className={className}>
       <InputBase
         required
         placeholder="Search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        value={value}
+        onChange={onChange}
       />
       <IconButton type="submit" aria-label="search">
         <SearchIcon />
       </IconButton>
-    </form>
+    </div>
   );
 };
 

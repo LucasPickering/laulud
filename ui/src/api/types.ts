@@ -3,6 +3,12 @@
  * to exactly match what the API has. Good luck!
  */
 
+export interface Image {
+  url: string;
+  width: number | null;
+  height: number | null;
+}
+
 export interface CurrentUser {
   id: string;
   href: string;
@@ -11,6 +17,14 @@ export interface CurrentUser {
 }
 
 export interface Track {
-  track_id: string;
+  track: {
+    id: string;
+    name: string;
+    href: string;
+    uri: string;
+    explicit: boolean;
+    popularity: number;
+    track_number: number;
+  };
   tags: string[];
 }

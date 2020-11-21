@@ -3,6 +3,7 @@ use crate::{
     util::{IdentityState, OAuthHandler},
 };
 use async_trait::async_trait;
+use log::trace;
 use oauth2::basic::BasicClient;
 use reqwest::{
     header::{self, HeaderValue},
@@ -10,7 +11,7 @@ use reqwest::{
 };
 use rocket::{http::CookieJar, request::FromRequest, State};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{backtrace::Backtrace, sync::Arc};
+use std::{backtrace::Backtrace, collections::HashMap, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
 
@@ -46,16 +47,69 @@ pub struct CurrentUser {
     pub images: Vec<Image>,
 }
 
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#external-id-object
+pub type ExternalIds = HashMap<String, String>;
+
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#external-url-object
+pub type ExternalUrls = HashMap<String, String>;
+
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ArtistSimplified {
+    pub external_urls: ExternalUrls,
+    pub href: String,
+    pub id: String,
+    pub name: String,
+    pub uri: String,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#album-object-simplified
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AlbumSimplified {
+    pub album_group: Option<String>,
+    pub album_type: String,
+    pub artists: Vec<ArtistSimplified>,
+    pub available_markets: Vec<String>,
+    pub external_urls: ExternalUrls,
+    pub href: String,
+    pub id: String,
+    pub images: Vec<Image>,
+    pub name: String,
+    pub release_date: String,
+    pub release_date_precision: String,
+    // Skipping `restrictions`
+    pub uri: String,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-link
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TrackLink {
+    pub external_urls: ExternalUrls,
+    pub href: String,
+    pub id: String,
+    pub uri: String,
+}
+
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Track {
-    id: String,
-    name: String,
-    href: String,
-    uri: String,
-    explicit: bool,
-    popularity: usize,
-    track_number: usize,
+    pub album: AlbumSimplified,
+    pub artists: Vec<ArtistSimplified>,
+    pub available_markets: Vec<String>,
+    pub disc_number: usize,
+    pub duration_ms: usize,
+    pub explicit: bool,
+    pub external_ids: ExternalIds,
+    pub external_urls: ExternalUrls,
+    pub href: String,
+    pub id: String,
+    pub is_playable: bool,
+    pub linked_from: Option<TrackLink>,
+    pub name: String,
+    pub popularity: usize,
+    pub preview_url: Option<String>,
+    pub track_number: usize,
+    pub uri: String,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/search/search/
@@ -112,6 +166,7 @@ impl Spotify {
         // If it's an error, get the body text and create an error obj with that
         let response_error = response.error_for_status_ref().err();
         let body = response.text().await?;
+        trace!("Spotify request URL: {}; Response: {}", &url, &body);
         match response_error {
             None => Ok(serde_json::from_str(&body).map_err(|err| {
                 ApiError::SpotifyApiDeserialization {

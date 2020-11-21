@@ -5,7 +5,7 @@ use crate::{
 use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken};
 use rocket::{
     get,
-    http::{Cookie, CookieJar, Status},
+    http::{Cookie, CookieJar},
     post,
     response::Redirect,
     State,

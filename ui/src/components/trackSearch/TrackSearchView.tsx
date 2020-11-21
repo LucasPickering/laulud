@@ -3,6 +3,7 @@ import { makeStyles, Paper } from "@material-ui/core";
 import SearchBar from "components/generic/SearchBar";
 
 import TrackSearchList from "./TrackSearchList";
+import useDebouncedValue from "hooks/useDebouncedValue";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -14,17 +15,22 @@ const useStyles = makeStyles(({ spacing }) => ({
   },
 }));
 
-const TrackSearchContainer: React.FC = () => {
+const TrackSearchView: React.FC = () => {
   const classes = useStyles();
   const [query, setQuery] = useState<string>("");
+  const debouncedQuery = useDebouncedValue(query, 1000);
 
   return (
     <Paper className={classes.container}>
-      <SearchBar className={classes.searchBar} onSearch={setQuery} />
+      <SearchBar
+        className={classes.searchBar}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
 
-      {query && <TrackSearchList query={query} />}
+      <TrackSearchList query={debouncedQuery} />
     </Paper>
   );
 };
 
-export default TrackSearchContainer;
+export default TrackSearchView;
