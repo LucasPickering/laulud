@@ -88,6 +88,12 @@ impl Spotify {
         self.get_endpoint("/v1/me", &[]).await
     }
 
+    /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
+    pub async fn get_track(&mut self, track_id: &str) -> ApiResult<Track> {
+        self.get_endpoint(&format!("/v1/tracks/{}", track_id), &[])
+            .await
+    }
+
     /// Search restricted to tracks
     /// https://developer.spotify.com/documentation/web-api/reference/search/search/
     pub async fn search_tracks(

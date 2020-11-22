@@ -1,5 +1,6 @@
 use crate::{error::ApiResult, LauludConfig};
 use mongodb::{options::ClientOptions, Client, Collection, Database};
+use serde::{Deserialize, Serialize};
 use strum::IntoStaticStr;
 
 const DATABASE_NAME: &str = "laulud";
@@ -28,4 +29,11 @@ impl DbHandler {
     pub fn collection(&self, collection_name: CollectionName) -> Collection {
         self.database().collection(collection_name.into())
     }
+}
+
+/// A document in [CollectionName::Tracks]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TrackDocument {
+    pub track_id: String,
+    pub tags: Vec<String>,
 }
