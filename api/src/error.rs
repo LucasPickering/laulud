@@ -42,6 +42,9 @@ pub enum ApiError {
         source: reqwest::Error,
         body: String,
         backtrace: Backtrace,
+        /// The status that we will return. Usually 500, but sometimes we may
+        /// want to propagate up the status from Spotify.
+        output_status: Status,
     },
 
     /// Failed to deserialize data from a Spotify APi response
@@ -91,14 +94,6 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
-    /// User requested a resource that doesn't exist. `resource` is the unknown
-    /// identifier.
-    #[error("Resource not found: {resource}")]
-    NotFound {
-        resource: String,
-        backtrace: Backtrace,
-    },
-
     /// Catch-all error, should have a descriptive message
     #[error("Unknown error: {message}")]
     Unknown {
@@ -120,17 +115,16 @@ impl ApiError {
             | Self::CsrfError { .. }
             | Self::OauthErrorResponse { .. } => Status::Unauthorized,
 
-            // 404
-            Self::NotFound { .. } => Status::NotFound,
-
             // 500
             Self::BsonDeserialize { .. }
             | Self::Mongo { .. }
             | Self::Reqwest { .. }
-            | Self::SpotifyApiHttp { .. }
             | Self::SpotifyApiDeserialization { .. }
             | Self::InvalidHeaderValue { .. }
             | Self::Unknown { .. } => Status::InternalServerError,
+
+            // Dynamic
+            Self::SpotifyApiHttp { output_status, .. } => *output_status,
         }
     }
 

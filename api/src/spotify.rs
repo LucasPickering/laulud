@@ -8,15 +8,27 @@ use log::trace;
 use oauth2::basic::BasicClient;
 use reqwest::{
     header::{self, HeaderValue},
-    Client,
+    Client, StatusCode,
 };
-use rocket::{http::CookieJar, request::FromRequest, State};
+use rocket::{
+    http::{CookieJar, Status},
+    request::FromRequest,
+    State,
+};
 use serde::de::DeserializeOwned;
 use std::{backtrace::Backtrace, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
 
-// Below are simple types mapped from the Spotify API
+/// Customization options for requests we make to the Spotify API
+#[derive(Copy, Clone, Debug, Default)]
+struct RequestOptions<'a> {
+    /// Query params
+    params: &'a [(&'a str, &'a str)],
+    /// These error status codes will be propagated up, instead of being
+    /// converted to a 500
+    propagate_errors: &'a [StatusCode],
+}
 
 /// A client for accessing the Spotify web API
 #[derive(Debug)]
@@ -46,7 +58,7 @@ impl Spotify {
     async fn get_endpoint<T: DeserializeOwned>(
         &mut self,
         endpoint: &str,
-        params: &[(&str, &str)],
+        options: RequestOptions<'_>,
     ) -> ApiResult<T> {
         // Make sure our auth token is up to date first
         self.oauth_handler.refresh_if_needed().await?;
@@ -62,7 +74,7 @@ impl Spotify {
                     self.oauth_handler.secret()
                 ))?,
             )
-            .query(params)
+            .query(options.params)
             .send()
             .await?;
 
@@ -80,11 +92,33 @@ impl Spotify {
                     backtrace: Backtrace::capture(),
                 }
             })?),
-            Some(err) => Err(ApiError::SpotifyApiHttp {
-                source: err,
-                body,
-                backtrace: Backtrace::capture(),
-            }),
+            Some(err) => {
+                // Check if the caller requested that we propagate this error
+                // with the actual status code, instead of 500
+                let output_status = match err.status() {
+                    Some(status)
+                        if options.propagate_errors.contains(&status) =>
+                    {
+                        // Convert reqwest status to rocket status
+                        Status::from_code(status.as_u16()).ok_or_else(|| {
+                            ApiError::Unknown {
+                                message: format!(
+                                    "Unknown status code from reqwest: {}",
+                                    status
+                                ),
+                                backtrace: Backtrace::capture(),
+                            }
+                        })?
+                    }
+                    _ => Status::InternalServerError,
+                };
+                Err(ApiError::SpotifyApiHttp {
+                    source: err,
+                    body,
+                    backtrace: Backtrace::capture(),
+                    output_status,
+                })
+            }
         }
     }
 
@@ -102,15 +136,24 @@ impl Spotify {
 
     /// https://developer.spotify.com/documentation/web-api/reference/users-profile/get-current-users-profile/
     pub async fn get_current_user(&mut self) -> ApiResult<CurrentUser> {
-        let user: CurrentUser = self.get_endpoint("/v1/me", &[]).await?;
+        let user: CurrentUser = self
+            .get_endpoint("/v1/me", RequestOptions::default())
+            .await?;
         self.user_id = Some(user.id.clone()); // caching!
         Ok(user)
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
     pub async fn get_track(&mut self, track_id: &str) -> ApiResult<Track> {
-        self.get_endpoint(&format!("/v1/tracks/{}", track_id), &[])
-            .await
+        self.get_endpoint(
+            &format!("/v1/tracks/{}", track_id),
+            RequestOptions {
+                // a 404 (hopefully) indicates an invalid track ID
+                propagate_errors: &[StatusCode::NOT_FOUND],
+                ..Default::default()
+            },
+        )
+        .await
     }
 
     /// Search restricted to tracks
@@ -121,7 +164,13 @@ impl Spotify {
     ) -> ApiResult<Vec<Track>> {
         // TODO maybe need to encode the query?
         let search_response: TracksSearchResponse = self
-            .get_endpoint("/v1/search", &[("q", query), ("type", "track")])
+            .get_endpoint(
+                "/v1/search",
+                RequestOptions {
+                    params: &[("q", query), ("type", "track")],
+                    ..Default::default()
+                },
+            )
             .await?;
         Ok(search_response.tracks.items)
     }
