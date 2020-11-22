@@ -49,10 +49,8 @@ const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (newTagText) {
-                  createTag(newTagText);
-                  setIsEditing(false);
-                }
+                createTag(newTagText);
+                setIsEditing(false);
               }}
             >
               <InputBase

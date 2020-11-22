@@ -7,6 +7,7 @@ use std::{
     io::{self, Write},
 };
 use typescript_definitions::{TypeScriptify, TypeScriptifyTrait};
+use validator::Validate;
 
 use crate::LauludConfig;
 
@@ -163,8 +164,9 @@ pub struct TaggedTrack {
     pub tags: Vec<String>,
 }
 
-/// POST input for tagging a trackS
-#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
+/// POST input for tagging a track
+#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify, Validate)]
 pub struct CreateTagBody {
-    pub tags: Vec<String>,
+    #[validate(length(min = 1))]
+    pub tag: String,
 }

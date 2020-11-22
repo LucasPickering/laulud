@@ -84,6 +84,13 @@ pub enum ApiError {
     #[error("CSRF token was not provided or did not match the expected value")]
     CsrfError { backtrace: Backtrace },
 
+    #[error("Invalid input: {source}")]
+    Validation {
+        #[from]
+        source: validator::ValidationErrors,
+        backtrace: Backtrace,
+    },
+
     /// User requested a resource that doesn't exist. `resource` is the unknown
     /// identifier.
     #[error("Resource not found: {resource}")]
@@ -104,6 +111,9 @@ impl ApiError {
     /// Convert this error to an HTTP status code
     pub fn to_status(&self) -> Status {
         match self {
+            // 400
+            Self::Validation { .. } => Status::BadRequest,
+
             // 401
             Self::Unauthenticated { .. }
             | Self::NoRefreshToken { .. }

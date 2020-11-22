@@ -1,11 +1,13 @@
 import React from "react";
-import { useMutation, useQuery } from "react-query";
+import { QueryStatus, useMutation, useQuery } from "react-query";
 import {
+  Alert,
   Card,
   CardContent,
   CardHeader,
   Chip,
   makeStyles,
+  Snackbar,
 } from "@material-ui/core";
 
 import { TaggedTrack } from "util/schema";
@@ -35,12 +37,15 @@ const TrackDetails: React.FC<Props> = ({ trackId }) => {
     queryKey,
     () => queryFn<TaggedTrack | undefined>({ url: `/api/tracks/${trackId}` })
   );
-  const [createTag, { status: createTagStatus }] = useMutation(
+  const [
+    createTag,
+    { status: createTagStatus, reset: resetCreateTagStatus },
+  ] = useMutation(
     (tag: string) =>
       queryFn<TaggedTrack>({
         url: `/api/tracks/${trackId}/tags`,
         method: "POST",
-        data: { tags: [tag] },
+        data: { tag },
       }),
     { onSuccess: (data) => queryCache.setQueryData(queryKey, data) }
   );
@@ -54,36 +59,45 @@ const TrackDetails: React.FC<Props> = ({ trackId }) => {
   );
 
   return (
-    <DataContainer {...state} data={track}>
-      {(track) => (
-        <Card>
-          <CardHeader
-            title={track.track.name}
-            subheader={track.track.artists
-              .map((artist) => artist.name)
-              .join(", ")}
-            avatar={<AlbumArt album={track.track.album} />}
-          />
-          <CardContent>
-            <div className={classes.tags}>
-              {track.tags.map((tag) => (
-                <Chip
-                  key={tag}
-                  label={tag}
+    <>
+      <DataContainer {...state} data={track}>
+        {(track) => (
+          <Card>
+            <CardHeader
+              title={track.track.name}
+              subheader={track.track.artists
+                .map((artist) => artist.name)
+                .join(", ")}
+              avatar={<AlbumArt album={track.track.album} />}
+            />
+            <CardContent>
+              <div className={classes.tags}>
+                {track.tags.map((tag) => (
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    color="primary"
+                    onDelete={() => deleteTag(tag)}
+                  />
+                ))}
+                <NewTagChip
                   color="primary"
-                  onDelete={() => deleteTag(tag)}
+                  status={createTagStatus}
+                  createTag={createTag}
                 />
-              ))}
-              <NewTagChip
-                color="primary"
-                status={createTagStatus}
-                createTag={createTag}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </DataContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </DataContainer>
+      <Snackbar
+        open={createTagStatus === QueryStatus.Error}
+        autoHideDuration={5000}
+        onClose={() => resetCreateTagStatus()}
+      >
+        <Alert severity="error">Error creating tag</Alert>
+      </Snackbar>
+    </>
   );
 };
 

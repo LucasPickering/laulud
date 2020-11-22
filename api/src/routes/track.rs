@@ -13,6 +13,7 @@ use rocket::{delete, get, post, State};
 use rocket_contrib::json::Json;
 use std::{backtrace::Backtrace, collections::HashMap};
 use tokio::stream::StreamExt;
+use validator::Validate;
 
 pub async fn load_track_tags(
     db_handler: &DbHandler,
@@ -93,8 +94,8 @@ pub async fn route_create_tag(
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TaggedTrack>> {
-    // TODO validate input
-    let CreateTagBody { tags } = body.into_inner();
+    body.validate()?;
+    let CreateTagBody { tag } = body.into_inner();
 
     // Look up the track in Spotify first, to get metadata/confirm it's real
     // TODO handle 404 here properly
@@ -106,7 +107,7 @@ pub async fn route_create_tag(
         .find_one_and_update(
             doc! {"track_id": &track_id},
             // Add each tag to the doc if it isn't present already
-            doc! {"$addToSet": {"tags": {"$each": &tags}}},
+            doc! {"$addToSet": {"tags": &tag}},
             Some(
                 FindOneAndUpdateOptions::builder()
                     .upsert(true)

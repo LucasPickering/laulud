@@ -22,3 +22,4 @@ time = {version = "0.2", features = ["serde"]}
 tokio = {version = "0.2", features = ["full"]}
 typescript-definitions = {git = "https://github.com/onelson/typescript-definitions", branch = "no-debug-attrs"}
 uuid = "0.8"
+validator = {version = "0.11", features = ["derive"]}
