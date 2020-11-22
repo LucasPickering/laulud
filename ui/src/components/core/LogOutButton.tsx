@@ -16,7 +16,11 @@ const LogOutButton: React.FC = () => {
     }
   }, [status]);
 
-  return <Button onClick={() => mutate()}>Log Out</Button>;
+  return (
+    <Button variant="outlined" onClick={() => mutate()}>
+      Log Out
+    </Button>
+  );
 };
 
 export default LogOutButton;

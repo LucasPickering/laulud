@@ -1,12 +1,12 @@
 import { Theme, createMuiTheme, responsiveFontSizes } from "@material-ui/core";
-import { blue, red } from "@material-ui/core/colors";
+import { green, red } from "@material-ui/core/colors";
 
 const theme: Theme = responsiveFontSizes(
   createMuiTheme({
     palette: {
       mode: "dark",
-      primary: blue,
-      secondary: red, // for error contexts ONLY
+      primary: green,
+      secondary: red,
       divider: "#ffffff",
       background: {
         default: "#000000",

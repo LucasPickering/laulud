@@ -70,12 +70,12 @@ const TrackDetails: React.FC<Props> = ({ trackId }) => {
                 <Chip
                   key={tag}
                   label={tag}
-                  color="secondary"
+                  color="primary"
                   onDelete={() => deleteTag(tag)}
                 />
               ))}
               <NewTagChip
-                color="secondary"
+                color="primary"
                 status={createTagStatus}
                 createTag={createTag}
               />
