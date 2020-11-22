@@ -82,7 +82,8 @@ async fn main() {
                 // track
                 routes::route_get_track,
                 routes::route_search_tracks,
-                routes::route_create_tag
+                routes::route_create_tag,
+                routes::route_delete_tag,
             ],
         )
         .manage(db_handler)

@@ -9,7 +9,7 @@ use mongodb::{
     bson::doc,
     options::{FindOneAndUpdateOptions, ReturnDocument},
 };
-use rocket::{get, post, State};
+use rocket::{delete, get, post, State};
 use rocket_contrib::json::Json;
 use std::{backtrace::Backtrace, collections::HashMap};
 use tokio::stream::StreamExt;
@@ -126,5 +126,43 @@ pub async fn route_create_tag(
     Ok(Json(TaggedTrack {
         track: spotify_track,
         tags: track_doc.tags,
+    }))
+}
+
+#[delete("/tracks/<track_id>/tags/<tag>")]
+pub async fn route_delete_tag(
+    track_id: String,
+    tag: String,
+    mut spotify: Spotify,
+    db_handler: State<'_, DbHandler>,
+) -> ApiResult<Json<TaggedTrack>> {
+    // Look up the track in Spotify first, to get metadata/confirm it's real
+    // TODO handle 404 here properly
+    let spotify_track = spotify.get_track(&track_id).await?;
+
+    // let CreateTagBody { tags } = body.to_owned();
+    let coll = db_handler.collection(CollectionName::Tracks);
+    let doc = coll
+        .find_one_and_update(
+            doc! {"track_id": &track_id},
+            // Remove the tag from the doc
+            doc! {"$pull": {"tags": &tag}},
+            Some(
+                FindOneAndUpdateOptions::builder()
+                    .return_document(ReturnDocument::After)
+                    .build(),
+            ),
+        )
+        .await?;
+    let tags = doc
+        .map::<ApiResult<Vec<String>>, _>(|doc| {
+            Ok(util::from_doc::<TrackDocument>(doc)?.tags)
+        })
+        .transpose()? // Option<Result> -> Result<Option>
+        .unwrap_or_else(Vec::new);
+
+    Ok(Json(TaggedTrack {
+        track: spotify_track,
+        tags,
     }))
 }
