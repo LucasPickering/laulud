@@ -93,7 +93,7 @@ pub async fn route_create_tag(
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TaggedTrack>> {
-    // TODO valid input
+    // TODO validate input
     let CreateTagBody { tags } = body.into_inner();
 
     // Look up the track in Spotify first, to get metadata/confirm it's real

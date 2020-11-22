@@ -1,37 +1,21 @@
-import { merge } from "lodash-es";
 import { QueryCache } from "react-query";
+import axios, { AxiosRequestConfig } from "axios";
+
+axios.defaults.headers.common["Accept"] = "application/json";
 
 /**
- * A wrapper around the std fetch function, that parses response data as JSON
- * and returns it as a pre-determined type. Note that the response data type
- * IS NOT ACTUALLY VALIDATED - so you better be sure about what the API is
- * returning.
+ * A wrapper around axios, that parses response data as JSON and returns it as
+ * a pre-determined type. Note that the response data type IS NOT ACTUALLY
+ * VALIDATED - so you better be sure about what the API is returning.
  *
- * @param input same as fetch's input param
- * @param init same as fetch's init param
- * @returns Same as fetch, except the data has been parsed as JSON and type-coerced
+ * @param url Request URL
+ * @param config Axios request config
+ * @returns Same as axios, except the data has been parsed as JSON and type-coerced
  */
-export async function queryFn<T>(
-  input: RequestInfo,
-  init?: RequestInit
+export async function queryFn<T = unknown>(
+  config: AxiosRequestConfig
 ): Promise<T> {
-  const response = await fetch(
-    input,
-    merge(
-      {
-        headers: {
-          Accept: "application/json",
-        },
-      },
-      init
-    )
-  );
-
-  const json = response.json();
-  if (response.ok) {
-    return json;
-  }
-  throw json;
+  return axios(config).then((response) => response.data);
 }
 
 const queryCache = new QueryCache({

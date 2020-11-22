@@ -32,7 +32,7 @@ const useStyles = makeStyles(({ palette, shape, spacing }) => ({
   inputInput: {
     padding: spacing(1),
     // horizontal padding + font size from searchIcon
-    paddingLeft: `calc(1em + ${spacing(4)})`,
+    paddingLeft: `calc(1rem + ${spacing(4)})`,
     width: "100%",
   },
 }));

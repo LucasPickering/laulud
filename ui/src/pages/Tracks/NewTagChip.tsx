@@ -1,22 +1,23 @@
-import React, { useState } from "react";
-import { Chip, InputBase, makeStyles } from "@material-ui/core";
+import React, { useEffect, useState } from "react";
+import {
+  Chip,
+  CircularProgress,
+  InputBase,
+  makeStyles,
+} from "@material-ui/core";
 import { Add as AddIcon } from "@material-ui/icons";
 import { QueryStatus } from "react-query";
-import DataContainer from "components/generic/DataContainer";
 
-const useStyles = makeStyles(({ spacing }) => ({
-  tags: {
+const useStyles = makeStyles(() => ({
+  inputWrapper: {
     display: "flex",
-    // Spacing between children
-    "& > * + *": {
-      marginLeft: spacing(1),
-    },
+    alignItems: "center",
   },
 }));
 
 interface Props extends React.ComponentProps<typeof Chip> {
   status: QueryStatus;
-  createTag: (tagName: string) => void;
+  createTag: (tag: string) => void;
 }
 
 const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
@@ -24,28 +25,47 @@ const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [newTagText, setNewTagText] = useState<string>("");
 
+  // After successfully creating a tag, reset state here
+  useEffect(() => {
+    if (status === QueryStatus.Success) {
+      setIsEditing(false);
+      setNewTagText("");
+    }
+  }, [status]);
+
   return (
     <Chip
       {...rest}
-      icon={<AddIcon />}
+      icon={
+        status === QueryStatus.Loading ? (
+          <CircularProgress size={24} />
+        ) : (
+          <AddIcon />
+        )
+      }
       label={
-        <DataContainer
-          status={status}
-          data={undefined}
-          idleEl={
+        <div className={classes.inputWrapper}>
+          {isEditing ? (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                createTag(newTagText);
+                if (newTagText) {
+                  createTag(newTagText);
+                  setIsEditing(false);
+                }
               }}
             >
               <InputBase
+                autoFocus
                 value={newTagText}
+                onBlur={() => setIsEditing(false)}
                 onChange={(e) => setNewTagText(e.target.value)}
               />
             </form>
-          }
-        />
+          ) : (
+            newTagText || null
+          )}
+        </div>
       }
       clickable
       onClick={() => setIsEditing(true)}

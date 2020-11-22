@@ -6,7 +6,7 @@ import { queryFn } from "util/queryCache";
 
 const LogOutButton: React.FC = () => {
   const [mutate, { status }] = useMutation(() =>
-    queryFn("/api/logout", { method: "POST" })
+    queryFn({ url: "/api/logout", method: "POST" })
   );
 
   useEffect(() => {
