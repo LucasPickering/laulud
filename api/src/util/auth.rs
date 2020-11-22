@@ -28,7 +28,7 @@ pub enum IdentityState {
         next: Option<String>,
     },
     /// State that we track when the user is already logged in.
-    PostAuth(Shithole),
+    PostAuth(AuthenticatedUser),
 }
 
 impl IdentityState {
@@ -90,7 +90,7 @@ impl IdentityState {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Shithole {
+pub struct AuthenticatedUser {
     /// The OAuth2 token we got for the user during auth flow. We'll use
     /// this to access the Spotify API on the user's behalf.
     token_response: BasicTokenResponse,
@@ -98,7 +98,7 @@ pub struct Shithole {
     expires_at: OffsetDateTime,
 }
 
-impl From<BasicTokenResponse> for Shithole {
+impl From<BasicTokenResponse> for AuthenticatedUser {
     fn from(token_response: BasicTokenResponse) -> Self {
         let expires_at =
             OffsetDateTime::now_utc() + token_response.expires_in().unwrap();
@@ -112,12 +112,15 @@ impl From<BasicTokenResponse> for Shithole {
 #[derive(Debug)]
 pub struct OAuthHandler {
     client: Arc<BasicClient>,
-    shithole: Shithole,
+    authenticated_user: AuthenticatedUser,
 }
 
 impl OAuthHandler {
     pub fn secret(&self) -> &str {
-        self.shithole.token_response.access_token().secret()
+        self.authenticated_user
+            .token_response
+            .access_token()
+            .secret()
     }
 
     pub async fn from_identity_state(
@@ -125,8 +128,11 @@ impl OAuthHandler {
         identity_state: IdentityState,
     ) -> ApiResult<Self> {
         match identity_state {
-            IdentityState::PostAuth(shithole) => {
-                let mut rv = Self { client, shithole };
+            IdentityState::PostAuth(authenticated_user) => {
+                let mut rv = Self {
+                    client,
+                    authenticated_user,
+                };
                 // Make sure the access token is fresh
                 rv.refresh_if_needed().await?;
                 Ok(rv)
@@ -142,9 +148,10 @@ impl OAuthHandler {
     /// make the HTTP call when necessary.
     pub async fn refresh_if_needed(&mut self) -> ApiResult<()> {
         // Give us a 1 minute buffer just to prevent race conditions or smth idk
-        let threshold = self.shithole.expires_at - Duration::minutes(1);
+        let threshold =
+            self.authenticated_user.expires_at - Duration::minutes(1);
         if OffsetDateTime::now_utc() > threshold {
-            match self.shithole.token_response.refresh_token() {
+            match self.authenticated_user.token_response.refresh_token() {
                 None => Err(ApiError::NoRefreshToken {
                     backtrace: Backtrace::capture(),
                 }),
@@ -154,7 +161,7 @@ impl OAuthHandler {
                         .exchange_refresh_token(refresh_token)
                         .request_async(oauth2::reqwest::async_http_client)
                         .await?;
-                    self.shithole = token_response.into();
+                    self.authenticated_user = token_response.into();
                     // Successful refresh
                     Ok(())
                 }
