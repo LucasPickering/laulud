@@ -93,6 +93,9 @@ pub async fn route_create_tag(
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TaggedTrack>> {
+    // TODO valid input
+    let CreateTagBody { tags } = body.into_inner();
+
     // Look up the track in Spotify first, to get metadata/confirm it's real
     // TODO handle 404 here properly
     let spotify_track = spotify.get_track(&track_id).await?;
@@ -103,7 +106,7 @@ pub async fn route_create_tag(
         .find_one_and_update(
             doc! {"track_id": &track_id},
             // Add each tag to the doc if it isn't present already
-            doc! {"$addToSet": {"tags": {"$each": &body.tags}}},
+            doc! {"$addToSet": {"tags": {"$each": &tags}}},
             Some(
                 FindOneAndUpdateOptions::builder()
                     .upsert(true)

@@ -46,7 +46,7 @@ const CoreContent: React.FC = () => {
           <Route path="/" exact>
             <HomePage />
           </Route>
-          <Route path="/tracks" exact>
+          <Route path="/tracks/:trackId?" exact>
             <TracksPage />
           </Route>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   List,
   ListItem,
@@ -13,6 +13,7 @@ import AlbumArt from "components/generic/AlbumArt";
 import DataContainer from "components/generic/DataContainer";
 import { useQuery } from "react-query";
 import { TaggedTrack } from "util/schema";
+import UnstyledLink from "components/generic/UnstyledLink";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -27,23 +28,15 @@ const useStyles = makeStyles(({ spacing }) => ({
 }));
 
 interface Props {
-  selectedTrack: TaggedTrack | undefined;
-  setSelectedTrack: (track: TaggedTrack | undefined) => void;
+  selectedTrackId?: string;
 }
 
-const TrackSearchList: React.FC<Props> = ({
-  selectedTrack,
-  setSelectedTrack,
-}) => {
+const TrackSearchList: React.FC<Props> = ({ selectedTrackId }) => {
   const classes = useStyles();
   const [query, setQuery] = useState<string>("");
   const state = useQuery<TaggedTrack[]>(`/api/tracks/search/${query}`, {
     enabled: Boolean(query),
   });
-
-  useEffect(() => {
-    setSelectedTrack(undefined);
-  }, [setSelectedTrack, query]);
 
   return (
     <Paper className={classes.container}>
@@ -56,8 +49,9 @@ const TrackSearchList: React.FC<Props> = ({
               <ListItem
                 key={track.track.id}
                 button
-                selected={track.track.id === selectedTrack?.track.id}
-                onClick={() => setSelectedTrack(track)}
+                selected={track.track.id === selectedTrackId}
+                component={UnstyledLink}
+                to={`/tracks/${track.track.id}`}
               >
                 <ListItemAvatar className={classes.listItemAvatar}>
                   <AlbumArt album={track.track.album} size="small" />

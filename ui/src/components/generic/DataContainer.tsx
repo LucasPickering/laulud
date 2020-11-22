@@ -3,32 +3,34 @@ import React from "react";
 import { CircularProgress } from "@material-ui/core";
 import { QueryResult } from "react-query";
 
-interface Props<T> extends QueryResult<T> {
-  loadingEl?: React.ReactElement;
-  children: (data: T) => React.ReactElement;
+interface Props<T> extends Pick<QueryResult<T>, "status" | "data"> {
+  idleEl?: React.ReactElement | null;
+  loadingEl?: React.ReactElement | null;
+  errorEl?: React.ReactElement | null;
+  children?: (data: T) => React.ReactElement | null;
 }
 
 function DataContainer<T>({
-  isLoading,
+  status,
   data,
-  error,
+  idleEl = null,
   loadingEl = <CircularProgress />,
-  children,
+  errorEl = <div>Error</div>,
+  children = () => null,
 }: Props<T>): React.ReactElement | null {
-  if (isLoading) {
-    return loadingEl;
+  switch (status) {
+    case "idle":
+      return idleEl;
+    case "loading":
+      return loadingEl;
+    case "error":
+      return errorEl;
+    case "success":
+      // We know data is populated here so we can coerce the type
+      return children(data as T);
+    default:
+      throw new Error(`Invalid status: ${status}`);
   }
-
-  if (error) {
-    return <div>Error</div>;
-  }
-
-  if (data) {
-    return children(data);
-  }
-
-  // A request hasn't even been attempted yet, just render nothing
-  return null;
 }
 
 export default DataContainer;
