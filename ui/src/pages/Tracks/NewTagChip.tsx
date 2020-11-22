@@ -8,7 +8,10 @@ import {
 import { Add as AddIcon } from "@material-ui/icons";
 import { QueryStatus } from "react-query";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(({ spacing }) => ({
+  tag: {
+    margin: spacing(0.5),
+  },
   inputWrapper: {
     display: "flex",
     alignItems: "center",
@@ -36,9 +39,10 @@ const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
   return (
     <Chip
       {...rest}
+      className={classes.tag}
       icon={
         status === QueryStatus.Loading ? (
-          <CircularProgress size={24} />
+          <CircularProgress color="secondary" size={24} />
         ) : (
           <AddIcon />
         )

@@ -2,7 +2,21 @@ import { AppBar, Toolbar, makeStyles } from "@material-ui/core";
 import { isEmpty } from "lodash-es";
 import React, { useContext } from "react";
 import { UserContext } from "util/UserContext";
+import HeaderLink from "./HeaderLink";
 import LogOutButton from "./LogOutButton";
+
+const LINKS = [
+  {
+    to: "/tracks",
+    label: "Tracks",
+    exact: false,
+  },
+  {
+    to: "/tags",
+    label: "Tags",
+    exact: false,
+  },
+];
 
 const useStyles = makeStyles(({ spacing }) => ({
   drawer: {
@@ -27,6 +41,11 @@ const Header: React.FC = () => {
   return (
     <AppBar position="static" color="default">
       <Toolbar component="nav" variant="dense">
+        {LINKS.map(({ to, label, exact }) => (
+          <HeaderLink key={to} to={to} exact={exact}>
+            {label}
+          </HeaderLink>
+        ))}
         <div className={classes.grow} />
         {showLogOut && <LogOutButton />}
       </Toolbar>

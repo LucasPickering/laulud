@@ -1,9 +1,9 @@
 import React from "react";
-
-import Link from "components/generic/Link";
+import { Redirect } from "react-router-dom";
 
 const HomePage: React.FC = () => {
-  return <Link to="/tracks">Tracks</Link>;
+  // We may want to put some center here in the future, but for now just redirect
+  return <Redirect to="/tracks" />;
 };
 
 export default HomePage;

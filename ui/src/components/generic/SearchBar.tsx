@@ -39,12 +39,13 @@ const useStyles = makeStyles(({ palette, shape, spacing }) => ({
 
 interface Props {
   className?: string;
+  initialQuery?: string;
   onSearch: (query: string) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ className, onSearch }) => {
+const SearchBar: React.FC<Props> = ({ className, initialQuery, onSearch }) => {
   const classes = useStyles();
-  const [query, setQuery] = useState<string>("");
+  const [query, setQuery] = useState<string>(initialQuery ?? "");
   const debouncedQuery = useDebouncedValue(query, 500);
 
   useEffect(() => {

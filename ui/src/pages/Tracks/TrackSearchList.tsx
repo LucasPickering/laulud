@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   List,
   ListItem,
@@ -7,13 +7,17 @@ import {
   makeStyles,
   Paper,
 } from "@material-ui/core";
+import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
-
 import AlbumArt from "components/generic/AlbumArt";
 import DataContainer from "components/generic/DataContainer";
 import { useQuery } from "react-query";
 import { TaggedTrack } from "util/schema";
 import UnstyledLink from "components/generic/UnstyledLink";
+import TagChips from "./TagChips";
+import { queryFn } from "util/queryCache";
+import useRouteQuery from "hooks/useRouteQuery";
+import { useHistory } from "react-router-dom";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -22,8 +26,14 @@ const useStyles = makeStyles(({ spacing }) => ({
   searchBar: {
     width: "100%",
   },
+  listItem: {
+    flexWrap: "wrap",
+  },
   listItemAvatar: {
     marginRight: spacing(2),
+  },
+  listItemTags: {
+    flexBasis: "100%",
   },
 }));
 
@@ -33,14 +43,30 @@ interface Props {
 
 const TrackSearchList: React.FC<Props> = ({ selectedTrackId }) => {
   const classes = useStyles();
+  const history = useHistory();
+  const { q } = useRouteQuery();
   const [query, setQuery] = useState<string>("");
-  const state = useQuery<TaggedTrack[]>(`/api/tracks/search/${query}`, {
-    enabled: Boolean(query),
-  });
+  const state = useQuery<TaggedTrack[]>(
+    "tracks",
+    () => queryFn({ url: `/api/tracks/search/${query}` }),
+    { enabled: Boolean(query) }
+  );
+
+  // Whenever the search changes, update the URL
+  useEffect(() => {
+    history.replace({
+      ...history.location,
+      search: queryString.stringify({ q: query }),
+    });
+  }, [history, query]);
 
   return (
     <Paper className={classes.container}>
-      <SearchBar className={classes.searchBar} onSearch={setQuery} />
+      <SearchBar
+        className={classes.searchBar}
+        initialQuery={(q ?? "").toString()}
+        onSearch={setQuery}
+      />
 
       <DataContainer {...state}>
         {(tracks) => (
@@ -48,10 +74,14 @@ const TrackSearchList: React.FC<Props> = ({ selectedTrackId }) => {
             {tracks.map((track) => (
               <ListItem
                 key={track.track.id}
+                className={classes.listItem}
                 button
                 selected={track.track.id === selectedTrackId}
                 component={UnstyledLink}
-                to={`/tracks/${track.track.id}`}
+                to={{
+                  ...history.location,
+                  pathname: `/tracks/${track.track.id}`,
+                }}
               >
                 <ListItemAvatar className={classes.listItemAvatar}>
                   <AlbumArt album={track.track.album} size="small" />
@@ -62,6 +92,7 @@ const TrackSearchList: React.FC<Props> = ({ selectedTrackId }) => {
                     .map((artist) => artist.name)
                     .join(", ")}
                 />
+                <TagChips className={classes.listItemTags} tags={track.tags} />
               </ListItem>
             ))}
           </List>

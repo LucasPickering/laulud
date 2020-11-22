@@ -1,7 +1,18 @@
 import React from "react";
 
-import { CircularProgress } from "@material-ui/core";
+import { CircularProgress, makeStyles } from "@material-ui/core";
 import { QueryResult } from "react-query";
+
+const useStyles = makeStyles(({ spacing }) => ({
+  loadingWrapper: {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing(2),
+  },
+}));
 
 interface Props<T> extends Pick<QueryResult<T>, "status" | "data"> {
   idleEl?: React.ReactElement | null;
@@ -10,11 +21,21 @@ interface Props<T> extends Pick<QueryResult<T>, "status" | "data"> {
   children?: (data: T) => React.ReactElement | null;
 }
 
+function DefaultLoading(): React.ReactElement {
+  const classes = useStyles();
+
+  return (
+    <div className={classes.loadingWrapper}>
+      <CircularProgress />
+    </div>
+  );
+}
+
 function DataContainer<T>({
   status,
   data,
   idleEl = null,
-  loadingEl = <CircularProgress />,
+  loadingEl = <DefaultLoading />,
   errorEl = <div>Error</div>,
   children = () => null,
 }: Props<T>): React.ReactElement | null {
