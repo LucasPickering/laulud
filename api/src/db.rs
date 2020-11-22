@@ -35,5 +35,6 @@ impl DbHandler {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TrackDocument {
     pub track_id: String,
+    pub user_id: String,
     pub tags: Vec<String>,
 }

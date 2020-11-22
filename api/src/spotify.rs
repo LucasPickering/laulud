@@ -26,6 +26,10 @@ pub struct Spotify {
     oauth_handler: OAuthHandler,
     /// HTTP request client
     req_client: Client,
+    /// Authenticated user's ID, will be populated after
+    /// [Self::get_current_user] is called for the first time. i.e. this is
+    /// just a cache for it.
+    user_id: Option<String>,
 }
 
 impl Spotify {
@@ -33,6 +37,7 @@ impl Spotify {
         Self {
             oauth_handler,
             req_client: Client::new(),
+            user_id: None,
         }
     }
 
@@ -83,9 +88,23 @@ impl Spotify {
         }
     }
 
+    /// Get the ID of the authenticated user. This will make a network request
+    /// if this is the first time it's being fetched for this client.
+    pub async fn get_user_id(&mut self) -> ApiResult<&str> {
+        if self.user_id.is_none() {
+            // This will populate self.user_id
+            self.get_current_user().await?;
+        }
+
+        // Now we know the cache is populated
+        Ok(self.user_id.as_deref().unwrap())
+    }
+
     /// https://developer.spotify.com/documentation/web-api/reference/users-profile/get-current-users-profile/
     pub async fn get_current_user(&mut self) -> ApiResult<CurrentUser> {
-        self.get_endpoint("/v1/me", &[]).await
+        let user: CurrentUser = self.get_endpoint("/v1/me", &[]).await?;
+        self.user_id = Some(user.id.clone()); // caching!
+        Ok(user)
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
@@ -125,6 +144,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
             let oauth_handler =
                 OAuthHandler::from_identity_state(oauth_client, identity_state)
                     .await?;
+
             Ok(Spotify::new(oauth_handler))
         }
 
