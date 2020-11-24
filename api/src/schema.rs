@@ -164,6 +164,14 @@ pub struct TaggedTrack {
     pub tags: Vec<String>,
 }
 
+/// Details for a tag
+#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
+pub struct TagDetails {
+    tag: String,
+    /// IDs of all tracks with this tag
+    tracks: Vec<String>,
+}
+
 /// POST input for tagging a track
 #[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify, Validate)]
 pub struct CreateTagBody {

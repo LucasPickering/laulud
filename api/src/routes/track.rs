@@ -124,7 +124,7 @@ pub async fn route_create_tag(
     }))
 }
 
-#[delete("/tracks/<track_id>/tags/<tag>")]
+#[delete("/tracks/<track_id>/tags/<tag>", format = "json")]
 pub async fn route_delete_tag(
     track_id: String,
     tag: String,
