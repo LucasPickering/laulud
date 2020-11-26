@@ -32,8 +32,7 @@ const TS_DEFINITION_GENERATION_FUNCS: &[&dyn Fn() -> Cow<'static, str>] = &[
 
 pub fn generate_ts_definitions(config: &LauludConfig) -> io::Result<()> {
     if let Some(path) = &config.ts_definitions_file {
-        let mut file =
-            File::with_options().create(true).write(true).open(path)?;
+        let mut file = File::with_options().create(true).write(true).open(path)?;
 
         for func in TS_DEFINITION_GENERATION_FUNCS {
             file.write_all(b"\n")?;
@@ -167,9 +166,9 @@ pub struct TaggedTrack {
 /// Details for a tag
 #[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
 pub struct TagDetails {
-    tag: String,
+    pub tag: String,
     /// IDs of all tracks with this tag
-    tracks: Vec<String>,
+    pub tracks: Vec<TaggedTrack>,
 }
 
 /// POST input for tagging a track

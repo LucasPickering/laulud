@@ -24,15 +24,13 @@ pub async fn route_get_track(
     // Look up the track in Spotify
     let spotify_track = spotify.get_track(&track_id).await?;
 
-    let coll = db_handler.collection(CollectionName::Tracks);
     let user_id = spotify.get_user_id().await?;
-    let doc = coll
+    let doc = db_handler
+        .collection(CollectionName::Tracks)
         .find_one(doc! { "track_id": &track_id, "user_id": user_id }, None)
         .await?;
     let tags = doc
-        .map::<ApiResult<Vec<String>>, _>(|doc| {
-            Ok(util::from_doc::<TrackDocument>(doc)?.tags)
-        })
+        .map::<ApiResult<Vec<String>>, _>(|doc| Ok(util::from_doc::<TrackDocument>(doc)?.tags))
         .transpose()? // Option<Result> -> Result<Option>
         .unwrap_or_else(Vec::new);
 
@@ -50,6 +48,7 @@ pub async fn route_search_tracks(
 ) -> ApiResult<Json<Vec<TaggedTrack>>> {
     // Search for the tracks on Spotify
     let spotify_tracks = spotify.search_tracks(&query).await?;
+    let user_id = spotify.get_user_id().await?;
 
     // Saturate the Spotify data with the tags from mongo
     let ids: Vec<&str> = spotify_tracks
@@ -58,8 +57,10 @@ pub async fn route_search_tracks(
         .collect();
 
     // Look up the relevant tracks in the DB
-    let coll = db_handler.collection(CollectionName::Tracks);
-    let mut cursor = coll.find(doc! {"track_id": {"$in": ids}}, None).await?;
+    let mut cursor = db_handler
+        .collection(CollectionName::Tracks)
+        .find(doc! {"track_id": {"$in": ids},"user_id": &user_id}, None)
+        .await?;
 
     // Build a mapping of track ID:tags
     let mut tagged_docs: HashMap<String, Vec<String>> = HashMap::new();
@@ -95,9 +96,9 @@ pub async fn route_create_tag(
     // Look up the track in Spotify first, to get metadata/confirm it's real
     let spotify_track = spotify.get_track(&track_id).await?;
 
-    let coll = db_handler.collection(CollectionName::Tracks);
     let user_id = spotify.get_user_id().await?;
-    let doc = coll
+    let doc = db_handler
+        .collection(CollectionName::Tracks)
         .find_one_and_update(
             doc! {"track_id": &track_id, "user_id": user_id},
             // Add each tag to the doc if it isn't present already
@@ -134,10 +135,9 @@ pub async fn route_delete_tag(
     // Look up the track in Spotify first, to get metadata/confirm it's real
     let spotify_track = spotify.get_track(&track_id).await?;
 
-    // let CreateTagBody { tags } = body.to_owned();
-    let coll = db_handler.collection(CollectionName::Tracks);
     let user_id = spotify.get_user_id().await?;
-    let doc = coll
+    let doc = db_handler
+        .collection(CollectionName::Tracks)
         .find_one_and_update(
             doc! {"track_id": &track_id, "user_id": user_id},
             // Remove the tag from the doc
@@ -150,9 +150,7 @@ pub async fn route_delete_tag(
         )
         .await?;
     let tags = doc
-        .map::<ApiResult<Vec<String>>, _>(|doc| {
-            Ok(util::from_doc::<TrackDocument>(doc)?.tags)
-        })
+        .map::<ApiResult<Vec<String>>, _>(|doc| Ok(util::from_doc::<TrackDocument>(doc)?.tags))
         .transpose()? // Option<Result> -> Result<Option>
         .unwrap_or_else(Vec::new);
 
