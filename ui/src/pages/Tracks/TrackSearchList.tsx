@@ -1,23 +1,14 @@
 import React, { useEffect, useState } from "react";
-import {
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  makeStyles,
-  Paper,
-} from "@material-ui/core";
+import { makeStyles, Paper } from "@material-ui/core";
 import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
-import AlbumArt from "components/generic/AlbumArt";
 import DataContainer from "components/generic/DataContainer";
 import { useQuery } from "react-query";
 import { TaggedTrack } from "util/schema";
-import UnstyledLink from "components/generic/UnstyledLink";
-import TagChips from "./TagChips";
 import { queryFn } from "util/queryCache";
 import useRouteQuery from "hooks/useRouteQuery";
 import { useHistory } from "react-router-dom";
+import TrackList from "components/TrackList";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -70,32 +61,15 @@ const TrackSearchList: React.FC<Props> = ({ selectedTrackId }) => {
 
       <DataContainer {...state}>
         {(tracks) => (
-          <List>
-            {tracks.map((track) => (
-              <ListItem
-                key={track.track.id}
-                className={classes.listItem}
-                button
-                selected={track.track.id === selectedTrackId}
-                component={UnstyledLink}
-                to={{
-                  ...history.location,
-                  pathname: `/tracks/${track.track.id}`,
-                }}
-              >
-                <ListItemAvatar className={classes.listItemAvatar}>
-                  <AlbumArt album={track.track.album} size="small" />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={track.track.name}
-                  secondary={track.track.artists
-                    .map((artist) => artist.name)
-                    .join(", ")}
-                />
-                <TagChips className={classes.listItemTags} tags={track.tags} />
-              </ListItem>
-            ))}
-          </List>
+          <TrackList
+            tracks={tracks}
+            selectedTrackId={selectedTrackId}
+            showTags
+            routeMapper={(track) => ({
+              ...history.location,
+              pathname: `/tracks/${track.track.id}`,
+            })}
+          />
         )}
       </DataContainer>
     </Paper>

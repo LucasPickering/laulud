@@ -76,7 +76,7 @@ async fn main() {
                 routes::route_create_tag,
                 routes::route_delete_tag,
                 // tag
-                // routes::route_get_tags,
+                routes::route_get_tags,
                 routes::route_get_tag,
             ],
         )

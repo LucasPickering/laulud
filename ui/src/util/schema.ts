@@ -32,5 +32,11 @@ export type TracksSearchResponse = { tracks: PaginatedResponse<Track>};
 // A track that we've annotated with tag metadata
 export type TaggedTrack = { track: Track; tags: string [] };
 
-// POST input for tagging a trackS
-export type CreateTagBody = { tags: string [] };
+// Summary informatoin for a tag
+export type TagSummary = { tag: string; num_tracks: number };
+
+// Details for a tag
+export type TagDetails = { tag: string; tracks: TaggedTrack [] };
+
+// POST input for tagging a track
+export type CreateTagBody = { tag: string };

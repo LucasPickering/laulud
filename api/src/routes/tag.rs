@@ -1,7 +1,7 @@
 use crate::{
     db::{CollectionName, DbHandler, TrackDocument},
     error::ApiResult,
-    schema::{TagDetails, TaggedTrack},
+    schema::{TagDetails, TagSummary, TaggedTrack},
     spotify::Spotify,
     util,
 };
@@ -9,26 +9,28 @@ use mongodb::bson::doc;
 use rocket::{get, State};
 use rocket_contrib::json::Json;
 
-// #[get("/tags", format = "json")]
-// pub async fn route_get_tags(
-//     mut spotify: Spotify,
-//     db_handler: State<'_, DbHandler>,
-// ) -> ApiResult<Json<Vec<TagDetails>>> {
-//     let coll = db_handler.collection(CollectionName::Tracks);
-//     let user_id = spotify.get_user_id().await?;
-//     let doc = coll
-//         .find(doc! { "tags": &track_id, "user_id": user_id }, None)
-//         .await?;
-//     let tags = doc
-//         .map::<ApiResult<Vec<String>>, _>(|doc| Ok(util::from_doc::<TrackDocument>(doc)?.tags))
-//         .transpose()? // Option<Result> -> Result<Option>
-//         .unwrap_or_else(Vec::new);
+#[get("/tags", format = "json")]
+pub async fn route_get_tags(
+    mut spotify: Spotify,
+    db_handler: State<'_, DbHandler>,
+) -> ApiResult<Json<Vec<TagSummary>>> {
+    let user_id = spotify.get_user_id().await?;
+    let cursor = db_handler
+        .collection(CollectionName::Tracks)
+        .aggregate(
+            vec![
+                doc! {"$match":{"user_id": user_id}},
+                doc! {"$unwind":"$tags"},
+                doc! {"$group":{"_id":"$tags","num_tracks":{"$sum":1}}},
+                doc! {"$project":{"tag": "$_id", "num_tracks": 1, "_id": 0}},
+            ],
+            None,
+        )
+        .await?;
+    let summaries: Vec<TagSummary> = util::from_cursor(cursor).await?;
 
-//     Ok(Json(TaggedTrack {
-//         track: spotify_track,
-//         tags,
-//     }))
-// }
+    Ok(Json(summaries))
+}
 
 #[get("/tags/<tag>", format = "json")]
 pub async fn route_get_tag(
@@ -61,7 +63,7 @@ pub async fn route_get_tag(
     // then we'll exclude it
     let joined_tracks = db_tracks
         .into_iter()
-        .zip(spotify_tracks)
+        .zip(spotify_tracks.tracks)
         // If Spotify returns None for a track, just skip it
         .filter_map(|(db_track, spotify_track)| {
             spotify_track.map(|spotify_track| TaggedTrack {

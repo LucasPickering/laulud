@@ -132,6 +132,7 @@ pub async fn route_delete_tag(
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TaggedTrack>> {
+    dbg!("MADE IT HERE");
     // Look up the track in Spotify first, to get metadata/confirm it's real
     let spotify_track = spotify.get_track(&track_id).await?;
 

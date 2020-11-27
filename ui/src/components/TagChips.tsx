@@ -1,6 +1,7 @@
 import React from "react";
-import { Chip, makeStyles } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core";
 import clsx from "clsx";
+import TagChip from "./TagChip";
 
 const useStyles = makeStyles(({ spacing }) => ({
   tags: {
@@ -29,11 +30,10 @@ const TagChips: React.FC<Props> = ({
   return (
     <div className={clsx(classes.tags, className)}>
       {tags.map((tag) => (
-        <Chip
+        <TagChip
           key={tag}
           className={classes.tag}
-          label={tag}
-          color="primary"
+          tag={tag}
           onDelete={deleteTag && (() => deleteTag(tag))}
         />
       ))}

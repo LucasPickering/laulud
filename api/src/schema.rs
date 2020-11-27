@@ -24,8 +24,11 @@ const TS_DEFINITION_GENERATION_FUNCS: &[&dyn Fn() -> Cow<'static, str>] = &[
     &AlbumSimplified::type_script_ify,
     &TrackLink::type_script_ify,
     &Track::type_script_ify,
+    &TracksResponse::type_script_ify,
     &TracksSearchResponse::type_script_ify,
     &TaggedTrack::type_script_ify,
+    &TagSummary::type_script_ify,
+    &TagDetails::type_script_ify,
     &CreateTagBody::type_script_ify,
     // Make sure any new types get added here
 ];
@@ -139,13 +142,19 @@ pub struct Track {
     pub external_urls: ExternalUrls,
     pub href: String,
     pub id: String,
-    pub is_playable: bool,
+    pub is_playable: Option<bool>,
     pub linked_from: Option<TrackLink>,
     pub name: String,
     pub popularity: usize,
     pub preview_url: Option<String>,
     pub track_number: usize,
     pub uri: String,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
+#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
+pub struct TracksResponse {
+    pub tracks: Vec<Option<Track>>,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/search/search/
@@ -161,6 +170,14 @@ pub struct TracksSearchResponse {
 pub struct TaggedTrack {
     pub track: Track,
     pub tags: Vec<String>,
+}
+
+/// Summary informatoin for a tag
+#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
+pub struct TagSummary {
+    pub tag: String,
+    /// The number of tracks that have this tag assigned
+    pub num_tracks: usize,
 }
 
 /// Details for a tag

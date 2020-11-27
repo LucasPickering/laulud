@@ -1,6 +1,6 @@
 use crate::{
     error::{ApiError, ApiResult},
-    schema::{CurrentUser, Track, TracksSearchResponse},
+    schema::{CurrentUser, Track, TracksResponse, TracksSearchResponse},
     util::{IdentityState, OAuthHandler},
 };
 use async_trait::async_trait;
@@ -134,7 +134,7 @@ impl Spotify {
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
-    pub async fn get_tracks(&mut self, track_ids: &[&str]) -> ApiResult<Vec<Option<Track>>> {
+    pub async fn get_tracks(&mut self, track_ids: &[&str]) -> ApiResult<TracksResponse> {
         self.get_endpoint(
             "/v1/tracks",
             RequestOptions {

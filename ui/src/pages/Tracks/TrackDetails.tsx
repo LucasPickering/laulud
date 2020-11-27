@@ -11,9 +11,9 @@ import {
 import { TaggedTrack } from "util/schema";
 import AlbumArt from "components/generic/AlbumArt";
 import DataContainer from "components/generic/DataContainer";
-import NewTagChip from "./NewTagChip";
+import NewTagChip from "../../components/NewTagChip";
 import queryCache, { queryFn } from "util/queryCache";
-import TagChips from "./TagChips";
+import TagChips from "components/TagChips";
 
 interface Props {
   trackId: string;

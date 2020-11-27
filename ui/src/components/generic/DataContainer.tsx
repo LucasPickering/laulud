@@ -1,7 +1,7 @@
 import React from "react";
-
-import { CircularProgress, makeStyles } from "@material-ui/core";
 import { QueryResult } from "react-query";
+import { Alert, CircularProgress, makeStyles } from "@material-ui/core";
+import Link from "./Link";
 
 const useStyles = makeStyles(({ spacing }) => ({
   loadingWrapper: {
@@ -31,12 +31,24 @@ function DefaultLoading(): React.ReactElement {
   );
 }
 
+function DefaultError(): React.ReactElement {
+  return (
+    <Alert severity="error">
+      An error occurred. Try again or maybe{" "}
+      <Link to="https://github.com/LucasPickering/laulud/issues/new">
+        file an issue
+      </Link>
+      .
+    </Alert>
+  );
+}
+
 function DataContainer<T>({
   status,
   data,
   idleEl = null,
   loadingEl = <DefaultLoading />,
-  errorEl = <div>Error</div>,
+  errorEl = <DefaultError />,
   children = () => null,
 }: Props<T>): React.ReactElement | null {
   switch (status) {
