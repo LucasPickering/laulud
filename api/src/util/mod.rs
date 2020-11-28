@@ -15,6 +15,8 @@ pub fn from_doc<T: DeserializeOwned>(doc: Document) -> ApiResult<T> {
     Ok(bson::from_bson(Bson::Document(doc))?)
 }
 
-pub async fn from_cursor<T: DeserializeOwned>(cursor: Cursor) -> ApiResult<Vec<T>> {
+pub async fn from_cursor<T: DeserializeOwned>(
+    cursor: Cursor,
+) -> ApiResult<Vec<T>> {
     cursor.map(|doc| from_doc::<T>(doc?)).collect().await
 }

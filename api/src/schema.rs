@@ -35,7 +35,8 @@ const TS_DEFINITION_GENERATION_FUNCS: &[&dyn Fn() -> Cow<'static, str>] = &[
 
 pub fn generate_ts_definitions(config: &LauludConfig) -> io::Result<()> {
     if let Some(path) = &config.ts_definitions_file {
-        let mut file = File::with_options().create(true).write(true).open(path)?;
+        let mut file =
+            File::with_options().create(true).write(true).open(path)?;
 
         for func in TS_DEFINITION_GENERATION_FUNCS {
             file.write_all(b"\n")?;

@@ -15,7 +15,7 @@ use std::{backtrace::Backtrace, collections::HashMap};
 use tokio::stream::StreamExt;
 use validator::Validate;
 
-#[get("/tracks/<track_id>", format = "json")]
+#[get("/tracks/<track_id>")]
 pub async fn route_get_track(
     track_id: String,
     mut spotify: Spotify,
@@ -30,7 +30,9 @@ pub async fn route_get_track(
         .find_one(doc! { "track_id": &track_id, "user_id": user_id }, None)
         .await?;
     let tags = doc
-        .map::<ApiResult<Vec<String>>, _>(|doc| Ok(util::from_doc::<TrackDocument>(doc)?.tags))
+        .map::<ApiResult<Vec<String>>, _>(|doc| {
+            Ok(util::from_doc::<TrackDocument>(doc)?.tags)
+        })
         .transpose()? // Option<Result> -> Result<Option>
         .unwrap_or_else(Vec::new);
 
@@ -40,7 +42,7 @@ pub async fn route_get_track(
     }))
 }
 
-#[get("/tracks/search/<query>", format = "json")]
+#[get("/tracks/search/<query>")]
 pub async fn route_search_tracks(
     query: String,
     mut spotify: Spotify,
@@ -125,7 +127,7 @@ pub async fn route_create_tag(
     }))
 }
 
-#[delete("/tracks/<track_id>/tags/<tag>", format = "json")]
+#[delete("/tracks/<track_id>/tags/<tag>")]
 pub async fn route_delete_tag(
     track_id: String,
     tag: String,
@@ -151,7 +153,9 @@ pub async fn route_delete_tag(
         )
         .await?;
     let tags = doc
-        .map::<ApiResult<Vec<String>>, _>(|doc| Ok(util::from_doc::<TrackDocument>(doc)?.tags))
+        .map::<ApiResult<Vec<String>>, _>(|doc| {
+            Ok(util::from_doc::<TrackDocument>(doc)?.tags)
+        })
         .transpose()? // Option<Result> -> Result<Option>
         .unwrap_or_else(Vec::new);
 

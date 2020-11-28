@@ -9,7 +9,7 @@ use mongodb::bson::doc;
 use rocket::{get, State};
 use rocket_contrib::json::Json;
 
-#[get("/tags", format = "json")]
+#[get("/tags")]
 pub async fn route_get_tags(
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
@@ -32,7 +32,7 @@ pub async fn route_get_tags(
     Ok(Json(summaries))
 }
 
-#[get("/tags/<tag>", format = "json")]
+#[get("/tags/<tag>")]
 pub async fn route_get_tag(
     tag: String,
     mut spotify: Spotify,

@@ -9,7 +9,9 @@ mod spotify;
 mod util;
 
 use crate::db::DbHandler;
-use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use oauth2::{
+    basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl,
+};
 use rocket::routes;
 use serde::Deserialize;
 use std::{path::PathBuf, sync::Arc};
@@ -39,12 +41,19 @@ pub async fn init_spotify_client(config: &LauludConfig) -> BasicClient {
     BasicClient::new(
         ClientId::new(config.spotify_client_id.to_string()),
         Some(ClientSecret::new(config.spotify_client_secret.to_string())),
-        AuthUrl::new("https://accounts.spotify.com/authorize".to_string()).unwrap(),
-        Some(TokenUrl::new("https://accounts.spotify.com/api/token".to_string()).unwrap()),
+        AuthUrl::new("https://accounts.spotify.com/authorize".to_string())
+            .unwrap(),
+        Some(
+            TokenUrl::new("https://accounts.spotify.com/api/token".to_string())
+                .unwrap(),
+        ),
     )
     // Set the URL the user will be redirected to after the authorization
     // process.
-    .set_redirect_url(RedirectUrl::new(format!("{}/api/oauth/callback", config.hostname)).unwrap())
+    .set_redirect_url(
+        RedirectUrl::new(format!("{}/api/oauth/callback", config.hostname))
+            .unwrap(),
+    )
 }
 
 #[rocket::main]

@@ -69,7 +69,10 @@ impl Spotify {
             .get(&url)
             .header(
                 header::AUTHORIZATION,
-                HeaderValue::from_str(&format!("Bearer {}", self.oauth_handler.secret()))?,
+                HeaderValue::from_str(&format!(
+                    "Bearer {}",
+                    self.oauth_handler.secret()
+                ))?,
             )
             .query(options.params)
             .send()
@@ -93,11 +96,18 @@ impl Spotify {
                 // Check if the caller requested that we propagate this error
                 // with the actual status code, instead of 500
                 let output_status = match err.status() {
-                    Some(status) if options.propagate_errors.contains(&status) => {
+                    Some(status)
+                        if options.propagate_errors.contains(&status) =>
+                    {
                         // Convert reqwest status to rocket status
-                        Status::from_code(status.as_u16()).ok_or_else(|| ApiError::Unknown {
-                            message: format!("Unknown status code from reqwest: {}", status),
-                            backtrace: Backtrace::capture(),
+                        Status::from_code(status.as_u16()).ok_or_else(|| {
+                            ApiError::Unknown {
+                                message: format!(
+                                    "Unknown status code from reqwest: {}",
+                                    status
+                                ),
+                                backtrace: Backtrace::capture(),
+                            }
                         })?
                     }
                     _ => Status::InternalServerError,
@@ -134,7 +144,10 @@ impl Spotify {
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
-    pub async fn get_tracks(&mut self, track_ids: &[&str]) -> ApiResult<TracksResponse> {
+    pub async fn get_tracks(
+        &mut self,
+        track_ids: &[&str],
+    ) -> ApiResult<TracksResponse> {
         self.get_endpoint(
             "/v1/tracks",
             RequestOptions {
@@ -160,7 +173,10 @@ impl Spotify {
 
     /// Search restricted to tracks
     /// https://developer.spotify.com/documentation/web-api/reference/search/search/
-    pub async fn search_tracks(&mut self, query: &str) -> ApiResult<Vec<Track>> {
+    pub async fn search_tracks(
+        &mut self,
+        query: &str,
+    ) -> ApiResult<Vec<Track>> {
         // TODO maybe need to encode the query?
         let search_response: TracksSearchResponse = self
             .get_endpoint(
@@ -190,20 +206,26 @@ impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
             // Read the user's access token from the auth cookie
             let identity_state = IdentityState::from_cookies(cookies)?;
             let oauth_handler =
-                OAuthHandler::from_identity_state(oauth_client, identity_state).await?;
+                OAuthHandler::from_identity_state(oauth_client, identity_state)
+                    .await?;
 
             Ok(Spotify::new(oauth_handler))
         }
 
-        let oauth_client = match request.guard::<State<'_, Arc<BasicClient>>>().await {
-            rocket::request::Outcome::Success(oauth_client) => oauth_client.inner(),
-            // software engineering!
-            _ => panic!("Couldn't get OAuth client"),
-        };
+        let oauth_client =
+            match request.guard::<State<'_, Arc<BasicClient>>>().await {
+                rocket::request::Outcome::Success(oauth_client) => {
+                    oauth_client.inner()
+                }
+                // software engineering!
+                _ => panic!("Couldn't get OAuth client"),
+            };
 
         match build_client(oauth_client.clone(), request.cookies()).await {
             Ok(spotify) => rocket::request::Outcome::Success(spotify),
-            Err(err) => rocket::request::Outcome::Failure((err.to_status(), err)),
+            Err(err) => {
+                rocket::request::Outcome::Failure((err.to_status(), err))
+            }
         }
     }
 }
