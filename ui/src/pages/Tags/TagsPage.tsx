@@ -9,7 +9,8 @@ interface RouteParams {
 }
 
 const TagsPage: React.FC = () => {
-  const { tag } = useParams<RouteParams>();
+  const params = useParams<RouteParams>();
+  const tag = params.tag && decodeURIComponent(params.tag);
 
   return (
     <Grid container spacing={2}>

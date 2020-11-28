@@ -4,7 +4,7 @@ import DataContainer from "components/generic/DataContainer";
 import { useQuery } from "react-query";
 import { TagDetails as SchemaTagDetails } from "schema";
 import { queryFn } from "util/queryCache";
-import TrackList from "components/TrackList";
+import ItemList from "components/ItemList";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -31,13 +31,13 @@ interface Props {
 const TagDetails: React.FC<Props> = ({ tag }) => {
   const classes = useStyles();
   const state = useQuery<SchemaTagDetails>(["tags", tag], () =>
-    queryFn<SchemaTagDetails>({ url: `/api/tags/${tag}` })
+    queryFn<SchemaTagDetails>({ url: `/api/tags/${encodeURIComponent(tag)}` })
   );
 
   return (
     <Paper className={classes.container}>
       <DataContainer {...state}>
-        {(tagDetails) => <TrackList tracks={tagDetails.tracks} />}
+        {(tagDetails) => <ItemList items={tagDetails.items} />}
       </DataContainer>
     </Paper>
   );

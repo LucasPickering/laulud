@@ -1,7 +1,7 @@
 use crate::{
-    db::{CollectionName, DbHandler, TrackDocument},
+    db::{CollectionName, DbHandler, TaggedItemDocument},
     error::ApiResult,
-    schema::{TagDetails, TagSummary, TaggedTrack},
+    schema::{TagDetails, TagSummary},
     spotify::Spotify,
     util::{self, UserId},
 };
@@ -15,13 +15,13 @@ pub async fn route_get_tags(
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<Vec<TagSummary>>> {
     let cursor = db_handler
-        .collection(CollectionName::Tracks)
+        .collection(CollectionName::TaggedItems)
         .aggregate(
             vec![
                 doc! {"$match":{"user_id": user_id}},
                 doc! {"$unwind":"$tags"},
-                doc! {"$group":{"_id":"$tags","num_tracks":{"$sum":1}}},
-                doc! {"$project":{"tag": "$_id", "num_tracks": 1, "_id": 0}},
+                doc! {"$group":{"_id":"$tags","num_items":{"$sum":1}}},
+                doc! {"$project":{"tag": "$_id", "num_items": 1, "_id": 0}},
             ],
             None,
         )
@@ -35,44 +35,21 @@ pub async fn route_get_tags(
 pub async fn route_get_tag(
     tag: String,
     user_id: UserId,
-    mut spotify: Spotify,
+    spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TagDetails>> {
-    // Look up the relevant tracks in the DB
+    dbg!(&tag);
+    // Look up the relevant items in the DB
     let cursor = db_handler
-        .collection(CollectionName::Tracks)
+        .collection(CollectionName::TaggedItems)
         .find(doc! {"tags": &tag, "user_id": &user_id}, None)
         .await?;
-    let db_tracks: Vec<TrackDocument> = util::from_cursor(cursor).await?;
+    let db_items: Vec<TaggedItemDocument> = util::from_cursor(cursor).await?;
 
-    // Saturate the Spotify data with the tags from mongo
-    let spotify_tracks = spotify
-        .get_tracks(
-            db_tracks
-                .iter()
-                .map(|track| track.track_id.as_str())
-                .collect::<Vec<&str>>()
-                .as_slice(),
-        )
-        .await?;
-
-    // Join the datasets. Spotify returns tracks in the same order we request,
-    // so we can just pair them together. If a track returns None from spotify,
-    // then we'll exclude it
-    let joined_tracks = db_tracks
-        .into_iter()
-        .zip(spotify_tracks.tracks)
-        // If Spotify returns None for a track, just skip it
-        .filter_map(|(db_track, spotify_track)| {
-            spotify_track.map(|spotify_track| TaggedTrack {
-                track: spotify_track,
-                tags: db_track.tags,
-            })
-        })
-        .collect();
-
+    // Pull data from Spotify to saturate our DB data
+    let saturated_items = spotify.saturated_tagged_items(db_items).await?;
     Ok(Json(TagDetails {
         tag,
-        tracks: joined_tracks,
+        items: saturated_items,
     }))
 }

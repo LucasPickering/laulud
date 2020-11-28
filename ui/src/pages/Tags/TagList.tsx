@@ -44,12 +44,12 @@ const TagList: React.FC<Props> = ({ selectedTag }) => {
                 component={UnstyledLink}
                 to={{
                   ...history.location,
-                  pathname: `/tags/${tagSummary.tag}`,
+                  pathname: `/tags/${encodeURIComponent(tagSummary.tag)}`,
                 }}
               >
                 <ListItemText
                   primary={<TagChip tag={tagSummary.tag} />}
-                  secondary={`${tagSummary.num_tracks} tracks`}
+                  secondary={`${tagSummary.num_items} items`}
                 />
               </ListItem>
             ))}

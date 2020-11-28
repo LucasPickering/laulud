@@ -1,7 +1,7 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core";
 
-import { AlbumSimplified } from "schema";
+import { Image } from "schema";
 
 const useStyles = makeStyles(() => ({
   small: {
@@ -18,20 +18,23 @@ const useStyles = makeStyles(() => ({
 }));
 
 interface Props {
-  album: AlbumSimplified;
+  item: {
+    name: string;
+    images: Image[];
+  };
   size?: "small" | "medium" | "large";
 }
 
-function AlbumArt({ album, size = "medium" }: Props): React.ReactElement {
+function ItemArt({ item, size = "medium" }: Props): React.ReactElement {
   const classes = useStyles();
 
   return (
     <img
       className={classes[size]}
-      alt={`${album.name} album art`}
-      src={album.images[0].url}
+      alt={`${item.name} icon`}
+      src={item.images[0]?.url}
     />
   );
 }
 
-export default AlbumArt;
+export default ItemArt;

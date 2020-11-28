@@ -1,32 +1,31 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Grid } from "@material-ui/core";
-
-import TrackSearchList from "./TrackSearchList";
-import TrackDetails from "./TrackDetails";
+import ItemSearchList, { getItemSearchQueryKey } from "./ItemSearchList";
+import ItemDetails from "./ItemDetails";
 
 interface RouteParams {
-  trackId?: string;
+  selectedUri?: string;
 }
 
-const TracksPage: React.FC = () => {
-  const { trackId } = useParams<RouteParams>();
+const SearchPage: React.FC = () => {
+  const { selectedUri } = useParams<RouteParams>();
   const [query, setQuery] = useState<string>("");
 
   return (
     <Grid container spacing={2}>
       <Grid item xs={12} sm={6} md={4}>
-        <TrackSearchList
+        <ItemSearchList
+          selectedUri={selectedUri}
           query={query}
           setQuery={setQuery}
-          selectedTrackId={trackId}
         />
       </Grid>
-      {trackId && (
+      {selectedUri && (
         <Grid item xs={12} sm={6} md={8}>
-          <TrackDetails
-            trackId={trackId}
-            trackListQueryKey={["tracks", { query }]}
+          <ItemDetails
+            uri={selectedUri}
+            itemListQueryKey={getItemSearchQueryKey(query)}
           />
         </Grid>
       )}
@@ -34,4 +33,4 @@ const TracksPage: React.FC = () => {
   );
 };
 
-export default TracksPage;
+export default SearchPage;

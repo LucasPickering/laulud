@@ -5,13 +5,15 @@ import clsx from "clsx";
 
 import useDebouncedValue from "hooks/useDebouncedValue";
 
-const useStyles = makeStyles(({ palette, shape, spacing }) => ({
+const useStyles = makeStyles(({ palette, shape, spacing, transitions }) => ({
   search: {
     position: "relative", // Needed because the icon is absolute
     display: "flex",
     alignItems: "center",
     borderRadius: shape.borderRadius,
     backgroundColor: palette.grey[800],
+    transitionProperty: "background-color",
+    transitionDuration: `${transitions.duration.short}ms`,
     "&:hover": {
       backgroundColor: palette.grey[700],
     },

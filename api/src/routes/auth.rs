@@ -8,6 +8,7 @@ use rocket::{get, http::CookieJar, post, response::Redirect, State};
 use rocket_contrib::json::Json;
 use serde::Deserialize;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// The frontend will redirect to this before being sent off to the
 /// actual openid provider
@@ -61,9 +62,9 @@ pub async fn route_auth_callback(
     // Fetch the auth user's unique ID from the Spotify API, which we'll store
     // in the cookie
     let token: AuthenticationToken = token_response.into();
-    let mut spotify = Spotify::new(OAuthHandler {
+    let spotify = Spotify::new(OAuthHandler {
         client: oauth_client.inner().clone(),
-        token,
+        token: RwLock::new(token),
     });
     let user_id: UserId = spotify.get_current_user().await?.id.into();
 

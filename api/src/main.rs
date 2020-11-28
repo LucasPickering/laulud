@@ -91,9 +91,9 @@ async fn main() {
                 routes::route_logout,
                 // user
                 routes::route_get_current_user,
-                // track
-                routes::route_get_track,
-                routes::route_search_tracks,
+                // item
+                routes::route_get_item,
+                routes::route_search_items,
                 routes::route_create_tag,
                 routes::route_delete_tag,
                 // tag

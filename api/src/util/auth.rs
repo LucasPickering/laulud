@@ -1,5 +1,9 @@
-use crate::error::{ApiError, ApiResult};
+use crate::{
+    error::{ApiError, ApiResult},
+    schema::SpotifyId,
+};
 use async_trait::async_trait;
+use derive_more::From;
 use mongodb::bson::Bson;
 use oauth2::{
     basic::{BasicClient, BasicTokenResponse},
@@ -12,6 +16,7 @@ use rocket::{
 use serde::{Deserialize, Serialize};
 use std::{backtrace::Backtrace, sync::Arc};
 use time::{Duration, OffsetDateTime};
+use tokio::sync::RwLock;
 
 /// The name of the cookie that we store auth data in
 const OAUTH_COOKIE_NAME: &str = "oauth-state";
@@ -138,18 +143,13 @@ impl From<BasicTokenResponse> for AuthenticationToken {
 
 /// A user's unique Spotify ID. We use a newtype so we can implement
 /// `FromRequest`.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UserId(String);
+#[derive(Clone, Debug, From, Serialize, Deserialize)]
+#[from(forward)]
+pub struct UserId(SpotifyId);
 
 impl From<UserId> for Bson {
     fn from(other: UserId) -> Self {
-        other.0.as_str().into()
-    }
-}
-
-impl From<String> for UserId {
-    fn from(other: String) -> Self {
-        UserId(other)
+        (other.0).0.as_str().into()
     }
 }
 
@@ -180,17 +180,28 @@ impl<'a, 'r> FromRequest<'a, 'r> for UserId {
 #[derive(Debug)]
 pub struct OAuthHandler {
     pub client: Arc<BasicClient>,
-    pub token: AuthenticationToken,
+    /// The auth token we received from the Spotify API for this user. We use
+    /// an RwLock here so we can lock the token during a refresh. Since 99% of
+    /// accesses will be read-only, this allows for a non-mutable interface on
+    /// this struct at the cost of occasionally having to block reads during
+    /// the refresh.
+    pub token: RwLock<AuthenticationToken>,
 }
 
 impl OAuthHandler {
-    pub fn secret(&self) -> &str {
-        self.token.token_response.access_token().secret()
+    pub async fn secret(&self) -> String {
+        self.token
+            .read()
+            .await
+            .token_response
+            .access_token()
+            .secret()
+            .to_owned()
     }
 
     /// Move the auth token out of this object
     pub fn into_token(self) -> AuthenticationToken {
-        self.token
+        self.token.into_inner()
     }
 
     pub async fn from_identity_state(
@@ -199,7 +210,10 @@ impl OAuthHandler {
     ) -> ApiResult<Self> {
         match identity_state {
             IdentityState::PostAuth { token, .. } => {
-                let mut rv = Self { client, token };
+                let rv = Self {
+                    client,
+                    token: RwLock::new(token),
+                };
                 // Make sure the access token is fresh
                 rv.refresh_if_needed().await?;
                 Ok(rv)
@@ -213,11 +227,30 @@ impl OAuthHandler {
     /// Check if the current access token is outdated, and if so, fetch a new
     /// one from the API. In most cases this will be very cheap, and will only
     /// make the HTTP call when necessary.
-    pub async fn refresh_if_needed(&mut self) -> ApiResult<()> {
-        // Give us a 1 minute buffer just to prevent race conditions or smth idk
-        let threshold = self.token.expires_at - Duration::minutes(1);
+    pub async fn refresh_if_needed(&self) -> ApiResult<()> {
+        // Most of the time this will grab a reader instantly, but if another
+        // thread is already refreshing the token, we'll block here. In that
+        // case, by the time we grab the reader, the token will just have been
+        // refreshed so we won't need to do it again.
+        let threshold = {
+            let token_read = self.token.read().await;
+
+            // Give us a 1 minute buffer just to prevent race conditions or smth
+            // idk
+            token_read.expires_at - Duration::minutes(1)
+        };
+
+        // There is a minimal gap here between when we release the read lock
+        // and grab the write lock. It's _possible_ that two threads entire the
+        // write section simulaneously. If that happens, then we'll just end up
+        // refreshing the token twice, which is slow but not the end of the
+        // world. Unfortunately RwLock doesn't support upgrading read->write.
+
         if OffsetDateTime::now_utc() > threshold {
-            match self.token.token_response.refresh_token() {
+            // At this point we know we're going to refresh the token, so grab
+            // the write lock to minimize the unlocked time
+            let mut token_write = self.token.write().await;
+            match token_write.token_response.refresh_token() {
                 None => Err(ApiError::NoRefreshToken {
                     backtrace: Backtrace::capture(),
                 }),
@@ -227,7 +260,7 @@ impl OAuthHandler {
                         .exchange_refresh_token(refresh_token)
                         .request_async(oauth2::reqwest::async_http_client)
                         .await?;
-                    self.token = token_response.into();
+                    *token_write = token_response.into();
                     // Successful refresh
                     Ok(())
                 }

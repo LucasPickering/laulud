@@ -1,3 +1,4 @@
+use derive_more::{Display, From};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use typescript_definitions::TypeScriptify;
@@ -7,16 +8,48 @@ use validator::Validate;
 
 // ========== SPOTIFY API TYPES ==========
 
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object
-#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
-pub struct PaginatedResponse<T> {
-    pub href: String,
-    pub limit: usize,
-    pub offset: usize,
-    pub total: usize,
-    pub next: Option<String>,
-    pub previos: Option<String>,
-    pub items: Vec<T>,
+/// Any object type that can get a URI
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    TypeScriptify,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum SpotifyObjectType {
+    Track,
+    Album,
+    Artist,
+    User,
+}
+
+/// https://developer.spotify.com/documentation/web-api/#spotify-uris-and-ids
+#[derive(
+    Clone,
+    Debug,
+    Display,
+    From,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    TypeScriptify,
+)]
+#[from(forward)]
+pub struct SpotifyId(pub String);
+
+/// https://developer.spotify.com/documentation/web-api/#spotify-uris-and-ids
+#[derive(Clone, Debug, Display, PartialEq, Eq, Hash)]
+#[display(fmt = "spotify:{}:{}", obj_type, id)]
+pub struct SpotifyUri {
+    pub obj_type: SpotifyObjectType,
+    pub id: SpotifyId,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object
@@ -30,9 +63,9 @@ pub struct Image {
 /// https://developer.spotify.com/documentation/web-api/reference/users-profile/get-current-users-profile/
 #[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
 pub struct CurrentUser {
-    pub id: String,
+    pub id: SpotifyId,
     pub href: String,
-    pub uri: String,
+    pub uri: SpotifyUri,
     pub display_name: Option<String>,
     pub images: Vec<Image>,
 }
@@ -50,9 +83,23 @@ pub struct ExternalUrls(HashMap<String, String>);
 pub struct ArtistSimplified {
     pub external_urls: ExternalUrls,
     pub href: String,
-    pub id: String,
+    pub id: SpotifyId,
     pub name: String,
-    pub uri: String,
+    pub uri: SpotifyUri,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-full
+#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
+pub struct Artist {
+    pub external_urls: ExternalUrls,
+    // skipping followers
+    pub genres: Vec<String>,
+    pub href: String,
+    pub id: SpotifyId,
+    pub images: Vec<Image>,
+    pub name: String,
+    pub popularity: usize,
+    pub uri: SpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#album-object-simplified
@@ -64,13 +111,13 @@ pub struct AlbumSimplified {
     pub available_markets: Vec<String>,
     pub external_urls: ExternalUrls,
     pub href: String,
-    pub id: String,
+    pub id: SpotifyId,
     pub images: Vec<Image>,
     pub name: String,
     pub release_date: String,
     pub release_date_precision: String,
     // Skipping `restrictions`
-    pub uri: String,
+    pub uri: SpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-link
@@ -78,8 +125,8 @@ pub struct AlbumSimplified {
 pub struct TrackLink {
     pub external_urls: ExternalUrls,
     pub href: String,
-    pub id: String,
-    pub uri: String,
+    pub id: SpotifyId,
+    pub uri: SpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
@@ -94,55 +141,60 @@ pub struct Track {
     pub external_ids: ExternalIds,
     pub external_urls: ExternalUrls,
     pub href: String,
-    pub id: String,
+    pub id: SpotifyId,
     pub is_playable: Option<bool>,
     pub linked_from: Option<TrackLink>,
     pub name: String,
     pub popularity: usize,
     pub preview_url: Option<String>,
     pub track_number: usize,
-    pub uri: String,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
-#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
-pub struct TracksResponse {
-    pub tracks: Vec<Option<Track>>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/search/search/
-#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
-pub struct TracksSearchResponse {
-    pub tracks: PaginatedResponse<Track>,
+    pub uri: SpotifyUri,
 }
 
 // ========== CUSTOM API TYPES ==========
 
-/// A track that we've annotated with tag metadata
-#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
-pub struct TaggedTrack {
-    pub track: Track,
+/// Anything that can be tagged
+/// impl is in the util folder
+#[derive(Clone, Debug, From, Serialize, Deserialize, TypeScriptify)]
+#[serde(tag = "type", content = "data", rename_all = "lowercase")]
+pub enum Item {
+    Track(Track),
+    Album(AlbumSimplified),
+    Artist(Artist),
+}
+
+/// A taggable item, with its assigned tags
+#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
+pub struct TaggedItem {
+    pub item: Item,
     pub tags: Vec<String>,
 }
 
-/// Summary informatoin for a tag
-#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
+/// Response for a search query
+#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
+pub struct ItemSearchResponse {
+    pub tracks: Vec<TaggedItem>,
+    pub albums: Vec<TaggedItem>,
+    pub artists: Vec<TaggedItem>,
+}
+
+/// Summary information for a tag
+#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
 pub struct TagSummary {
     pub tag: String,
-    /// The number of tracks that have this tag assigned
-    pub num_tracks: usize,
+    /// The number of items that have this tag assigned
+    pub num_items: usize,
 }
 
 /// Details for a tag
-#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify)]
+#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify)]
 pub struct TagDetails {
     pub tag: String,
-    /// IDs of all tracks with this tag
-    pub tracks: Vec<TaggedTrack>,
+    pub items: Vec<TaggedItem>,
 }
 
 /// POST input for tagging a track
-#[derive(Debug, Clone, Serialize, Deserialize, TypeScriptify, Validate)]
+#[derive(Clone, Debug, Serialize, Deserialize, TypeScriptify, Validate)]
 pub struct CreateTagBody {
     #[validate(length(min = 1))]
     pub tag: String,

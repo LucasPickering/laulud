@@ -9,8 +9,8 @@ import PageContainer from "./PageContainer";
 import { UserContext } from "util/UserContext";
 import LoginPage from "pages/Login/LoginPage";
 import { CurrentUser } from "schema";
-import TracksPage from "pages/Tracks/TracksPage";
 import TagsPage from "pages/Tags/TagsPage";
+import SearchPage from "pages/Search/SearchPage";
 
 const CoreContent: React.FC = () => {
   const { isLoading, data: currentUser } = useQuery<CurrentUser>(
@@ -47,8 +47,8 @@ const CoreContent: React.FC = () => {
           <Route path="/" exact>
             <HomePage />
           </Route>
-          <Route path="/tracks/:trackId?" exact>
-            <TracksPage />
+          <Route path="/search/:selectedUri?" exact>
+            <SearchPage />
           </Route>
           <Route path="/tags/:tag?" exact>
             <TagsPage />

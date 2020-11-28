@@ -5,6 +5,8 @@ use rocket::{http::Status, response::Responder, Request};
 use std::{backtrace::Backtrace, error::Error};
 use thiserror::Error;
 
+use crate::schema::SpotifyObjectType;
+
 pub type ApiResult<T> = Result<T, ApiError>;
 
 /// Type to capture all errors that can happen throughout the app.
@@ -74,6 +76,12 @@ pub enum ApiError {
         >,
         backtrace: Backtrace,
     },
+    #[error("Invalid input: {source}")]
+    Validation {
+        #[from]
+        source: validator::ValidationErrors,
+        backtrace: Backtrace,
+    },
 
     /// Action cannot be performed because the user is not authenticated.
     #[error("Not logged in")]
@@ -87,10 +95,17 @@ pub enum ApiError {
     #[error("CSRF token was not provided or did not match the expected value")]
     CsrfError { backtrace: Backtrace },
 
-    #[error("Invalid input: {source}")]
-    Validation {
-        #[from]
-        source: validator::ValidationErrors,
+    /// Error while running some custom parsing
+    #[error("Parse error: {message}")]
+    ParseError {
+        message: String,
+        backtrace: Backtrace,
+    },
+
+    // Tried to tag an object of an supported type
+    #[error("Tagging not supported for object of type: {obj_type}")]
+    UnsupportedObjectType {
+        obj_type: SpotifyObjectType,
         backtrace: Backtrace,
     },
 
@@ -107,7 +122,9 @@ impl ApiError {
     pub fn to_status(&self) -> Status {
         match self {
             // 400
-            Self::Validation { .. } => Status::BadRequest,
+            Self::Validation { .. }
+            | Self::ParseError { .. }
+            | Self::UnsupportedObjectType { .. } => Status::BadRequest,
 
             // 401
             Self::Unauthenticated { .. }

@@ -15,7 +15,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: api/
+      dockerfile: api/Dockerfile
     working_dir: /app/api
     command: cargo watch -i *.ts -x run
     init: true # Fixes slow shutdown
@@ -37,7 +37,7 @@ services:
   ui:
     build:
       context: .
-      dockerfile: ui/
+      dockerfile: ui/Dockerfile
     working_dir: /app/ui
     command: sh -c "npm install && npm run start | cat" # pipe to cat so console does not get reset
     init: true # Fixes slow shutdown

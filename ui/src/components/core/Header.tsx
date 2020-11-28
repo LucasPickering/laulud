@@ -7,13 +7,13 @@ import LogOutButton from "./LogOutButton";
 
 const LINKS = [
   {
-    to: "/tracks",
-    label: "Tracks",
+    to: "/tags",
+    label: "My Tags",
     exact: false,
   },
   {
-    to: "/tags",
-    label: "Tags",
+    to: "/search",
+    label: "Search",
     exact: false,
   },
 ];
