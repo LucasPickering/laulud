@@ -3,7 +3,7 @@ use crate::{
     error::{ApiError, ApiResult},
     schema::{CreateTagBody, TaggedTrack},
     spotify::Spotify,
-    util,
+    util::{self, UserId},
 };
 use mongodb::{
     bson::doc,
@@ -18,13 +18,13 @@ use validator::Validate;
 #[get("/tracks/<track_id>")]
 pub async fn route_get_track(
     track_id: String,
+    user_id: UserId,
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TaggedTrack>> {
     // Look up the track in Spotify
     let spotify_track = spotify.get_track(&track_id).await?;
 
-    let user_id = spotify.get_user_id().await?;
     let doc = db_handler
         .collection(CollectionName::Tracks)
         .find_one(doc! { "track_id": &track_id, "user_id": user_id }, None)
@@ -45,12 +45,12 @@ pub async fn route_get_track(
 #[get("/tracks/search/<query>")]
 pub async fn route_search_tracks(
     query: String,
+    user_id: UserId,
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<Vec<TaggedTrack>>> {
     // Search for the tracks on Spotify
     let spotify_tracks = spotify.search_tracks(&query).await?;
-    let user_id = spotify.get_user_id().await?;
 
     // Saturate the Spotify data with the tags from mongo
     let ids: Vec<&str> = spotify_tracks
@@ -89,6 +89,7 @@ pub async fn route_search_tracks(
 pub async fn route_create_tag(
     track_id: String,
     body: Json<CreateTagBody>,
+    user_id: UserId,
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TaggedTrack>> {
@@ -98,7 +99,6 @@ pub async fn route_create_tag(
     // Look up the track in Spotify first, to get metadata/confirm it's real
     let spotify_track = spotify.get_track(&track_id).await?;
 
-    let user_id = spotify.get_user_id().await?;
     let doc = db_handler
         .collection(CollectionName::Tracks)
         .find_one_and_update(
@@ -131,14 +131,13 @@ pub async fn route_create_tag(
 pub async fn route_delete_tag(
     track_id: String,
     tag: String,
+    user_id: UserId,
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TaggedTrack>> {
-    dbg!("MADE IT HERE");
     // Look up the track in Spotify first, to get metadata/confirm it's real
     let spotify_track = spotify.get_track(&track_id).await?;
 
-    let user_id = spotify.get_user_id().await?;
     let doc = db_handler
         .collection(CollectionName::Tracks)
         .find_one_and_update(

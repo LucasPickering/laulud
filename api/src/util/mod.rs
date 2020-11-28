@@ -15,6 +15,7 @@ pub fn from_doc<T: DeserializeOwned>(doc: Document) -> ApiResult<T> {
     Ok(bson::from_bson(Bson::Document(doc))?)
 }
 
+/// Collect a stream of Mongo documents into a Vec
 pub async fn from_cursor<T: DeserializeOwned>(
     cursor: Cursor,
 ) -> ApiResult<Vec<T>> {

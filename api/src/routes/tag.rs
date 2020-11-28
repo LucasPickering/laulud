@@ -3,7 +3,7 @@ use crate::{
     error::ApiResult,
     schema::{TagDetails, TagSummary, TaggedTrack},
     spotify::Spotify,
-    util,
+    util::{self, UserId},
 };
 use mongodb::bson::doc;
 use rocket::{get, State};
@@ -11,10 +11,9 @@ use rocket_contrib::json::Json;
 
 #[get("/tags")]
 pub async fn route_get_tags(
-    mut spotify: Spotify,
+    user_id: UserId,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<Vec<TagSummary>>> {
-    let user_id = spotify.get_user_id().await?;
     let cursor = db_handler
         .collection(CollectionName::Tracks)
         .aggregate(
@@ -35,11 +34,10 @@ pub async fn route_get_tags(
 #[get("/tags/<tag>")]
 pub async fn route_get_tag(
     tag: String,
+    user_id: UserId,
     mut spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TagDetails>> {
-    let user_id = spotify.get_user_id().await?;
-
     // Look up the relevant tracks in the DB
     let cursor = db_handler
         .collection(CollectionName::Tracks)

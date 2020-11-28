@@ -1,15 +1,10 @@
 use crate::{
     error::ApiResult,
-    util::{IdentityState, OAUTH_COOKIE_NAME},
+    spotify::Spotify,
+    util::{AuthenticationToken, IdentityState, OAuthHandler, UserId},
 };
 use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken};
-use rocket::{
-    get,
-    http::{Cookie, CookieJar},
-    post,
-    response::Redirect,
-    State,
-};
+use rocket::{get, http::CookieJar, post, response::Redirect, State};
 use rocket_contrib::json::Json;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -47,14 +42,10 @@ pub struct LoginQuery {
 pub async fn route_auth_callback(
     oauth_client: State<'_, Arc<BasicClient>>,
     cookies: &CookieJar<'_>,
+    identity_state: IdentityState,
     code: Option<String>,
     state: Option<String>,
 ) -> ApiResult<Redirect> {
-    // Read identity/state data that stored in an encrypted+signed cookie.
-    // We know this data is safe, we wrote it and it hasn't been
-    // modified.
-    let identity_state = IdentityState::from_cookies(cookies)?;
-
     // VERY IMPORTANT - read the CSRF token from the state param, and
     // compare it to the token we stored in the cookie. The cookie
     // is encrypted+signed, Parse the state param and validate the
@@ -67,10 +58,23 @@ pub async fn route_auth_callback(
         .request_async(oauth2::reqwest::async_http_client)
         .await?;
 
+    // Fetch the auth user's unique ID from the Spotify API, which we'll store
+    // in the cookie
+    let token: AuthenticationToken = token_response.into();
+    let mut spotify = Spotify::new(OAuthHandler {
+        client: oauth_client.inner().clone(),
+        token,
+    });
+    let user_id: UserId = spotify.get_current_user().await?.id.into();
+
     // Replace the auth state cookie with one for permanenet auth. We use
     // the UserProvider ID so that this works even if the User
     // object hasn't been created yet.
-    let new_identity_state = IdentityState::PostAuth(token_response.into());
+    let new_identity_state = IdentityState::PostAuth {
+        // We don't need the Spotify client anymore, so take the token back
+        token: spotify.into_oauth_handler().into_token(),
+        user_id,
+    };
     cookies.add_private(new_identity_state.to_cookie());
 
     // Redirect to the path specified in the state cookie
@@ -79,6 +83,6 @@ pub async fn route_auth_callback(
 
 #[post("/logout")]
 pub async fn route_logout(cookies: &CookieJar<'_>) -> Json<()> {
-    cookies.remove_private(Cookie::named(OAUTH_COOKIE_NAME));
+    IdentityState::remove_cookie(cookies);
     Json(())
 }

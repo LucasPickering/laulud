@@ -11,8 +11,8 @@ use reqwest::{
     Client, StatusCode,
 };
 use rocket::{
-    http::{CookieJar, Status},
-    request::FromRequest,
+    http::Status,
+    request::{FromRequest, Outcome},
     State,
 };
 use serde::de::DeserializeOwned;
@@ -38,10 +38,6 @@ pub struct Spotify {
     oauth_handler: OAuthHandler,
     /// HTTP request client
     req_client: Client,
-    /// Authenticated user's ID, will be populated after
-    /// [Self::get_current_user] is called for the first time. i.e. this is
-    /// just a cache for it.
-    user_id: Option<String>,
 }
 
 impl Spotify {
@@ -49,8 +45,12 @@ impl Spotify {
         Self {
             oauth_handler,
             req_client: Client::new(),
-            user_id: None,
         }
+    }
+
+    /// Move the [OAuthHandler] out of this object
+    pub fn into_oauth_handler(self) -> OAuthHandler {
+        self.oauth_handler
     }
 
     /// Helper method for doing a GET request against a Spotify endpoint. Parses
@@ -122,25 +122,9 @@ impl Spotify {
         }
     }
 
-    /// Get the ID of the authenticated user. This will make a network request
-    /// if this is the first time it's being fetched for this client.
-    pub async fn get_user_id(&mut self) -> ApiResult<&str> {
-        if self.user_id.is_none() {
-            // This will populate self.user_id
-            self.get_current_user().await?;
-        }
-
-        // Now we know the cache is populated
-        Ok(self.user_id.as_deref().unwrap())
-    }
-
     /// https://developer.spotify.com/documentation/web-api/reference/users-profile/get-current-users-profile/
     pub async fn get_current_user(&mut self) -> ApiResult<CurrentUser> {
-        let user: CurrentUser = self
-            .get_endpoint("/v1/me", RequestOptions::default())
-            .await?;
-        self.user_id = Some(user.id.clone()); // caching!
-        Ok(user)
+        self.get_endpoint("/v1/me", RequestOptions::default()).await
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
@@ -201,10 +185,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
         /// Helper to build the client, which returns a result
         async fn build_client(
             oauth_client: Arc<BasicClient>,
-            cookies: &CookieJar<'_>,
+            identity_state: IdentityState,
         ) -> ApiResult<Spotify> {
-            // Read the user's access token from the auth cookie
-            let identity_state = IdentityState::from_cookies(cookies)?;
             let oauth_handler =
                 OAuthHandler::from_identity_state(oauth_client, identity_state)
                     .await?;
@@ -212,6 +194,13 @@ impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
             Ok(Spotify::new(oauth_handler))
         }
 
+        // Read the user's ID state and access token from the request
+        // TODO clean this up with utility funcs
+        let identity_state = match IdentityState::from_request(request).await {
+            Outcome::Success(identity_state) => identity_state,
+            Outcome::Failure(err) => return Outcome::Failure(err),
+            Outcome::Forward(()) => return Outcome::Forward(()),
+        };
         let oauth_client =
             match request.guard::<State<'_, Arc<BasicClient>>>().await {
                 rocket::request::Outcome::Success(oauth_client) => {
@@ -221,7 +210,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
                 _ => panic!("Couldn't get OAuth client"),
             };
 
-        match build_client(oauth_client.clone(), request.cookies()).await {
+        match build_client(oauth_client.clone(), identity_state).await {
             Ok(spotify) => rocket::request::Outcome::Success(spotify),
             Err(err) => {
                 rocket::request::Outcome::Failure((err.to_status(), err))
