@@ -7,7 +7,7 @@ import {
   makeStyles,
 } from "@material-ui/core";
 import AlbumArt from "components/generic/AlbumArt";
-import { TaggedTrack } from "util/schema";
+import { TaggedTrack } from "schema";
 import UnstyledLink from "components/generic/UnstyledLink";
 import { LocationDescriptorObject } from "history";
 import TagChips from "./TagChips";

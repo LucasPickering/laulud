@@ -2,7 +2,7 @@ import React from "react";
 import { makeStyles, Paper } from "@material-ui/core";
 import DataContainer from "components/generic/DataContainer";
 import { useQuery } from "react-query";
-import { TagDetails as SchemaTagDetails } from "util/schema";
+import { TagDetails as SchemaTagDetails } from "schema";
 import { queryFn } from "util/queryCache";
 import TrackList from "components/TrackList";
 import TagChip from "components/TagChip";

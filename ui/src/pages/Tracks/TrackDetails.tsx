@@ -8,7 +8,7 @@ import {
   Snackbar,
 } from "@material-ui/core";
 
-import { TaggedTrack } from "util/schema";
+import { TaggedTrack } from "schema";
 import AlbumArt from "components/generic/AlbumArt";
 import DataContainer from "components/generic/DataContainer";
 import NewTagChip from "../../components/NewTagChip";

@@ -1,7 +1,7 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core";
 
-import { AlbumSimplified } from "util/schema";
+import { AlbumSimplified } from "schema";
 
 const useStyles = makeStyles(() => ({
   small: {

@@ -4,7 +4,7 @@ import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
 import DataContainer from "components/generic/DataContainer";
 import { useQuery } from "react-query";
-import { TaggedTrack } from "util/schema";
+import { TaggedTrack } from "schema";
 import { queryFn } from "util/queryCache";
 import useRouteQuery from "hooks/useRouteQuery";
 import { useHistory } from "react-router-dom";

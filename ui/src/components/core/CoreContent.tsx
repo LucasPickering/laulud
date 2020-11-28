@@ -8,7 +8,7 @@ import NotFoundPage from "pages/NotFound/NotFoundPage";
 import PageContainer from "./PageContainer";
 import { UserContext } from "util/UserContext";
 import LoginPage from "pages/Login/LoginPage";
-import { CurrentUser } from "util/schema";
+import { CurrentUser } from "schema";
 import TracksPage from "pages/Tracks/TracksPage";
 import TagsPage from "pages/Tags/TagsPage";
 

@@ -11,7 +11,7 @@ import { useQuery } from "react-query";
 import UnstyledLink from "components/generic/UnstyledLink";
 import { queryFn } from "util/queryCache";
 import { useHistory } from "react-router-dom";
-import { TagSummary } from "util/schema";
+import { TagSummary } from "schema";
 import TagChip from "components/TagChip";
 
 const useStyles = makeStyles(({ spacing }) => ({

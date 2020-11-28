@@ -7,4 +7,4 @@ database_url = "mongodb://db:27017/?appname=laulud"
 hostname = "https://localhost:3000"
 # I know security, I have the best security
 secret_key = "D4Xag/vs2ctcwya7bPTcCxMrwEH/cHESEu7mJiCwvvM="
-ts_definitions_file = "./schema.ts"
+ts_definitions_file = "../schema.ts"

@@ -24,7 +24,10 @@ export type AlbumSimplified = {     album_group: string | null; album_type: stri
 export type TrackLink = { external_urls: ExternalUrls; href: string; id: string; uri: string };
 
 // https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
-export type Track = {     album: AlbumSimplified; artists: ArtistSimplified [];     available_markets: string []; disc_number: number; duration_ms:     number; explicit: boolean; external_ids: ExternalIds; external_urls:     ExternalUrls; href: string; id: string; is_playable: boolean;     linked_from: TrackLink | null; name: string; popularity: number;     preview_url: string | null; track_number: number; uri: string };
+export type Track = {     album: AlbumSimplified; artists: ArtistSimplified [];     available_markets: string []; disc_number: number; duration_ms:     number; explicit: boolean; external_ids: ExternalIds; external_urls:     ExternalUrls; href: string; id: string; is_playable: boolean | null; linked_from: TrackLink | null; name: string; popularity: number;     preview_url: string | null; track_number: number; uri: string };
+
+// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
+export type TracksResponse = { tracks: Track | null [] };
 
 // https://developer.spotify.com/documentation/web-api/reference/search/search/
 export type TracksSearchResponse = { tracks: PaginatedResponse<Track>};

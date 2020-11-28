@@ -4,7 +4,7 @@ use crate::{
     util::{IdentityState, OAuthHandler},
 };
 use async_trait::async_trait;
-use log::trace;
+use log::{debug, trace};
 use oauth2::basic::BasicClient;
 use reqwest::{
     header::{self, HeaderValue},
@@ -64,6 +64,7 @@ impl Spotify {
         self.oauth_handler.refresh_if_needed().await?;
 
         let url = format!("{}{}", SPOTIFY_BASE_URL, endpoint);
+        let start_time = std::time::Instant::now();
         let response = self
             .req_client
             .get(&url)
@@ -83,7 +84,12 @@ impl Spotify {
         // If it's an error, get the body text and create an error obj with that
         let response_error = response.error_for_status_ref().err();
         let body = response.text().await?;
-        trace!("Spotify request URL: {}; Response: {}", &url, &body);
+        debug!(
+            "Spotify request ({}) took {} ms",
+            &url,
+            start_time.elapsed().as_millis()
+        );
+        trace!("Spotify response: {}", &body);
         match response_error {
             None => Ok(serde_json::from_str(&body).map_err(|err| {
                 ApiError::SpotifyApiDeserialization {
