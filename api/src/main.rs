@@ -5,8 +5,20 @@ mod db;
 mod error;
 mod routes;
 mod schema;
+#[cfg(debug_assertions)]
+mod schema_gen;
 mod spotify;
 mod util;
+
+#[cfg(not(debug_assertions))]
+mod schema_gen {
+    use super::LauludConfig;
+    use std::io;
+
+    pub fn generate_ts_definitions(_: &LauludConfig) -> io::Result<()> {
+        Ok(())
+    }
+}
 
 use crate::db::DbHandler;
 use oauth2::{
@@ -63,7 +75,7 @@ async fn main() {
     let config: LauludConfig = rocket.figment().extract().unwrap();
 
     if cfg!(debug_assertions) {
-        schema::generate_ts_definitions(&config).unwrap();
+        schema_gen::generate_ts_definitions(&config).unwrap();
     }
 
     let db_handler = DbHandler::connect(&config).await.unwrap();

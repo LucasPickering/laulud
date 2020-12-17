@@ -1,4 +1,5 @@
 
+// All types that get serialized over the wire live here
 // https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object
 export type PaginatedResponse<T> = {     href: string; limit: number; offset: number; total: number; next:     string | null; previos: string | null; items: T [] };
 
