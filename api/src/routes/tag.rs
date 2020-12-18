@@ -38,7 +38,6 @@ pub async fn route_get_tag(
     spotify: Spotify,
     db_handler: State<'_, DbHandler>,
 ) -> ApiResult<Json<TagDetails>> {
-    dbg!(&tag);
     // Look up the relevant items in the DB
     let cursor = db_handler
         .collection(CollectionName::TaggedItems)

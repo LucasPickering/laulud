@@ -3,6 +3,7 @@ import {
   List,
   ListItem,
   ListItemAvatar,
+  ListItemIcon,
   ListItemText,
   makeStyles,
 } from "@material-ui/core";
@@ -11,6 +12,7 @@ import { LocationDescriptorObject } from "history";
 import { Item, SpotifyUri, TaggedItem } from "schema";
 import ItemArt from "./generic/ItemArt";
 import TagChips from "./TagChips";
+import ItemIcon from "./generic/ItemIcon";
 
 const useStyles = makeStyles(({ spacing }) => ({
   listItem: {
@@ -72,6 +74,7 @@ interface Props {
   className?: string;
   items: TaggedItem[];
   selectedUri?: SpotifyUri;
+  showIcons?: boolean;
   showTags?: boolean;
   mapRoute?: (item: Item) => string | LocationDescriptorObject;
   onSelect?: (uri: SpotifyUri) => void;
@@ -84,6 +87,7 @@ function ItemList({
   className,
   items,
   selectedUri,
+  showIcons = false,
   showTags = false,
   mapRoute,
   onSelect,
@@ -108,6 +112,11 @@ function ItemList({
             onClick={onSelect && (() => onSelect(uri))}
           >
             <ItemListEntry item={item} />
+            {showIcons && (
+              <ListItemIcon>
+                <ItemIcon item={item.item} />
+              </ListItemIcon>
+            )}
 
             {showTags && (
               <TagChips className={classes.listItemTags} tags={item.tags} />

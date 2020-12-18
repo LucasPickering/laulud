@@ -37,7 +37,7 @@ const TagDetails: React.FC<Props> = ({ tag }) => {
   return (
     <Paper className={classes.container}>
       <DataContainer {...state}>
-        {(tagDetails) => <ItemList items={tagDetails.items} />}
+        {(tagDetails) => <ItemList items={tagDetails.items} showIcons />}
       </DataContainer>
     </Paper>
   );

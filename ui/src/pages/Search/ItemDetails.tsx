@@ -13,6 +13,7 @@ import DataContainer from "components/generic/DataContainer";
 import NewTagChip from "../../components/NewTagChip";
 import queryCache, { queryFn } from "util/queryCache";
 import TagChips from "components/TagChips";
+import ItemIcon from "components/generic/ItemIcon";
 
 function getQueryKey(uri: SpotifyUri): QueryKey {
   return ["items", { item: { uri } }];
