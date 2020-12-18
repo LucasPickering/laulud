@@ -29,16 +29,21 @@ const useStyles = makeStyles(({ spacing }) => ({
 }));
 
 interface Props {
+  query: string;
+  setQuery: (query: string) => void;
   selectedTrackId?: string;
 }
 
-const TrackSearchList: React.FC<Props> = ({ selectedTrackId }) => {
+const TrackSearchList: React.FC<Props> = ({
+  query,
+  setQuery,
+  selectedTrackId,
+}) => {
   const classes = useStyles();
   const history = useHistory();
   const { q } = useRouteQuery();
-  const [query, setQuery] = useState<string>("");
   const state = useQuery<TaggedTrack[]>(
-    "tracks",
+    ["tracks", { query }],
     () => queryFn({ url: `/api/tracks/search/${query}` }),
     { enabled: Boolean(query) }
   );

@@ -5,7 +5,6 @@ import { useQuery } from "react-query";
 import { TagDetails as SchemaTagDetails } from "schema";
 import { queryFn } from "util/queryCache";
 import TrackList from "components/TrackList";
-import TagChip from "components/TagChip";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {

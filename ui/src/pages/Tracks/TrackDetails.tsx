@@ -17,32 +17,38 @@ import TagChips from "components/TagChips";
 
 interface Props {
   trackId: string;
+  trackListQueryKey?: QueryKey;
 }
 
 function getQueryKey(trackId: string): QueryKey {
   return ["tracks", { track: { id: trackId } }];
 }
 
-function updateCachedTrack(track: TaggedTrack): void {
+function updateCachedTrack(
+  trackListQueryKey: QueryKey | undefined,
+  track: TaggedTrack
+): void {
   const trackId = track.track.id;
   const queryKey = getQueryKey(trackId);
   queryCache.setQueryData<TaggedTrack>(queryKey, track);
-  queryCache.setQueryData<TaggedTrack[]>("tracks", (tracks) => {
-    // If we have a list of tracks cached, make sure we update the track there too
-    if (tracks) {
-      const index = tracks.findIndex(
-        (cachedTrack) => cachedTrack.track.id === trackId
-      );
-      if (index !== undefined) {
-        tracks[index] = track;
+  if (trackListQueryKey) {
+    queryCache.setQueryData<TaggedTrack[]>(trackListQueryKey, (tracks) => {
+      // If we have a list of tracks cached, make sure we update the track there too
+      if (tracks) {
+        const index = tracks.findIndex(
+          (cachedTrack) => cachedTrack.track.id === trackId
+        );
+        if (index !== undefined) {
+          tracks[index] = track;
+        }
+        return tracks;
       }
-      return tracks;
-    }
-    return [];
-  });
+      return [];
+    });
+  }
 }
 
-const TrackDetails: React.FC<Props> = ({ trackId }) => {
+const TrackDetails: React.FC<Props> = ({ trackId, trackListQueryKey }) => {
   const queryKey = ["tracks", { track: { id: trackId } }];
   const { data: track, ...state } = useQuery(
     queryKey,
@@ -50,9 +56,11 @@ const TrackDetails: React.FC<Props> = ({ trackId }) => {
     {
       // Grab initial data from the search list
       initialData: () =>
-        queryCache
-          .getQueryData<TaggedTrack[]>("tracks")
-          ?.find((track) => track.track.id === trackId),
+        trackListQueryKey
+          ? queryCache
+              .getQueryData<TaggedTrack[]>(trackListQueryKey)
+              ?.find((track) => track.track.id === trackId)
+          : undefined,
     }
   );
   const [
@@ -65,7 +73,7 @@ const TrackDetails: React.FC<Props> = ({ trackId }) => {
         method: "POST",
         data: { tag },
       }),
-    { onSuccess: (data) => updateCachedTrack(data) }
+    { onSuccess: (data) => updateCachedTrack(trackListQueryKey, data) }
   );
   const [deleteTag] = useMutation(
     (tag: string) =>
@@ -73,7 +81,7 @@ const TrackDetails: React.FC<Props> = ({ trackId }) => {
         url: `/api/tracks/${trackId}/tags/${tag}`,
         method: "DELETE",
       }),
-    { onSuccess: (data) => updateCachedTrack(data) }
+    { onSuccess: (data) => updateCachedTrack(trackListQueryKey, data) }
   );
 
   return (
