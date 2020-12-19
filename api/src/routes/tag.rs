@@ -22,6 +22,7 @@ pub async fn route_get_tags(
                 doc! {"$unwind":"$tags"},
                 doc! {"$group":{"_id":"$tags","num_items":{"$sum":1}}},
                 doc! {"$project":{"tag": "$_id", "num_items": 1, "_id": 0}},
+                doc! {"$sort": {"num_items": -1}},
             ],
             None,
         )
