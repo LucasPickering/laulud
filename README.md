@@ -16,11 +16,4 @@ Then it will be accessible at `https://localhost:3000`. Note the http**s**!
 
 ## Deployment
 
-Deployed through [Keskne](https://github.com/LucasPickering/keskne). To push changes:
-
-```sh
-docker-compose -f docker-compose.build.yml build
-docker-compose -f docker-compose.build.yml push
-```
-
-Then redeploy via Keskne.
+Deployed through [Keskne](https://github.com/LucasPickering/keskne). Images are automatically built and pushed on every push to master.

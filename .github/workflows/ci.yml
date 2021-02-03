@@ -1,0 +1,118 @@
+name: Build and Deploy to Docker
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  check-api:
+    name: "Check API"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache cargo files
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            API/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('api/Cargo.lock') }}
+
+      - name: Install dependencies
+        run: rustup component add rustfmt clippy
+
+      - name: Run rustfmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --manifest-path api/Cargo.toml -- --check
+
+      - name: Run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --manifest-path api/Cargo.toml -- -D clippy::all
+
+  check-ui:
+    name: "Check UI"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache npm files
+        uses: actions/cache@v2
+        with:
+          path: ui/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('ui/package-lock.json') }}
+
+      - name: npm install
+        working-directory: ui/
+        run: npm install
+
+      - name: Lint
+        working-directory: ui/
+        run: npm run lint
+
+  build-api:
+    name: "Build & Push API Image"
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    needs:
+      - check-api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Docker login
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_SECRET }}
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./api/
+          file: ./api/prd.Dockerfile
+          tags: ghcr.io/lucaspickering/laulud-api:latest
+          pull: true
+          push: true
+
+  build-ui:
+    name: "Build & Push UI Image"
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    needs:
+      - check-ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Docker login
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_SECRET }}
+
+      - name: Build & push UI image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./ui/prd.Dockerfile
+          tags: ghcr.io/lucaspickering/laulud-static:latest
+          pull: true
+          push: true
