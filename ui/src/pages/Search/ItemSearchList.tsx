@@ -78,6 +78,7 @@ const ItemSearchList: React.FC<Props> = ({ selectedUri, query, setQuery }) => {
       <SearchBar
         className={classes.searchBar}
         initialQuery={(q ?? "").toString()}
+        placeholder="Search tracks, albums, and artists…"
         onSearch={setQuery}
       />
 

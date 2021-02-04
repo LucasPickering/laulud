@@ -42,10 +42,16 @@ const useStyles = makeStyles(({ palette, shape, spacing, transitions }) => ({
 interface Props {
   className?: string;
   initialQuery?: string;
+  placeholder?: string;
   onSearch: (query: string) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ className, initialQuery, onSearch }) => {
+const SearchBar: React.FC<Props> = ({
+  className,
+  initialQuery,
+  placeholder = "Search…",
+  onSearch,
+}) => {
   const classes = useStyles();
   const [query, setQuery] = useState<string>(initialQuery ?? "");
   const debouncedQuery = useDebouncedValue(query, 500);
@@ -66,7 +72,7 @@ const SearchBar: React.FC<Props> = ({ className, initialQuery, onSearch }) => {
         <SearchIcon />
       </div>
       <InputBase
-        placeholder="Search…"
+        placeholder={placeholder}
         classes={{
           root: classes.inputRoot,
           input: classes.inputInput,
