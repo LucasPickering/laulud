@@ -13,6 +13,7 @@ import { Item, SpotifyUri, TaggedItem } from "schema";
 import ItemArt from "./generic/ItemArt";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";
+import SpotifyLink from "./generic/SpotifyLink";
 
 const useStyles = makeStyles(({ spacing }) => ({
   listItem: {
@@ -113,9 +114,14 @@ function ItemList({
           >
             <ItemListEntry item={item} />
             {showIcons && (
-              <ListItemIcon>
-                <ItemIcon item={item.item} />
-              </ListItemIcon>
+              <>
+                <ListItemIcon>
+                  <ItemIcon item={item.item} />
+                </ListItemIcon>
+                <ListItemIcon>
+                  <SpotifyLink item={item.item} />
+                </ListItemIcon>
+              </>
             )}
 
             {showTags && (

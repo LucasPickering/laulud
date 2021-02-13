@@ -3,6 +3,7 @@ import {
   Chip,
   CircularProgress,
   InputBase,
+  Tooltip,
   makeStyles,
 } from "@material-ui/core";
 import { Add as AddIcon } from "@material-ui/icons";
@@ -37,41 +38,43 @@ const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
   }, [status]);
 
   return (
-    <Chip
-      {...rest}
-      className={classes.tag}
-      icon={
-        status === QueryStatus.Loading ? (
-          <CircularProgress color="secondary" size={24} />
-        ) : (
-          <AddIcon />
-        )
-      }
-      label={
-        <div className={classes.inputWrapper}>
-          {isEditing ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                createTag(newTagText);
-                setIsEditing(false);
-              }}
-            >
-              <InputBase
-                autoFocus
-                value={newTagText}
-                onBlur={() => setIsEditing(false)}
-                onChange={(e) => setNewTagText(e.target.value)}
-              />
-            </form>
+    <Tooltip title="Add Tag">
+      <Chip
+        {...rest}
+        className={classes.tag}
+        icon={
+          status === QueryStatus.Loading ? (
+            <CircularProgress color="secondary" size={24} />
           ) : (
-            newTagText || null
-          )}
-        </div>
-      }
-      clickable
-      onClick={() => setIsEditing(true)}
-    />
+            <AddIcon />
+          )
+        }
+        label={
+          <div className={classes.inputWrapper}>
+            {isEditing ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  createTag(newTagText);
+                  setIsEditing(false);
+                }}
+              >
+                <InputBase
+                  autoFocus
+                  value={newTagText}
+                  onBlur={() => setIsEditing(false)}
+                  onChange={(e) => setNewTagText(e.target.value)}
+                />
+              </form>
+            ) : (
+              newTagText || null
+            )}
+          </div>
+        }
+        clickable
+        onClick={() => setIsEditing(true)}
+      />
+    </Tooltip>
   );
 };
 
