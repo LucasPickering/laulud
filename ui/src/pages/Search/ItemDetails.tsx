@@ -13,6 +13,7 @@ import DataContainer from "components/generic/DataContainer";
 import NewTagChip from "../../components/NewTagChip";
 import queryCache, { queryFn } from "util/queryCache";
 import TagChips from "components/TagChips";
+import SpotifyLink from "components/generic/SpotifyLink";
 
 function getQueryKey(uri: SpotifyUri): QueryKey {
   return ["items", { item: { uri } }];
@@ -55,6 +56,7 @@ const ItemHeader: React.FC<{ item: Item }> = ({ item }) => {
         title={track.name}
         subheader={track.artists.map((artist) => artist.name).join(", ")}
         avatar={<ItemArt item={track.album} />}
+        action={<SpotifyLink item={item} />}
       />
     );
   }
@@ -66,6 +68,7 @@ const ItemHeader: React.FC<{ item: Item }> = ({ item }) => {
         title={album.name}
         subheader={album.artists.map((artist) => artist.name).join(", ")}
         avatar={<ItemArt item={album} />}
+        action={<SpotifyLink item={item} />}
       />
     );
   }
@@ -73,7 +76,11 @@ const ItemHeader: React.FC<{ item: Item }> = ({ item }) => {
   if (item.type === "artist") {
     const artist = item.data;
     return (
-      <CardHeader title={artist.name} avatar={<ItemArt item={artist} />} />
+      <CardHeader
+        title={artist.name}
+        avatar={<ItemArt item={artist} />}
+        action={<SpotifyLink item={item} />}
+      />
     );
   }
 

@@ -45,7 +45,7 @@ const UnstyledLink = React.forwardRef(
     ref: React.Ref<HTMLAnchorElement>
   ): React.ReactElement => {
     const destString = to.toString();
-    const external = Boolean(destString.match(/^https?:/));
+    const external = Boolean(destString.match(/^\w+:/));
     const apiLink = Boolean(destString.match(/^\/api\//));
 
     if (external || apiLink) {
