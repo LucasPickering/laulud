@@ -3,12 +3,11 @@ import { makeStyles, Paper, Tab, Tabs } from "@material-ui/core";
 import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
 import DataContainer from "components/generic/DataContainer";
-import { QueryKey, useQuery } from "react-query";
-import { ItemSearchResponse, SpotifyUri, TaggedItem } from "schema";
-import { queryFn } from "util/queryCache";
+import { ItemSearchResponse, TaggedItem } from "schema";
 import useRouteQuery from "hooks/useRouteQuery";
 import { useHistory } from "react-router-dom";
 import ItemList from "components/ItemList";
+import useLauludQuery from "hooks/useLauludQuery";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -27,10 +26,6 @@ const useStyles = makeStyles(({ spacing }) => ({
   },
 }));
 
-export function getItemSearchQueryKey(query: string): QueryKey {
-  return ["itemSearch", { query }];
-}
-
 function getListItems(
   data: ItemSearchResponse,
   selectedTab: "tracks" | "albums" | "artists"
@@ -45,13 +40,12 @@ function getListItems(
   }
 }
 
-interface Props {
-  selectedUri?: SpotifyUri;
+interface Props extends Omit<React.ComponentProps<typeof ItemList>, "items"> {
   query: string;
   setQuery: (query: string) => void;
 }
 
-const ItemSearchList: React.FC<Props> = ({ selectedUri, query, setQuery }) => {
+const ItemSearchList: React.FC<Props> = ({ query, setQuery, ...rest }) => {
   const classes = useStyles();
   const history = useHistory();
   const { q } = useRouteQuery();
@@ -59,11 +53,9 @@ const ItemSearchList: React.FC<Props> = ({ selectedUri, query, setQuery }) => {
     "tracks" | "albums" | "artists"
   >("tracks");
 
-  const state = useQuery<ItemSearchResponse>(
-    getItemSearchQueryKey(query),
-    () => queryFn({ url: `/api/items/search/${query}` }),
-    { enabled: Boolean(query) }
-  );
+  const state = useLauludQuery(["items", "search", query], undefined, {
+    enabled: Boolean(query),
+  });
 
   // Whenever the search changes, update the URL
   useEffect(() => {
@@ -109,12 +101,8 @@ const ItemSearchList: React.FC<Props> = ({ selectedUri, query, setQuery }) => {
             </Tabs>
             <ItemList
               items={getListItems(data, selectedTab)}
-              selectedUri={selectedUri}
               showTags
-              mapRoute={(item) => ({
-                ...history.location,
-                pathname: `/search/${item.data.uri}`,
-              })}
+              {...rest}
             />
           </>
         )}

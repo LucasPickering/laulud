@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { Grid } from "@material-ui/core";
-import ItemSearchList, { getItemSearchQueryKey } from "./ItemSearchList";
+import ItemSearchList from "./ItemSearchList";
 import ItemDetails from "./ItemDetails";
 
 interface RouteParams {
@@ -11,6 +11,7 @@ interface RouteParams {
 const SearchPage: React.FC = () => {
   const { selectedUri } = useParams<RouteParams>();
   const [query, setQuery] = useState<string>("");
+  const history = useHistory();
 
   return (
     <Grid container spacing={2}>
@@ -19,13 +20,17 @@ const SearchPage: React.FC = () => {
           selectedUri={selectedUri}
           query={query}
           setQuery={setQuery}
+          mapRoute={(item) => ({
+            ...history.location,
+            pathname: `/search/${item.data.uri}`,
+          })}
         />
       </Grid>
       {selectedUri && (
         <Grid item xs={12} sm={6} md={8}>
           <ItemDetails
             uri={selectedUri}
-            itemListQueryKey={getItemSearchQueryKey(query)}
+            searchQueryKey={["items", "search", query]}
           />
         </Grid>
       )}

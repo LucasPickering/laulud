@@ -8,13 +8,11 @@ import {
   Typography,
 } from "@material-ui/core";
 import DataContainer from "components/generic/DataContainer";
-import { useQuery } from "react-query";
 import UnstyledLink from "components/generic/UnstyledLink";
-import { queryFn } from "util/queryCache";
 import { useHistory } from "react-router-dom";
-import { TagSummary } from "schema";
 import TagChip from "components/TagChip";
 import Link from "components/generic/Link";
+import useLauludQuery from "hooks/useLauludQuery";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -32,9 +30,7 @@ interface Props {
 const TagList: React.FC<Props> = ({ selectedTag }) => {
   const classes = useStyles();
   const history = useHistory();
-  const state = useQuery<TagSummary[]>("tags", () =>
-    queryFn<TagSummary[]>({ url: "/api/tags" })
-  );
+  const state = useLauludQuery(["tags"]);
 
   return (
     <Paper className={classes.container}>

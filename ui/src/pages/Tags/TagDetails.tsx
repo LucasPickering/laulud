@@ -1,10 +1,18 @@
-import React from "react";
-import { makeStyles, Paper } from "@material-ui/core";
+import React, { useState } from "react";
+import {
+  makeStyles,
+  Paper,
+  IconButton,
+  Alert,
+  Snackbar,
+} from "@material-ui/core";
+import { Add as IconAdd } from "@material-ui/icons";
 import DataContainer from "components/generic/DataContainer";
-import { useQuery } from "react-query";
-import { TagDetails as SchemaTagDetails } from "schema";
-import { queryFn } from "util/queryCache";
 import ItemList from "components/ItemList";
+import ItemSearchList from "pages/Search/ItemSearchList";
+import useLauludQuery from "hooks/useLauludQuery";
+import useMutationNewItemTag from "hooks/useMutationNewItemTag";
+import { QueryStatus } from "react-query";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -30,14 +38,51 @@ interface Props {
 
 const TagDetails: React.FC<Props> = ({ tag }) => {
   const classes = useStyles();
-  const state = useQuery<SchemaTagDetails>(["tags", tag], () =>
-    queryFn<SchemaTagDetails>({ url: `/api/tags/${encodeURIComponent(tag)}` })
-  );
+
+  const state = useLauludQuery(["tags", tag]);
+
+  const [isAdding, setIsAdding] = useState<boolean>(false);
+  const [addingQuery, setAddingQuery] = useState<string>("");
+
+  const [
+    createTag,
+    { status: createTagStatus, reset: resetCreateTagStatus },
+  ] = useMutationNewItemTag(["items", "search", addingQuery]);
 
   return (
     <Paper className={classes.container}>
       <DataContainer {...state}>
-        {(tagDetails) => <ItemList items={tagDetails.items} showIcons />}
+        {(tagDetails) => (
+          <>
+            <ItemList items={tagDetails.items} showIcons />
+            {isAdding ? (
+              <ItemSearchList
+                query={addingQuery}
+                setQuery={setAddingQuery}
+                // Attach the selected take to this item
+                mapAction={(item) => (
+                  <IconButton
+                    onClick={() => createTag({ uri: item.data.uri, tag })}
+                  >
+                    <IconAdd />
+                  </IconButton>
+                )}
+              />
+            ) : (
+              <IconButton onClick={() => setIsAdding(true)}>
+                <IconAdd />
+              </IconButton>
+            )}
+
+            <Snackbar
+              open={createTagStatus === QueryStatus.Error}
+              autoHideDuration={5000}
+              onClose={() => resetCreateTagStatus()}
+            >
+              <Alert severity="error">Error creating tag</Alert>
+            </Snackbar>
+          </>
+        )}
       </DataContainer>
     </Paper>
   );
