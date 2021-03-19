@@ -1,16 +1,15 @@
 import React from "react";
 import { CircularProgress, makeStyles } from "@material-ui/core";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { useQuery } from "react-query";
 
 import HomePage from "pages/Home/HomePage";
 import NotFoundPage from "pages/NotFound/NotFoundPage";
 import PageContainer from "./PageContainer";
 import { UserContext } from "util/UserContext";
 import LoginPage from "pages/Login/LoginPage";
-import { CurrentUser } from "schema";
 import TagsPage from "pages/Tags/TagsPage";
 import SearchPage from "pages/Search/SearchPage";
+import useLauludQuery from "hooks/useLauludQuery";
 
 const useStyles = makeStyles({
   loadingWrapper: {
@@ -24,8 +23,10 @@ const useStyles = makeStyles({
 
 const CoreContent: React.FC = () => {
   const classes = useStyles();
-  const { isLoading, data: currentUser } = useQuery<CurrentUser>(
-    "/api/users/current"
+  const { isLoading, data: currentUser } = useLauludQuery(
+    ["users", "current"],
+    undefined,
+    { retry: 0 }
   );
 
   if (isLoading) {

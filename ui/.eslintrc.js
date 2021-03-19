@@ -53,11 +53,20 @@ module.exports = {
       { ignoreParameters: true },
     ],
     "@typescript-eslint/camelcase": "off",
+
+    "no-restricted-syntax": [
+      "error",
+      {
+        message:
+          "Call useLauludQuery instead of useQuery for better type enforcement",
+        selector: 'CallExpression > .callee[name="useQuery"]',
+      },
+    ],
   },
   overrides: [
     {
       // Special config files
-      files: ["config-overrides.js", "src/setupProxy.js"],
+      files: [".eslintrc.js", "config-overrides.js", "src/setupProxy.js"],
       parserOptions: {
         ecmaVersion: 3,
       },

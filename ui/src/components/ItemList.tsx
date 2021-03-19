@@ -13,7 +13,7 @@ import { Item, SpotifyUri, TaggedItem } from "schema";
 import ItemArt from "./generic/ItemArt";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";
-import SpotifyLink from "./generic/SpotifyLink";
+import SpotifyLinkIcon from "./generic/SpotifyLink";
 
 const useStyles = makeStyles(({ spacing }) => ({
   listItem: {
@@ -77,6 +77,7 @@ interface Props {
   selectedUri?: SpotifyUri;
   showIcons?: boolean;
   showTags?: boolean;
+  mapAction?: (item: Item) => React.ReactNode;
   mapRoute?: (item: Item) => string | LocationDescriptorObject;
   onSelect?: (uri: SpotifyUri) => void;
 }
@@ -90,6 +91,7 @@ function ItemList({
   selectedUri,
   showIcons = false,
   showTags = false,
+  mapAction,
   mapRoute,
   onSelect,
 }: Props): React.ReactElement {
@@ -99,18 +101,29 @@ function ItemList({
     <List className={className}>
       {items.map((item) => {
         const uri = item.item.data.uri;
+        const action = mapAction && mapAction(item.item);
+
+        // Render as a button if we have a link or onSelect
+        // The typing on ListItem is really shitty so this has to be super jank
+        const buttonProps: Record<string, unknown> = {};
+        if (onSelect || mapRoute) {
+          buttonProps.button = true;
+          buttonProps.selected = uri === selectedUri;
+
+          if (onSelect) {
+            buttonProps.onClick = () => onSelect(uri);
+          }
+          if (mapRoute) {
+            buttonProps.component = UnstyledLink;
+            buttonProps.to = mapRoute(item.item);
+          }
+        }
+
         return (
           <ListItem
             key={uri.toString()}
             className={classes.listItem}
-            selected={uri === selectedUri}
-            button
-            // If a route mapper is given, use it to turn this item into a link
-            {...(mapRoute && {
-              component: UnstyledLink,
-              to: mapRoute(item.item),
-            })}
-            onClick={onSelect && (() => onSelect(uri))}
+            {...buttonProps}
           >
             <ItemListEntry item={item} />
             {showIcons && (
@@ -119,10 +132,11 @@ function ItemList({
                   <ItemIcon item={item.item} />
                 </ListItemIcon>
                 <ListItemIcon>
-                  <SpotifyLink item={item.item} />
+                  <SpotifyLinkIcon item={item.item} />
                 </ListItemIcon>
               </>
             )}
+            {action}
 
             {showTags && (
               <TagChips className={classes.listItemTags} tags={item.tags} />
