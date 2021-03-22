@@ -66,7 +66,7 @@ module.exports = {
   overrides: [
     {
       // Special config files
-      files: [".eslintrc.js", "config-overrides.js", "src/setupProxy.js"],
+      files: ["*.js"],
       parserOptions: {
         ecmaVersion: 3,
       },
