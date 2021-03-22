@@ -39,12 +39,12 @@ services:
       context: .
       dockerfile: ui/Dockerfile
     working_dir: /app/ui
-    command: sh -c "npm install && npm run start | cat" # pipe to cat so console does not get reset
+    command: sh -c "npm install && npm run start"
     init: true # Fixes slow shutdown
     tty: true # Colorize output
     environment:
+      WEBPACK_HOST: 0.0.0.0
       LAULUD_API_HOST: http://api:8000
-      HTTPS: "true" # Needed for Spotify login
     volumes:
       - ./:/app
       - ui_node_modules:/app/ui/node_modules
