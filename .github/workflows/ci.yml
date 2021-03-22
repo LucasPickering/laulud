@@ -20,7 +20,12 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            API/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('api/rust-toolchain') }}
+
+      - name: Cache rust build files
+        uses: actions/cache@v2
+        with:
+          path: api/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('api/Cargo.lock') }}
 
       - name: Install dependencies
