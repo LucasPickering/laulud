@@ -1,5 +1,5 @@
 import React from "react";
-import { CircularProgress } from "@material-ui/core";
+import { CircularProgress, makeStyles } from "@material-ui/core";
 import { Redirect, Route, Switch } from "react-router-dom";
 import { useQuery } from "react-query";
 
@@ -12,13 +12,28 @@ import { CurrentUser } from "schema";
 import TagsPage from "pages/Tags/TagsPage";
 import SearchPage from "pages/Search/SearchPage";
 
+const useStyles = makeStyles({
+  loadingWrapper: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+  },
+});
+
 const CoreContent: React.FC = () => {
+  const classes = useStyles();
   const { isLoading, data: currentUser } = useQuery<CurrentUser>(
     "/api/users/current"
   );
 
   if (isLoading) {
-    return <CircularProgress />;
+    return (
+      <div className={classes.loadingWrapper}>
+        <CircularProgress size="8rem" />
+      </div>
+    );
   }
 
   if (!currentUser) {

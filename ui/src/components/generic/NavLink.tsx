@@ -3,7 +3,7 @@ import { NavLink as RouterNavLink } from "react-router-dom";
 import { Link as MuiLink } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core";
 
-const useLocalStyles = makeStyles({
+const useStyles = makeStyles({
   active: {
     textDecoration: "underline",
   },
@@ -16,10 +16,10 @@ type Props = Pick<
   React.ComponentProps<typeof MuiLink>;
 
 const NavLink = ({ ...rest }: Props): React.ReactElement => {
-  const localClasses = useLocalStyles();
+  const classes = useStyles();
   const props = {
     component: RouterNavLink,
-    activeClassName: localClasses.active,
+    activeClassName: classes.active,
     ...rest,
   };
 

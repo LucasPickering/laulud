@@ -3,7 +3,7 @@ import { makeStyles } from "@material-ui/core";
 import clsx from "clsx";
 import NavLink from "../generic/NavLink";
 
-const useLocalStyles = makeStyles(({ palette, transitions, typography }) => {
+const useStyles = makeStyles(({ palette, transitions, typography }) => {
   const activeStyles = {
     textDecoration: "none",
     borderBottomColor: palette.primary.main,
@@ -37,12 +37,12 @@ const HeaderLink: React.FC<React.ComponentProps<typeof NavLink>> = ({
   className,
   ...rest
 }) => {
-  const localClasses = useLocalStyles();
+  const classes = useStyles();
   return (
-    <span className={localClasses.linkContainer}>
+    <span className={classes.linkContainer}>
       <NavLink
-        className={clsx(localClasses.link, className)}
-        activeClassName={localClasses.active}
+        className={clsx(classes.link, className)}
+        activeClassName={classes.active}
         {...rest}
       />
     </span>
