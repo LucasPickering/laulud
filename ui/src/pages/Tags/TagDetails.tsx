@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  makeStyles,
-  Paper,
-  IconButton,
-  Alert,
-  Snackbar,
-} from "@material-ui/core";
+import { makeStyles, Paper, IconButton, Snackbar } from "@material-ui/core";
 import { Add as IconAdd } from "@material-ui/icons";
 import DataContainer from "components/generic/DataContainer";
 import ItemList from "components/ItemList";
@@ -13,6 +7,7 @@ import ItemSearchList from "pages/Search/ItemSearchList";
 import useLauludQuery from "hooks/useLauludQuery";
 import useMutationNewItemTag from "hooks/useMutationNewItemTag";
 import { QueryStatus } from "react-query";
+import { Alert } from "@material-ui/lab";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {

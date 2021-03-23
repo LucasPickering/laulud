@@ -5,7 +5,7 @@ function theme(): Theme {
   return responsiveFontSizes(
     createMuiTheme({
       palette: {
-        mode: "dark",
+        type: "dark",
         primary: green,
         secondary: red,
         divider: "#ffffff",
