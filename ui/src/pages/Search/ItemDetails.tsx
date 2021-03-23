@@ -1,12 +1,6 @@
 import React from "react";
 import { QueryStatus } from "react-query";
-import {
-  Alert,
-  Card,
-  CardContent,
-  CardHeader,
-  Snackbar,
-} from "@material-ui/core";
+import { Card, CardContent, CardHeader, Snackbar } from "@material-ui/core";
 import { Item, SpotifyUri } from "schema";
 import ItemArt from "components/generic/ItemArt";
 import DataContainer from "components/generic/DataContainer";
@@ -17,6 +11,7 @@ import useMutationNewItemTag from "hooks/useMutationNewItemTag";
 import useMutationDeleteItemTag from "hooks/useMutationDeleteItemTag";
 import useLauludQuery from "hooks/useLauludQuery";
 import { ApiRouteItemSearch } from "api";
+import { Alert } from "@material-ui/lab";
 
 const ItemHeader: React.FC<{ item: Item }> = ({ item }) => {
   if (item.type === "track") {
