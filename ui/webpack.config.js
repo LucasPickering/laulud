@@ -2,17 +2,12 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
-const apiHost = process.env.LAULUD_API_HOST;
-if (!apiHost) {
-  throw new Error("No proxy target defined; set LAULUD_API_HOST");
-}
-
 module.exports = {
   mode: process.env.NODE_ENV || "development",
   entry: "./src/index.tsx",
   target: "web",
   output: {
-    path: path.resolve(__dirname, "dist"),
+    path: path.resolve(__dirname, "build"),
     publicPath: "/",
     filename: "[name].bundle.js",
   },
@@ -77,7 +72,7 @@ module.exports = {
     watchContentBase: true,
     hot: true,
     proxy: {
-      "/api": apiHost,
+      "/api": process.env.LAULUD_API_HOST,
     },
   },
 };
