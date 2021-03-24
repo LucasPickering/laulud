@@ -13,11 +13,9 @@ services:
       - "27017:27017"
 
   api:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
+    build: ./api
     working_dir: /app/api
-    command: cargo watch -i *.ts -x run
+    command: cargo watch -x run
     init: true # Fixes slow shutdown
     tty: true # Colorize output
     volumes:

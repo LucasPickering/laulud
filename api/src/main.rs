@@ -3,22 +3,10 @@
 
 mod db;
 mod error;
+mod graphql;
 mod routes;
-mod schema;
-#[cfg(debug_assertions)]
-mod schema_gen;
 mod spotify;
 mod util;
-
-#[cfg(not(debug_assertions))]
-mod schema_gen {
-    use super::LauludConfig;
-    use std::io;
-
-    pub fn generate_ts_definitions(_: &LauludConfig) -> io::Result<()> {
-        Ok(())
-    }
-}
 
 use crate::db::DbHandler;
 use oauth2::{
@@ -26,7 +14,7 @@ use oauth2::{
 };
 use rocket::routes;
 use serde::Deserialize;
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 /// App-wide configuration settings
 #[derive(Debug, Deserialize)]
@@ -34,9 +22,6 @@ pub struct LauludConfig {
     /// The URL of the DB that we connect to, as a Mongo URI.
     /// https://docs.mongodb.com/manual/reference/connection-string/
     pub database_url: String,
-    /// If given, the API will generate TS definitions for all of the external
-    /// API types, and store them at this path
-    pub ts_definitions_file: Option<PathBuf>,
     /// The host server, for use with the OAuth flow
     pub hostname: String,
     /// ID for our Spotify app
@@ -62,7 +47,7 @@ pub async fn init_spotify_client(config: &LauludConfig) -> BasicClient {
     )
     // Set the URL the user will be redirected to after the authorization
     // process.
-    .set_redirect_url(
+    .set_redirect_uri(
         RedirectUrl::new(format!("{}/api/oauth/callback", config.hostname))
             .unwrap(),
     )
@@ -74,35 +59,26 @@ async fn main() {
     let rocket = rocket::ignite();
     let config: LauludConfig = rocket.figment().extract().unwrap();
 
-    if cfg!(debug_assertions) {
-        schema_gen::generate_ts_definitions(&config).unwrap();
-    }
-
     let db_handler = DbHandler::connect(&config).await.unwrap();
     let spotify_oauth_client = init_spotify_client(&config).await;
+    let graphql_schema = graphql::create_graphql_schema();
 
     rocket
         .mount(
             "/api",
             routes![
                 // auth
-                routes::route_auth_redirect,
-                routes::route_auth_callback,
-                routes::route_logout,
-                // user
-                routes::route_get_current_user,
-                // item
-                routes::route_get_item,
-                routes::route_search_items,
-                routes::route_create_tag,
-                routes::route_delete_tag,
-                // tag
-                routes::route_get_tags,
-                routes::route_get_tag,
+                routes::auth::route_auth_redirect,
+                routes::auth::route_auth_callback,
+                routes::auth::route_logout,
+                // graphql
+                routes::graphql::route_graphql,
+                routes::graphql::route_graphiql,
             ],
         )
-        .manage(db_handler)
+        .manage(Arc::new(db_handler))
         .manage(Arc::new(spotify_oauth_client))
+        .manage(Arc::new(graphql_schema))
         .launch()
         .await
         .unwrap();

@@ -1,11 +1,13 @@
+use crate::graphql::SpotifyObjectType;
+use juniper::{FieldError, IntoFieldError};
 use log::{log, Level};
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
-use std::{backtrace::Backtrace, error::Error, str::Utf8Error};
+use std::{
+    backtrace::Backtrace, error::Error, num::TryFromIntError, str::Utf8Error,
+};
 use thiserror::Error;
-
-use crate::schema::SpotifyObjectType;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -76,6 +78,8 @@ pub enum ApiError {
         >,
         backtrace: Backtrace,
     },
+
+    // Invalid input data
     #[error("Invalid input: {source}")]
     Validation {
         #[from]
@@ -110,10 +114,22 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
-    // Tried to tag an object of an unsupported type
-    #[error("Tagging not supported for object of type: {obj_type}")]
+    /// Tried to tag an object of an unsupported type
+    #[error("Tagging not supported for object of type: {object_type}")]
     UnsupportedObjectType {
-        obj_type: SpotifyObjectType,
+        object_type: SpotifyObjectType,
+        backtrace: Backtrace,
+    },
+
+    /// Tried to convert an int to a different type but it didn't fit in the
+    /// output type. Usually this indicates either an extremely large value
+    /// (beyond what we ever expect to support, so that will never actually
+    /// happen) or a failed assumption somewhere. Either way, safe to treat
+    /// this as a server error.
+    #[error("Number conversion error")]
+    TryFromInt {
+        #[from]
+        source: TryFromIntError,
         backtrace: Backtrace,
     },
 
@@ -147,6 +163,7 @@ impl ApiError {
             | Self::Reqwest { .. }
             | Self::SpotifyApiDeserialization { .. }
             | Self::InvalidHeaderValue { .. }
+            | Self::TryFromInt { .. }
             | Self::Unknown { .. } => Status::InternalServerError,
 
             // Dynamic
@@ -178,5 +195,15 @@ impl<'r> Responder<'r, 'static> for ApiError {
     ) -> rocket::response::Result<'static> {
         self.log();
         Err(self.to_status())
+    }
+}
+
+// Juniper error
+impl IntoFieldError for ApiError {
+    fn into_field_error(self) -> FieldError {
+        // Temporary method to log errors
+        // TODO write a ticket for this
+        self.log();
+        FieldError::new(self.to_string(), juniper::Value::Null)
     }
 }

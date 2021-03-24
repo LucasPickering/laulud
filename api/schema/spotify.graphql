@@ -1,0 +1,95 @@
+# This file holds any and all types that map 1:1 with the Spotify interface, and
+# NOTHING ELSE! Anything we define on top of the Spotify API should live in
+# another file.
+
+"""
+Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-full
+"""
+type Artist {
+  # Skipping `externalUrls` and `followers`
+  genres: [String!]! @juniper(infallible: true)
+  href: String! @juniper(infallible: true)
+  id: String! @juniper(infallible: true)
+  images: [Image!]! @juniper(infallible: true)
+  name: String! @juniper(infallible: true)
+  popularity: Int! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true)
+}
+
+"""
+Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
+"""
+type ArtistSimplified {
+  # Skipping `externalUrls`
+  href: String! @juniper(infallible: true)
+  id: String! @juniper(infallible: true)
+  name: String! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true)
+}
+
+"""
+Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/object-model/#album-object-simplified
+"""
+type AlbumSimplified {
+  albumGroup: String @juniper(infallible: true)
+  albumType: String! @juniper(infallible: true)
+  artists: [ArtistSimplified!]! @juniper(infallible: true)
+  availableMarkets: [String!]! @juniper(infallible: true)
+  # Skipping `externalUrls`
+  href: String! @juniper(infallible: true)
+  id: String! @juniper(infallible: true)
+  images: [Image!]! @juniper(infallible: true)
+  name: String! @juniper(infallible: true)
+  releaseDate: String! @juniper(infallible: true)
+  releaseDatePrecision: String! @juniper(infallible: true)
+  # Skipping `restrictions`
+  uri: String! @juniper(infallible: true)
+}
+
+"""
+Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
+"""
+type Track {
+  album: AlbumSimplified! @juniper(infallible: true)
+  artists: [ArtistSimplified!]! @juniper(infallible: true)
+  availableMarkets: [String!]! @juniper(infallible: true)
+  discNumber: Int! @juniper(infallible: true)
+  durationMs: Int! @juniper(infallible: true)
+  explicit: Boolean! @juniper(infallible: true)
+  # Skipping `externalIds` and `externalUrls`
+  href: String! @juniper(infallible: true)
+  id: String! @juniper(infallible: true)
+  isPlayable: Boolean @juniper(infallible: true)
+  # Skipping `linkedFrom`
+  name: String! @juniper(infallible: true)
+  popularity: Int! @juniper(infallible: true)
+  previewUrl: String @juniper(infallible: true)
+  trackNumber: Int! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true)
+}
+
+"""
+Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object
+"""
+type Image {
+  url: String! @juniper(infallible: true)
+  width: Int @juniper(infallible: true)
+  height: Int @juniper(infallible: true)
+}
+
+"""
+Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/#object-privateuserobject
+"""
+type PrivateUser {
+  id: String! @juniper(infallible: true)
+  href: String! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true)
+  displayName: String @juniper(infallible: true)
+  images: [Image!]! @juniper(infallible: true)
+}

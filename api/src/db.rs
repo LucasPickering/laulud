@@ -1,28 +1,16 @@
-use std::{backtrace::Backtrace, collections::HashMap};
-
 use crate::{
-    error::{ApiError, ApiResult},
-    schema::{SpotifyId, SpotifyObjectType, SpotifyUri},
-    util::UserId,
-    LauludConfig,
+    error::ApiResult, graphql::SpotifyUri, util::UserId, LauludConfig,
 };
-use mongodb::{options::ClientOptions, Client, Collection, Database};
+use derive_more::{Deref, From};
+use juniper::futures::StreamExt;
+use mongodb::{
+    bson::{self, doc, Document},
+    options::ClientOptions,
+    Client, Collection, Cursor, Database,
+};
 use serde::{Deserialize, Serialize};
 
 const DATABASE_NAME: &str = "laulud";
-
-#[derive(Copy, Clone, Debug)]
-pub enum CollectionName {
-    TaggedItems,
-}
-
-impl CollectionName {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::TaggedItems => "taggedItems",
-        }
-    }
-}
 
 pub struct DbHandler {
     client: Client,
@@ -39,8 +27,171 @@ impl DbHandler {
         self.client.database(DATABASE_NAME)
     }
 
-    pub fn collection(&self, collection_name: CollectionName) -> Collection {
-        self.database().collection(collection_name.as_str())
+    /// Get a reference to the `taggedItems` collection from the DB. This can
+    /// be used for any and all interactions with that collection. See the
+    /// [TaggedItemsCollection] wrapper type for additional functionality
+    /// provided beyond the stock Mongo functions.
+    pub fn collection_tagged_items(&self) -> TaggedItemsCollection {
+        self.database()
+            .collection(TaggedItemsCollection::name())
+            .into()
+    }
+}
+
+/// A wrapper around the `taggedItems` collection that provides extra
+/// functionality that's commonly needed on the collection. This is basically
+/// a mini ORM for the collection.
+///
+/// The point of this is to encapsulate most (if not all) Mongo-specific logic
+/// in one place, so that if we change the Mongo schema, we don't end up with
+/// a bunch of broken queries around the app.
+///
+/// Right now the app doesn't support any cross-user interaction, so every
+/// method on this filters by user ID. As such, we don't bother mentioning
+/// the user in the method name, for brevity.
+#[derive(Debug, Deref, From)]
+pub struct TaggedItemsCollection {
+    collection: Collection<TaggedItemDocument>,
+}
+
+impl TaggedItemsCollection {
+    // Get the name of this collection, as defined in the DB
+    pub fn name() -> &'static str {
+        "taggedItems"
+    }
+
+    /// Filter this collection for documents owned by a particular user that
+    /// have a particular tag applied
+    pub async fn find_by_tag(
+        &self,
+        user_id: &UserId,
+        tag: &str,
+    ) -> ApiResult<Cursor<TaggedItemDocument>> {
+        Ok(self
+            .collection
+            .find(Self::filter_by_tag(user_id, tag), None)
+            .await?)
+    }
+
+    /// Count the number of documents owned by a particular user that
+    /// have a particular tag applied
+    pub async fn count_by_tag(
+        &self,
+        user_id: &UserId,
+        tag: &str,
+    ) -> ApiResult<i64> {
+        Ok(self
+            .collection
+            .count_documents(Self::filter_by_tag(user_id, tag), None)
+            .await?)
+    }
+
+    /// Count the number of unique tags that this user has created
+    pub async fn count_tags(&self, user_id: &UserId) -> ApiResult<i64> {
+        self.count_tags_helper(Self::filter_by_user(user_id)).await
+    }
+
+    /// Count the number of unique tags that a user has applied to a particular
+    /// item
+    pub async fn count_tags_by_item(
+        &self,
+        user_id: &UserId,
+        item_uri: &SpotifyUri,
+    ) -> ApiResult<i64> {
+        self.count_tags_helper(Self::filter_by_item(user_id, item_uri))
+            .await
+    }
+
+    /// Get a list of unique tags that this user has created
+    pub async fn find_tags(&self, user_id: &UserId) -> ApiResult<Vec<String>> {
+        self.find_tags_helper(Self::filter_by_user(user_id)).await
+    }
+
+    /// Get a list of unique tags that this user has applied to a particular
+    /// item
+    pub async fn find_tags_by_item(
+        &self,
+        user_id: &UserId,
+        item_uri: &SpotifyUri,
+    ) -> ApiResult<Vec<String>> {
+        self.find_tags_helper(Self::filter_by_item(user_id, item_uri))
+            .await
+    }
+
+    fn filter_by_user(user_id: &UserId) -> Document {
+        doc! {"user_id": user_id}
+    }
+
+    fn filter_by_tag(user_id: &UserId, tag: &str) -> Document {
+        doc! {"user_id": user_id, "tags":tag}
+    }
+
+    fn filter_by_item(user_id: &UserId, item_uri: &SpotifyUri) -> Document {
+        doc! {"user_id": user_id, "uri": item_uri}
+    }
+
+    /// Internal helper function to count the number of unique tags in the DB
+    /// that match a given filter
+    async fn count_tags_helper(
+        &self,
+        match_filter: Document,
+    ) -> ApiResult<i64> {
+        let mut cursor = self
+            .collection
+            .aggregate(
+                vec![
+                    // TODO test this with edge cases
+                    doc! {"$match": match_filter},
+                    doc! {"$unwind": "$tags"},
+                    doc! {"$count": "count"},
+                ],
+                None,
+            )
+            .await?;
+
+        // This should return either 0 docs (no tags for this user)
+        // or 1 doc (all other cases). If the doc is present, parse it
+        // to get the tag count
+        let count = match cursor.next().await {
+            Some(doc) => {
+                let count_doc: CountDocument =
+                    mongodb::bson::from_document(doc?)?;
+                count_doc.count
+            }
+            None => 0,
+        };
+
+        Ok(count)
+    }
+
+    /// Internal helper function to fetch and return a list of the unique tags
+    /// in the DB that match a given filter
+    async fn find_tags_helper(
+        &self,
+        match_filter: Document,
+    ) -> ApiResult<Vec<String>> {
+        let mut cursor = self
+            .collection
+            .aggregate(
+                vec![
+                    doc! {"$match":match_filter},
+                    doc! {"$unwind":"$tags"},
+                    doc! {"$project":{"tag": "$_id", "_id": 0}},
+                    // Sort tags alphabetically
+                    doc! {"$sort": {"tag": 1}},
+                ],
+                None,
+            )
+            .await?;
+
+        // Load and deserialize each doc
+        let mut tags: Vec<String> = Vec::new();
+        while let Some(doc) = cursor.next().await {
+            let doc: TagSummaryDocument = bson::from_document(doc?)?;
+            tags.push(doc.tag)
+        }
+
+        Ok(tags)
     }
 }
 
@@ -61,39 +212,19 @@ pub struct TaggedItemDocument {
     pub uri: SpotifyUri,
 }
 
-impl TaggedItemDocument {
-    /// Convert a list of docs into three different mappings of URI:tags, split
-    /// by doc type (tracks, albums, artists)
-    #[allow(clippy::clippy::type_complexity)] // fuck a lint warning
-    pub fn group_tags(
-        docs: impl IntoIterator<Item = Self>,
-    ) -> ApiResult<(
-        HashMap<SpotifyId, Vec<String>>,
-        HashMap<SpotifyId, Vec<String>>,
-        HashMap<SpotifyId, Vec<String>>,
-    )> {
-        // Each one is a mapping of ID:tags
-        let mut track_tags: HashMap<SpotifyId, Vec<String>> = HashMap::new();
-        let mut album_tags: HashMap<SpotifyId, Vec<String>> = HashMap::new();
-        let mut artist_tags: HashMap<SpotifyId, Vec<String>> = HashMap::new();
+/// A Mongo document that counts a single `count` field. Useful when
+/// deserializing the results of an aggregation that ends in a
+/// `{$count:"count"}` step.
+#[derive(Copy, Clone, Debug, Deserialize)]
+struct CountDocument {
+    /// Technically this could be a usize because counts should never be
+    /// negative, but Mongo uses `i64` for the `count_*` methods, so we stick
+    /// with that for consistency
+    pub count: i64,
+}
 
-        // Group the docs by type
-        for doc in docs {
-            let id_map = match doc.uri.obj_type {
-                SpotifyObjectType::Track => &mut track_tags,
-                SpotifyObjectType::Album => &mut album_tags,
-                SpotifyObjectType::Artist => &mut artist_tags,
-                // We don't support tagging any other object types
-                obj_type => {
-                    return Err(ApiError::UnsupportedObjectType {
-                        obj_type,
-                        backtrace: Backtrace::capture(),
-                    })
-                }
-            };
-            id_map.insert(doc.uri.id, doc.tags);
-        }
-
-        Ok((track_tags, album_tags, artist_tags))
-    }
+/// A summary of tag information, generated by an unwind query.
+#[derive(Clone, Debug, Deserialize)]
+struct TagSummaryDocument {
+    tag: String,
 }

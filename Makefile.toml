@@ -1,2 +1,5 @@
 [tasks.types]
 script = ["mv ./api/schema.ts ./ui/src/util/"]
+
+[tasks.schema]
+script = ["cat api/schema/*.graphql > ui/schema.graphql"]

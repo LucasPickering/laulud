@@ -1,0 +1,88 @@
+# Type declarations and basic Relay types
+
+directive @juniper(
+  async: Boolean = false
+  infallible: Boolean = false
+  ownership: String = "borrowed"
+  stream_item_infallible: Boolean = true # lint-disable-line input-object-values-are-camel-cased
+  stream_type: String = null # lint-disable-line input-object-values-are-camel-cased
+  with_time_zone: Boolean = true # lint-disable-line input-object-values-are-camel-cased
+) on FIELD_DEFINITION | SCALAR
+
+"""
+An opaque identifier that uniquely identifies an object within a connection.
+The cursor should be stable and unique to the object, as long as the parameters
+of the connection don't change (filter, sort, etc.), and the sequence isn't
+mutated.
+
+https://relay.dev/graphql/connections.htm#sec-Cursor
+"""
+scalar Cursor
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+"""
+An object with a globally unique ID.
+"""
+interface Node {
+  """
+  The ID of the object.
+  """
+  id: ID! @juniper(infallible: true, ownership: "owned")
+}
+
+"""
+A related object. Appears in a connection (i.e. a list).
+"""
+interface Edge {
+  """
+  A cursor that identifies this edge within the connection.
+  """
+  cursor: Cursor! @juniper(infallible: true)
+}
+
+"""
+Connection page metadata.
+
+https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
+"""
+type PageInfo {
+  """
+  The cursor of the first edge in the page. Null iff the page is empty.
+  """
+  startCursor: Cursor @juniper(infallible: true, ownership: "owned")
+
+  """
+  The cursor of the last edge in the page. Null iff the page is empty.
+  """
+  endCursor: Cursor @juniper(infallible: true, ownership: "owned")
+
+  """
+  Is there another page in the connection before this one?
+  """
+  hasPreviousPage: Boolean! @juniper(infallible: true, ownership: "owned")
+
+  """
+  Is there another page in the connection after this one?
+  """
+  hasNextPage: Boolean! @juniper(infallible: true, ownership: "owned")
+}
+
+"""
+A view to access a list of edges.
+"""
+interface ConnectionInterface {
+  """
+  Total number of edges in the connection, across all pages. Any relevant
+  filters will be applied to the count.
+  """
+  totalCount: Int! @juniper(async: true, ownership: "owned")
+
+  """
+  Metadata for the current page of data being requested.
+  """
+  pageInfo: PageInfo! @juniper(async: true, ownership: "owned")
+}

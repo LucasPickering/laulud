@@ -1,0 +1,146 @@
+# Query types specific to our app. Includes types are used in both queries
+# and mutations.
+
+"""
+The root query.
+"""
+type Query {
+  """
+  Fetch a single node, of any type, via a UUID.
+  """
+  node(
+    """
+    The UUID of the node to fetch.
+    """
+    id: ID!
+  ): Node @juniper(async: true, ownership: "owned")
+
+  """
+  The currently logged-in user. All API access requires authentication, so this
+  will always return a result.
+  """
+  currentUser: PrivateUser! @juniper(async: true, ownership: "owned")
+
+  item(uri: String!): TaggedItemNode @juniper(async: true, ownership: "owned")
+
+  itemSearch(
+    query: String!
+
+    """
+    The maximum number of results to return. If null, will be unlimited.
+    """
+    first: Int
+
+    """
+    The cursor AFTER which elements will start being included. The element
+    referred to by this cursor WILL NOT be in the output. The first element in
+    the output will be the element AFTER this cursor. If null, results will
+    start from the beginning of the collection.
+    """
+    after: Cursor
+  ): ItemSearch! @juniper(async: true, ownership: "owned")
+
+  """
+  TODO description
+  TODO support pagination on this
+  """
+  tags: TagConnection! @juniper(infallible: true, ownership: "owned")
+
+  tag(tag: String!): TagNode! @juniper(async: true, ownership: "owned")
+}
+
+type TagNode implements Node {
+  id: ID! @juniper(infallible: true, ownership: "owned")
+  tag: String! @juniper(infallible: true)
+
+  """
+  TODO description
+  TODO support pagination on this field
+  """
+  items: TaggedItemConnection! @juniper(infallible: true, ownership: "owned")
+}
+
+"""
+Edge for TagNode
+"""
+type TagEdge implements Edge {
+  """
+  The related node
+  """
+  node: TagNode! @juniper(infallible: true)
+
+  """
+  Identifier for this edge
+  """
+  cursor: Cursor! @juniper(infallible: true)
+}
+
+type TagConnection implements ConnectionInterface {
+  """
+  See Connection definition.
+  """
+  totalCount: Int! @juniper(async: true, ownership: "owned")
+
+  """
+  See Connection definition.
+  """
+  pageInfo: PageInfo! @juniper(async: true, ownership: "owned")
+
+  """
+  The queried user programs.
+  """
+  edges: [TagEdge!]! @juniper(async: true, ownership: "owned")
+}
+
+"""
+Any Spotify item that can be tagged. This does **not** include all Spotify
+types, e.g. user is not included in this.
+"""
+union Item = Track | AlbumSimplified | Artist
+
+type TaggedItemNode implements Node {
+  id: ID! @juniper(infallible: true, ownership: "owned")
+  item: Item! @juniper(infallible: true)
+
+  """
+  TODO description
+  TODO support pagination on this field
+  """
+  tags: TagConnection! @juniper(infallible: true, ownership: "owned")
+}
+
+"""
+Edge for TaggedItemNode
+"""
+type TaggedItemEdge implements Edge {
+  """
+  The related node
+  """
+  node: TaggedItemNode! @juniper(infallible: true)
+
+  """
+  Identifier for this edge
+  """
+  cursor: Cursor! @juniper(infallible: true)
+}
+
+type TaggedItemConnection implements ConnectionInterface {
+  """
+  See Connection definition.
+  """
+  totalCount: Int! @juniper(async: true, ownership: "owned")
+  """
+  See Connection definition.
+  """
+  pageInfo: PageInfo! @juniper(async: true, ownership: "owned")
+  """
+  The queried user programs.
+  """
+  edges: [TaggedItemEdge!]! @juniper(async: true, ownership: "owned")
+}
+
+type ItemSearch {
+  tracks: TaggedItemConnection! @juniper(infallible: true)
+  albums: TaggedItemConnection! @juniper(infallible: true)
+  artists: TaggedItemConnection! @juniper(infallible: true)
+}

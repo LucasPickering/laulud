@@ -1,9 +1,6 @@
-use crate::{
-    error::{ApiError, ApiResult},
-    schema::SpotifyId,
-};
+use crate::error::{ApiError, ApiResult};
 use async_trait::async_trait;
-use derive_more::From;
+use derive_more::{Display, From};
 use mongodb::bson::Bson;
 use oauth2::{
     basic::{BasicClient, BasicTokenResponse},
@@ -97,11 +94,11 @@ impl IdentityState {
 
 /// Load ID state from the request cookies
 #[async_trait]
-impl<'a, 'r> FromRequest<'a, 'r> for IdentityState {
+impl<'r> FromRequest<'r> for IdentityState {
     type Error = ApiError;
 
     async fn from_request(
-        request: &'a rocket::Request<'r>,
+        request: &'r rocket::Request<'_>,
     ) -> Outcome<Self, Self::Error> {
         // This cookie is encrypted+signed
         if let Some(cookie) = request.cookies().get_private(OAUTH_COOKIE_NAME) {
@@ -143,22 +140,22 @@ impl From<BasicTokenResponse> for AuthenticationToken {
 
 /// A user's unique Spotify ID. We use a newtype so we can implement
 /// `FromRequest`.
-#[derive(Clone, Debug, From, Serialize, Deserialize)]
+#[derive(Clone, Debug, Display, From, PartialEq, Serialize, Deserialize)]
 #[from(forward)]
-pub struct UserId(SpotifyId);
+pub struct UserId(pub String);
 
 impl From<UserId> for Bson {
     fn from(other: UserId) -> Self {
-        (other.0).0.as_str().into()
+        other.0.as_str().into()
     }
 }
 
 #[async_trait]
-impl<'a, 'r> FromRequest<'a, 'r> for UserId {
+impl<'r> FromRequest<'r> for UserId {
     type Error = ApiError;
 
     async fn from_request(
-        request: &'a rocket::Request<'r>,
+        request: &'r rocket::Request<'_>,
     ) -> Outcome<Self, Self::Error> {
         // TODO clean this up with utility funcs
         match IdentityState::from_request(request).await {
@@ -255,11 +252,12 @@ impl OAuthHandler {
                     backtrace: Backtrace::capture(),
                 }),
                 Some(refresh_token) => {
-                    let token_response = self
+                    let result = self
                         .client
                         .exchange_refresh_token(refresh_token)
                         .request_async(oauth2::reqwest::async_http_client)
-                        .await?;
+                        .await;
+                    let token_response = result?;
                     *token_write = token_response.into();
                     // Successful refresh
                     Ok(())

@@ -1,9 +1,16 @@
+//! A binding for the Spotify Web API. Most of the mapped types are defined
+//! in GraphQL schema, then juniper_from_schema generates the Rust types that
+//! we use here. Some extra types are defined here though, as well as the main
+//! [Spotify] type that handles auth and wraps over common requests.
+//!
+//! The Spotify API has really good docs at
+//! https://developer.spotify.com/documentation/web-api/reference/
+
 use crate::{
-    db::TaggedItemDocument,
     error::{ApiError, ApiResult},
-    schema::{
-        AlbumSimplified, Artist, CurrentUser, Item, SpotifyId,
-        SpotifyObjectType, SpotifyUri, TaggedItem, Track,
+    graphql::{
+        AlbumSimplified, Artist, Item, PrivateUser, SpotifyId,
+        SpotifyObjectType, SpotifyUri, Track,
     },
     util::{IdentityState, OAuthHandler},
 };
@@ -21,22 +28,11 @@ use rocket::{
     State,
 };
 use serde::{de::DeserializeOwned, Deserialize};
-use std::{backtrace::Backtrace, convert::identity, sync::Arc};
-use tokio::try_join;
+use std::{backtrace::Backtrace, collections::HashMap, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
 
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object
-#[derive(Clone, Debug, Deserialize)]
-pub struct PaginatedResponse<T> {
-    pub href: String,
-    pub limit: usize,
-    pub offset: usize,
-    pub total: usize,
-    pub next: Option<String>,
-    pub previos: Option<String>,
-    pub items: Vec<T>,
-}
+// TODO move the rest of these types below the main struct
 
 /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
 #[derive(Clone, Debug, Deserialize)]
@@ -58,21 +54,15 @@ pub struct ArtistsResponse {
     pub artists: Vec<Option<Artist>>,
 }
 
-/// https://developer.spotify.com/documentation/web-api/reference/search/search/
+/// https://developer.spotify.com/documentation/web-api/reference/#category-search
+/// The search method is hard-coded to always request these item categories,
+/// so we can hard-code them here. If we wanted to make that dynamic though, we
+/// could use a HashMap instead of this struct.
 #[derive(Clone, Debug, Deserialize)]
 pub struct SearchResponse {
     pub tracks: PaginatedResponse<Track>,
     pub albums: PaginatedResponse<AlbumSimplified>,
     pub artists: PaginatedResponse<Artist>,
-}
-/// Customization options for requests we make to the Spotify API
-#[derive(Copy, Clone, Debug, Default)]
-struct RequestOptions<'a> {
-    /// Query params
-    params: &'a [(&'a str, &'a str)],
-    /// These error status codes will be propagated up, instead of being
-    /// converted to a 500
-    propagate_errors: &'a [StatusCode],
 }
 
 /// A client for accessing the Spotify web API
@@ -174,51 +164,8 @@ impl Spotify {
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/users-profile/get-current-users-profile/
-    pub async fn get_current_user(&self) -> ApiResult<CurrentUser> {
+    pub async fn get_current_user(&self) -> ApiResult<PrivateUser> {
         self.get_endpoint("/v1/me", RequestOptions::default()).await
-    }
-
-    /// Get an item of any type from the API
-    pub async fn get_item(&self, uri: &SpotifyUri) -> ApiResult<Item> {
-        let options = RequestOptions {
-            // a 404 (hopefully) indicates an invalid ID
-            propagate_errors: &[StatusCode::NOT_FOUND],
-            ..Default::default()
-        };
-        let item = match uri.obj_type {
-            // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
-            SpotifyObjectType::Track => self
-                .get_endpoint::<Track>(
-                    &format!("/v1/tracks/{}", uri.id),
-                    options,
-                )
-                .await?
-                .into(),
-            // https://developer.spotify.com/documentation/web-api/reference/albums/get-album/
-            SpotifyObjectType::Album => self
-                .get_endpoint::<AlbumSimplified>(
-                    &format!("/v1/albums/{}", uri.id),
-                    options,
-                )
-                .await?
-                .into(),
-            // https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
-            SpotifyObjectType::Artist => self
-                .get_endpoint::<Artist>(
-                    &format!("/v1/artists/{}", uri.id),
-                    options,
-                )
-                .await?
-                .into(),
-            // We don't support tagging any other object types
-            obj_type => {
-                return Err(ApiError::UnsupportedObjectType {
-                    obj_type,
-                    backtrace: Backtrace::capture(),
-                })
-            }
-        };
-        Ok(item)
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
@@ -231,7 +178,7 @@ impl Spotify {
             RequestOptions {
                 params: &[(
                     "ids",
-                    track_ids.map(|id| id.0.as_str()).join(",").as_str(),
+                    track_ids.map(|id| id.as_str()).join(",").as_str(),
                 )],
                 ..Default::default()
             },
@@ -249,7 +196,7 @@ impl Spotify {
             RequestOptions {
                 params: &[(
                     "ids",
-                    album_ids.map(|id| id.0.as_str()).join(",").as_str(),
+                    album_ids.map(|id| id.as_str()).join(",").as_str(),
                 )],
                 ..Default::default()
             },
@@ -267,7 +214,7 @@ impl Spotify {
             RequestOptions {
                 params: &[(
                     "ids",
-                    artists_ids.map(|id| id.0.as_str()).join(",").as_str(),
+                    artists_ids.map(|id| id.as_str()).join(",").as_str(),
                 )],
                 ..Default::default()
             },
@@ -277,73 +224,122 @@ impl Spotify {
 
     /// Search restricted to taggable items
     /// https://developer.spotify.com/documentation/web-api/reference/search/search/
-    pub async fn search_items(&self, query: &str) -> ApiResult<SearchResponse> {
-        self.get_endpoint(
-            "/v1/search",
-            RequestOptions {
-                params: &[("q", query), ("type", "track,album,artist")],
-                ..Default::default()
-            },
-        )
-        .await
+    pub async fn search_items(
+        &self,
+        query: &str,
+        limit: Option<usize>,
+        offset: Option<usize>,
+    ) -> ApiResult<HashMap<String, PaginatedResponse<Item>>> {
+        let responses: HashMap<String, PaginatedResponse<ItemDeserialize>> =
+            self.get_endpoint(
+                "/v1/search",
+                RequestOptions {
+                    // TODO pass limit+offset to spotify
+                    params: &[("q", query), ("type", "track,album,artist")],
+                    ..Default::default()
+                },
+            )
+            .await?;
+        // TODO comment this
+        let responses = responses
+            .into_iter()
+            .map(|(item_type, paginated_response)| {
+                (
+                    item_type,
+                    paginated_response.map_items(|items| {
+                        items.into_iter().map(Item::from).collect()
+                    }),
+                )
+            })
+            .collect();
+        Ok(responses)
     }
 
-    /// Given an array of tagged items that came from Mongo, this looks up
-    /// each item's metadata from Spotify and joins it into each document.
-    /// For example, for a track this will add in title, artist, album, etc.
-    pub async fn saturated_tagged_items(
+    /// Get an item of any type from the API. This will call the correct
+    /// endpoint based on the item's type (track, album, etc.).
+    pub async fn get_item(&self, uri: &SpotifyUri) -> ApiResult<Item> {
+        let options = RequestOptions {
+            // a 404 (hopefully) indicates an invalid ID
+            propagate_errors: &[StatusCode::NOT_FOUND],
+            ..Default::default()
+        };
+        let (object_type, id) = SpotifyObjectType::parse_uri(uri);
+        let item = match object_type {
+            // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
+            SpotifyObjectType::Track => self
+                .get_endpoint::<Track>(&format!("/v1/tracks/{}", id), options)
+                .await?
+                .into(),
+            // https://developer.spotify.com/documentation/web-api/reference/albums/get-album/
+            SpotifyObjectType::Album => self
+                .get_endpoint::<AlbumSimplified>(
+                    &format!("/v1/albums/{}", id),
+                    options,
+                )
+                .await?
+                .into(),
+            // https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
+            SpotifyObjectType::Artist => self
+                .get_endpoint::<Artist>(&format!("/v1/artists/{}", id), options)
+                .await?
+                .into(),
+            // We don't support tagging any other object types
+            object_type => {
+                return Err(ApiError::UnsupportedObjectType {
+                    object_type,
+                    backtrace: Backtrace::capture(),
+                })
+            }
+        };
+        Ok(item)
+    }
+
+    /// Fetch data for a list of items of any type. This will make one request
+    /// to the API per item _type_ in the input list, e.g. if your input URIs
+    /// have 3 tracks, 2 albums, and 10 artists, this will still only make 3
+    /// requests to the API.
+    pub async fn get_items(
         &self,
-        docs: Vec<TaggedItemDocument>,
-    ) -> ApiResult<Vec<TaggedItem>> {
-        // Group the docs by type
-        let (track_tags, album_tags, artist_tags) =
-            TaggedItemDocument::group_tags(docs)?;
+        uris: impl Iterator<Item = &SpotifyUri>,
+    ) -> ApiResult<Vec<Item>> {
+        // Group URIs by type so we can make one request per type
+        let ids_by_type: HashMap<SpotifyObjectType, Vec<SpotifyId>> =
+            uris.map(SpotifyObjectType::parse_uri).into_group_map();
 
-        // Fetch all the data from Spotify. For any item type, if we have no
-        // documents for that type, then skip it.
-        let (tracks_resp, albums_resp, artists_resp) = try_join!(
-            async {
-                if track_tags.is_empty() {
-                    Ok(None)
-                } else {
-                    self.get_tracks(track_tags.keys()).await.map(Some)
+        // Make one request to the Spotify API for each item type
+        // TODO run these requests concurrently with something like join_all
+        let mut items: Vec<Item> = Vec::new();
+        for (object_type, ids) in ids_by_type {
+            // Each of these get_x methods returns a Vec<Option>, where the
+            // order corresponds to the requested IDs and any element will be
+            // null if nothing was found for that ID. We don't care about
+            // those missing results though, so just filter those out
+            match object_type {
+                SpotifyObjectType::Track => {
+                    let response = self.get_tracks(ids.iter()).await?;
+                    items.extend(
+                        response.tracks.into_iter().flatten().map(Item::from),
+                    );
                 }
-            },
-            async {
-                if album_tags.is_empty() {
-                    Ok(None)
-                } else {
-                    self.get_albums(album_tags.keys()).await.map(Some)
+                SpotifyObjectType::Album => {
+                    let response = self.get_albums(ids.iter()).await?;
+                    items.extend(
+                        response.albums.into_iter().flatten().map(Item::from),
+                    );
                 }
-            },
-            async {
-                if artist_tags.is_empty() {
-                    Ok(None)
-                } else {
-                    self.get_artists(artist_tags.keys()).await.map(Some)
+                SpotifyObjectType::Artist => {
+                    let response = self.get_artists(ids.iter()).await?;
+                    items.extend(
+                        response.artists.into_iter().flatten().map(Item::from),
+                    );
                 }
-            },
-        )?;
-
-        // Join the tag data into each item we got from spotify
-        let mut items: Vec<TaggedItem> = Vec::new();
-        if let Some(track_objs) = tracks_resp {
-            items.extend(Item::join_tags(
-                track_tags,
-                track_objs.tracks.into_iter().filter_map(identity),
-            ));
-        }
-        if let Some(album_objs) = albums_resp {
-            items.extend(Item::join_tags(
-                album_tags,
-                album_objs.albums.into_iter().filter_map(identity),
-            ));
-        }
-        if let Some(artist_objs) = artists_resp {
-            items.extend(Item::join_tags(
-                artist_tags,
-                artist_objs.artists.into_iter().filter_map(identity),
-            ));
+                _ => {
+                    return Err(ApiError::UnsupportedObjectType {
+                        object_type,
+                        backtrace: Backtrace::capture(),
+                    })
+                }
+            }
         }
 
         Ok(items)
@@ -351,11 +347,11 @@ impl Spotify {
 }
 
 #[async_trait]
-impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
+impl<'r> FromRequest<'r> for Spotify {
     type Error = ApiError;
 
     async fn from_request(
-        request: &'a rocket::Request<'r>,
+        request: &'r rocket::Request<'_>,
     ) -> rocket::request::Outcome<Self, Self::Error> {
         /// Helper to build the client, which returns a result
         async fn build_client(
@@ -390,6 +386,74 @@ impl<'a, 'r> FromRequest<'a, 'r> for Spotify {
             Err(err) => {
                 rocket::request::Outcome::Failure((err.to_status(), err))
             }
+        }
+    }
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object
+#[derive(Clone, Debug, Deserialize)]
+pub struct PaginatedResponse<T> {
+    pub href: String,
+    pub limit: usize,
+    pub offset: usize,
+    pub total: usize,
+    pub next: Option<String>,
+    pub previous: Option<String>,
+    pub items: Vec<T>,
+}
+
+impl<T> PaginatedResponse<T> {
+    /// TODO
+    pub fn map_items<U>(
+        self,
+        mut mapper: impl FnMut(Vec<T>) -> Vec<U>,
+    ) -> PaginatedResponse<U> {
+        PaginatedResponse {
+            // Can't use .. syntax because the generic param changes
+            href: self.href,
+            limit: self.limit,
+            offset: self.offset,
+            total: self.total,
+            next: self.next,
+            previous: self.previous,
+            items: mapper(self.items),
+        }
+    }
+}
+
+/// Customization options for requests we make to the Spotify API
+#[derive(Copy, Clone, Debug, Default)]
+struct RequestOptions<'a> {
+    /// Query params - typically a slice of (&str, &str)
+    params: &'a [(&'a str, &'a str)],
+    /// These error status codes will be propagated up, instead of being
+    /// converted to a 500
+    propagate_errors: &'a [StatusCode],
+}
+
+/// A struct to define how to deserialize items from the Spotify API. This is
+/// essentially the same thing as the [Item] type that's generated for the
+/// API, but we can't define macro attributes on auto-generated types, so we
+/// need this mirror type to be able to use serde's attributes.
+///
+/// We could get around this if
+/// https://github.com/davidpdrsn/juniper-from-schema/issues/139 happens.
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum ItemDeserialize {
+    Track(Track),
+    Album(AlbumSimplified),
+    Artist(Artist),
+}
+
+// Convert from a Spotify API item to a GraphQL item. These are basically the
+// same thing, just with different types
+impl From<ItemDeserialize> for Item {
+    fn from(other: ItemDeserialize) -> Self {
+        match other {
+            ItemDeserialize::Track(track) => Item::Track(track),
+            ItemDeserialize::Album(album) => Item::AlbumSimplified(album),
+            ItemDeserialize::Artist(artist) => Item::Artist(artist),
         }
     }
 }

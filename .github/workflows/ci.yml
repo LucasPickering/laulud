@@ -66,9 +66,18 @@ jobs:
         working-directory: ui/
         run: npm install
 
+      # TODO this is probably broken currently
+      - name: Type-check
+        working-directory: ui/
+        run: npx tsc
+
       - name: Lint
         working-directory: ui/
         run: npm run lint
+
+      - name: Lint GraphQL schema
+        working-directory: ui/
+        run: npm run lint:gql
 
   build-api:
     name: "Build & Push API Image"

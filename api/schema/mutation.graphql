@@ -1,0 +1,28 @@
+# All logic specific to mutation. Types that are used in both queries and
+# mutations live in query.graphql
+
+type Mutation {
+  addTag(input: AddTagInput!): AddTagPayload!
+    @juniper(async: true, ownership: "owned")
+
+  deleteTag(input: DeleteTagInput!): DeleteTagPayload!
+    @juniper(async: true, ownership: "owned")
+}
+
+input AddTagInput {
+  itemUri: String!
+  tag: String!
+}
+
+type AddTagPayload {
+  item: TaggedItemNode @juniper(infallible: true)
+}
+
+input DeleteTagInput {
+  itemUri: String!
+  tag: String!
+}
+
+type DeleteTagPayload {
+  item: TaggedItemNode @juniper(infallible: true)
+}
