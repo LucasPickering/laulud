@@ -2,7 +2,7 @@ use log::{log, Level};
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
-use std::{backtrace::Backtrace, error::Error};
+use std::{backtrace::Backtrace, error::Error, str::Utf8Error};
 use thiserror::Error;
 
 use crate::schema::SpotifyObjectType;
@@ -95,6 +95,14 @@ pub enum ApiError {
     #[error("CSRF token was not provided or did not match the expected value")]
     CsrfError { backtrace: Backtrace },
 
+    /// User passed in some bad UTF-8 string
+    #[error("Invalid UTF-8 input")]
+    Utf8Error {
+        #[from]
+        source: Utf8Error,
+        backtrace: Backtrace,
+    },
+
     /// Error while running some custom parsing
     #[error("Parse error: {message}")]
     ParseError {
@@ -102,7 +110,7 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
-    // Tried to tag an object of an supported type
+    // Tried to tag an object of an unsupported type
     #[error("Tagging not supported for object of type: {obj_type}")]
     UnsupportedObjectType {
         obj_type: SpotifyObjectType,
@@ -123,6 +131,7 @@ impl ApiError {
         match self {
             // 400
             Self::Validation { .. }
+            | Self::Utf8Error { .. }
             | Self::ParseError { .. }
             | Self::UnsupportedObjectType { .. } => Status::BadRequest,
 

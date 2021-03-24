@@ -138,7 +138,7 @@ impl<'r> FromParam<'r> for SpotifyUri {
     type Error = ApiError;
 
     fn from_param(param: &'r RawStr) -> Result<Self, Self::Error> {
-        param.as_str().parse()
+        param.percent_decode()?.parse()
     }
 }
 
