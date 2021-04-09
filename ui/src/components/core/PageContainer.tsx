@@ -23,7 +23,7 @@ const useStyles = makeStyles(({ palette, spacing }) => ({
     display: "flex",
     justifyContent: "center",
     "& > *": {
-      padding: `0px ${spacing(1)}`,
+      padding: `0px ${spacing(1)}px`,
     },
     "& > * + *": {
       borderLeftWidth: 1,
