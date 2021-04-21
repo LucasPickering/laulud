@@ -23,17 +23,13 @@ use reqwest::{
     Client, StatusCode,
 };
 use rocket::{
-    http::Status,
     request::{FromRequest, Outcome},
     State,
 };
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{backtrace::Backtrace, collections::HashMap, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
-
-// TODO move the rest of these types below the main struct
-
 
 /// A client for accessing the Spotify web API
 #[derive(Debug)]
@@ -59,11 +55,18 @@ impl Spotify {
     }
 
     /// Helper method for doing a GET request against a Spotify endpoint. Parses
-    /// the result as JSON.
-    async fn get_endpoint<T: DeserializeOwned>(
+    /// the result as JSON. Query params are generally specified as a slice of
+    /// string tuples, e.g.:
+    ///
+    /// ```
+    /// &[("p1", "v1"), ("p2", "v2")]
+    /// ```
+    ///
+    /// For requests with no query params, just pass `&[]`.
+    async fn get_endpoint<P: Serialize, T: DeserializeOwned>(
         &self,
         endpoint: &str,
-        options: RequestOptions<'_>,
+        query_params: P,
     ) -> ApiResult<T> {
         // Make sure our auth token is up to date first
         self.oauth_handler.refresh_if_needed().await?;
@@ -80,7 +83,7 @@ impl Spotify {
                     &self.oauth_handler.secret().await
                 ))?,
             )
-            .query(options.params)
+            .query(&query_params)
             .send()
             .await?;
 
@@ -103,39 +106,17 @@ impl Spotify {
                     backtrace: Backtrace::capture(),
                 }
             })?),
-            Some(err) => {
-                // Check if the caller requested that we propagate this error
-                // with the actual status code, instead of 500
-                let output_status = match err.status() {
-                    Some(status)
-                        if options.propagate_errors.contains(&status) =>
-                    {
-                        // Convert reqwest status to rocket status
-                        Status::from_code(status.as_u16()).ok_or_else(|| {
-                            ApiError::Unknown {
-                                message: format!(
-                                    "Unknown status code from reqwest: {}",
-                                    status
-                                ),
-                                backtrace: Backtrace::capture(),
-                            }
-                        })?
-                    }
-                    _ => Status::InternalServerError,
-                };
-                Err(ApiError::SpotifyApiHttp {
-                    source: err,
-                    body,
-                    backtrace: Backtrace::capture(),
-                    output_status,
-                })
-            }
+            Some(err) => Err(ApiError::SpotifyApiHttp {
+                source: err,
+                body,
+                backtrace: Backtrace::capture(),
+            }),
         }
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/users-profile/get-current-users-profile/
     pub async fn get_current_user(&self) -> ApiResult<PrivateUser> {
-        self.get_endpoint("/v1/me", RequestOptions::default()).await
+        self.get_endpoint::<&[&str], _>("/v1/me", &[]).await
     }
 
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
@@ -145,13 +126,7 @@ impl Spotify {
     ) -> ApiResult<TracksResponse> {
         self.get_endpoint(
             "/v1/tracks",
-            RequestOptions {
-                params: &[(
-                    "ids",
-                    track_ids.map(|id| id.as_str()).join(",").as_str(),
-                )],
-                ..Default::default()
-            },
+            &[("ids", track_ids.map(|id| id.as_str()).join(",").as_str())],
         )
         .await
     }
@@ -163,13 +138,7 @@ impl Spotify {
     ) -> ApiResult<AlbumsResponse> {
         self.get_endpoint(
             "/v1/albums",
-            RequestOptions {
-                params: &[(
-                    "ids",
-                    album_ids.map(|id| id.as_str()).join(",").as_str(),
-                )],
-                ..Default::default()
-            },
+            &[("ids", album_ids.map(|id| id.as_str()).join(",").as_str())],
         )
         .await
     }
@@ -181,36 +150,35 @@ impl Spotify {
     ) -> ApiResult<ArtistsResponse> {
         self.get_endpoint(
             "/v1/artists",
-            RequestOptions {
-                params: &[(
-                    "ids",
-                    artists_ids.map(|id| id.as_str()).join(",").as_str(),
-                )],
-                ..Default::default()
-            },
+            &[("ids", artists_ids.map(|id| id.as_str()).join(",").as_str())],
         )
         .await
     }
 
     /// Search restricted to taggable items
-    /// https://developer.spotify.com/documentation/web-api/reference/search/search/
+    /// https://developer.spotify.com/documentation/web-api/reference/#category-search
     pub async fn search_items(
         &self,
         query: &str,
         limit: Option<usize>,
         offset: Option<usize>,
     ) -> ApiResult<HashMap<String, PaginatedResponse<Item>>> {
+        let mut query_params = vec![
+            ("q", query.to_owned()),
+            ("type", "track,album,artist".to_owned()),
+        ];
+
+        if let Some(limit) = limit {
+            query_params.push(("limit", limit.to_string()));
+        }
+        if let Some(offset) = offset {
+            query_params.push(("offset", offset.to_string()));
+        }
+
         let responses: HashMap<String, PaginatedResponse<ItemDeserialize>> =
-            self.get_endpoint(
-                "/v1/search",
-                RequestOptions {
-                    // TODO pass limit+offset to spotify
-                    params: &[("q", query), ("type", "track,album,artist")],
-                    ..Default::default()
-                },
-            )
-            .await?;
-        // TODO comment this
+            self.get_endpoint("/v1/search", &query).await?;
+        // Map each ItemDeserialize to an Item. Check the ItemDeserialize doc
+        // comment for an explanation of the difference (there isn't much).
         let responses = responses
             .into_iter()
             .map(|(item_type, paginated_response)| {
@@ -228,29 +196,30 @@ impl Spotify {
     /// Get an item of any type from the API. This will call the correct
     /// endpoint based on the item's type (track, album, etc.).
     pub async fn get_item(&self, uri: &SpotifyUri) -> ApiResult<Item> {
-        let options = RequestOptions {
-            // a 404 (hopefully) indicates an invalid ID
-            propagate_errors: &[StatusCode::NOT_FOUND],
-            ..Default::default()
-        };
         let (object_type, id) = SpotifyObjectType::parse_uri(uri);
         let item = match object_type {
             // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
             SpotifyObjectType::Track => self
-                .get_endpoint::<Track>(&format!("/v1/tracks/{}", id), options)
+                .get_endpoint::<&[&str], Track>(
+                    &format!("/v1/tracks/{}", id,),
+                    &[],
+                )
                 .await?
                 .into(),
             // https://developer.spotify.com/documentation/web-api/reference/albums/get-album/
             SpotifyObjectType::Album => self
-                .get_endpoint::<AlbumSimplified>(
-                    &format!("/v1/albums/{}", id),
-                    options,
+                .get_endpoint::<&[&str], AlbumSimplified>(
+                    &format!("/v1/albums/{}", id,),
+                    &[],
                 )
                 .await?
                 .into(),
             // https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
             SpotifyObjectType::Artist => self
-                .get_endpoint::<Artist>(&format!("/v1/artists/{}", id), options)
+                .get_endpoint::<&[&str], Artist>(
+                    &format!("/v1/artists/{}", id,),
+                    &[],
+                )
                 .await?
                 .into(),
             // We don't support tagging any other object types
@@ -261,6 +230,9 @@ impl Spotify {
                 })
             }
         };
+
+        // TODO map 404s to None
+
         Ok(item)
     }
 
@@ -268,6 +240,11 @@ impl Spotify {
     /// to the API per item _type_ in the input list, e.g. if your input URIs
     /// have 3 tracks, 2 albums, and 10 artists, this will still only make 3
     /// requests to the API.
+    ///
+    /// If any of the given URIs doesn't return a response from Spotify, then
+    /// that item will simply not be included in the output. So the output will
+    /// always be the length of the input minus the number of
+    /// invalid/non-matching URIs.
     pub async fn get_items(
         &self,
         uris: impl Iterator<Item = &SpotifyUri>,
@@ -341,7 +318,6 @@ impl<'r> FromRequest<'r> for Spotify {
         }
 
         // Read the user's ID state and access token from the request
-        // TODO clean this up with utility funcs
         let identity_state = match IdentityState::from_request(request).await {
             Outcome::Success(identity_state) => identity_state,
             Outcome::Failure(err) => return Outcome::Failure(err),
@@ -353,6 +329,8 @@ impl<'r> FromRequest<'r> for Spotify {
                     oauth_client.inner()
                 }
                 // software engineering!
+                // This shouldn't be possible, as long as the oauth client is
+                // available which is always will be
                 _ => panic!("Couldn't get OAuth client"),
             };
 
@@ -364,7 +342,6 @@ impl<'r> FromRequest<'r> for Spotify {
         }
     }
 }
-
 
 /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
 #[derive(Clone, Debug, Deserialize)]
@@ -410,7 +387,9 @@ pub struct PaginatedResponse<T> {
 }
 
 impl<T> PaginatedResponse<T> {
-    /// TODO
+    /// Create a new struct instance that has all the same values as this
+    /// instance, except the `items` field has had the mapper function applied
+    /// to it. Useful for type transformations on the `items` field.
     pub fn map_items<U>(
         self,
         mut mapper: impl FnMut(Vec<T>) -> Vec<U>,
@@ -429,13 +408,22 @@ impl<T> PaginatedResponse<T> {
 }
 
 /// Customization options for requests we make to the Spotify API
-#[derive(Copy, Clone, Debug, Default)]
-struct RequestOptions<'a> {
+#[derive(Copy, Clone, Debug)]
+struct RequestOptions<'a, P: Serialize> {
     /// Query params - typically a slice of (&str, &str)
-    params: &'a [(&'a str, &'a str)],
+    params: P,
     /// These error status codes will be propagated up, instead of being
     /// converted to a 500
     propagate_errors: &'a [StatusCode],
+}
+
+impl<'a> Default for RequestOptions<'a, ()> {
+    fn default() -> Self {
+        RequestOptions {
+            params: (),
+            propagate_errors: &[],
+        }
+    }
 }
 
 /// A struct to define how to deserialize items from the Spotify API. This is

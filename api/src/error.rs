@@ -27,8 +27,10 @@ pub enum ApiError {
     /// Mongo DB error
     #[error("Database error: {source}")]
     Mongo {
+        /// Boxed to reduce variant size. Otherwise we get a clippy warning
+        /// about having one very large variant.
         #[from]
-        source: mongodb::error::Error,
+        source: Box<mongodb::error::Error>,
         backtrace: Backtrace,
     },
 
@@ -46,9 +48,6 @@ pub enum ApiError {
         source: reqwest::Error,
         body: String,
         backtrace: Backtrace,
-        /// The status that we will return. Usually 500, but sometimes we may
-        /// want to propagate up the status from Spotify.
-        output_status: Status,
     },
 
     /// Failed to deserialize data from a Spotify APi response
@@ -162,12 +161,14 @@ impl ApiError {
             | Self::Mongo { .. }
             | Self::Reqwest { .. }
             | Self::SpotifyApiDeserialization { .. }
+            // In some cases, Spotify errors indicate user error (e.g. 404 for
+            // an invalid ID), but those will be handled on a case-by-case
+            // case by the surrounding code. So generically, Spotify errors are
+            // 500s
+            | Self::SpotifyApiHttp { .. }
             | Self::InvalidHeaderValue { .. }
             | Self::TryFromInt { .. }
             | Self::Unknown { .. } => Status::InternalServerError,
-
-            // Dynamic
-            Self::SpotifyApiHttp { output_status, .. } => *output_status,
         }
     }
 
@@ -185,6 +186,13 @@ impl ApiError {
             self,
             self.backtrace().expect("No backtrace available :(")
         );
+    }
+}
+
+// Mongo errors get boxed so we need a handwritten From impl to do that
+impl From<mongodb::error::Error> for ApiError {
+    fn from(other: mongodb::error::Error) -> Self {
+        Box::new(other).into()
     }
 }
 
