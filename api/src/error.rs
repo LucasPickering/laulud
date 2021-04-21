@@ -50,7 +50,8 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
-    /// Failed to deserialize data from a Spotify APi response
+    /// Failed to deserialize data from a Spotify API response. Indicates a bug
+    /// in one of our local Spotify type definitions
     #[error("Spotify deserialization error: {source}; Body: {body}")]
     SpotifyApiDeserialization {
         source: serde_json::Error,

@@ -1,8 +1,6 @@
 //! Basic, generic GraphQL types, that aren't specific to any part of the API or
 //! any particular data type
 
-use std::convert::TryInto;
-
 use crate::graphql::{Cursor, PageInfoFields, RequestContext};
 use juniper::Executor;
 
@@ -13,12 +11,14 @@ pub type SpotifyUri = String;
 // TODO add a scalar type for Tag as well
 
 impl Cursor {
-    /// TODO
-    pub fn offset(&self) -> i32 {
+    /// Parse the cursor into an offset value. A cursor is just an obfuscated
+    /// number that indicates the element's offset into the collection. These
+    /// offsets can be used with Spotify or Mongo to find the element.
+    ///
+    /// TODO make this return a result and Err if the value isn't a valid usize
+    pub fn offset(&self) -> usize {
         // TODO cursor validation and remove unwrap
-        // TODO remove conversion unwrap (validation should enforce that it fits
-        // in i32)
-        (self.0.parse::<usize>().unwrap() + 1).try_into().unwrap()
+        self.0.parse::<usize>().unwrap() + 1
     }
 
     /// Get a cursor for an edge based on the offset of the page that if came

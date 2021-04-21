@@ -14,6 +14,7 @@ use juniper::{futures::StreamExt, Executor};
 use juniper_from_schema::{QueryTrail, Walked};
 use mongodb::bson::doc;
 use serde::Deserialize;
+use std::convert::TryInto;
 
 /// Root GraphQL query
 pub struct Query;
@@ -101,15 +102,16 @@ impl QueryFields for Query {
     ) -> ApiResult<ItemSearch> {
         // We need to run the search through spotify, then join tag data
         let context = executor.context();
-        let limit = first;
-        let offset = after.map(|cursor| cursor.offset());
+        // TODO replace unwrap with some input validation logic
+        let limit: Option<usize> = first.map(|first| first.try_into().unwrap());
+        let offset: Option<usize> = after.map(|cursor| cursor.offset());
 
         // Run the search query through spotify. This returns a mapping of
         // results, grouped by item type. i.e. one PaginatedResponse for each
         // type (track/album/artist)
         // TODO pass limit/offset
         let mut search_response =
-            context.spotify.search_items(&query, None, None).await?;
+            context.spotify.search_items(&query, limit, offset).await?;
 
         // Pull out the item types we care about. This should always exhaust
         // the map (with no missing types), because the fields we return here

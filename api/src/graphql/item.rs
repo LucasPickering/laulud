@@ -225,6 +225,11 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
     }
 }
 
+/// Result of running a search query among taggable items. This is the result of
+/// a single Spotify API request, but Spotify returns the items grouped by type
+/// so that's what we'll do. The 3 connections pagination in lockstep, i.e. they
+/// use the same limit/offset.
+/// https://developer.spotify.com/documentation/web-api/reference/#category-search
 pub struct ItemSearch {
     pub tracks: TaggedItemConnection,
     pub albums: TaggedItemConnection,
