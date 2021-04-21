@@ -3,9 +3,9 @@ use std::convert::TryInto;
 use crate::{
     error::ApiResult,
     graphql::{
-        Cursor, Item, ItemSearchFields, PageInfo, RequestContext, SpotifyUri,
-        TagConnection, TaggedItemConnectionFields, TaggedItemEdgeFields,
-        TaggedItemNodeFields,
+        internal::GenericEdge, Cursor, Item, ItemSearchFields, PageInfo,
+        RequestContext, SpotifyUri, TagConnection, TaggedItemConnectionFields,
+        TaggedItemEdgeFields, TaggedItemNodeFields,
     },
     spotify::PaginatedResponse,
     util,
@@ -60,10 +60,7 @@ impl TaggedItemNodeFields for TaggedItemNode {
     }
 }
 
-pub struct TaggedItemEdge {
-    pub node: TaggedItemNode,
-    pub cursor: Cursor,
-}
+pub type TaggedItemEdge = GenericEdge<TaggedItemNode>;
 
 impl TaggedItemEdgeFields for TaggedItemEdge {
     fn field_node(
@@ -71,14 +68,14 @@ impl TaggedItemEdgeFields for TaggedItemEdge {
         _executor: &Executor<'_, '_, RequestContext>,
         _trail: &QueryTrail<'_, TaggedItemNode, Walked>,
     ) -> &TaggedItemNode {
-        &self.node
+        self.node()
     }
 
     fn field_cursor(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> &Cursor {
-        &self.cursor
+        self.cursor()
     }
 }
 
@@ -208,18 +205,16 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
         };
 
         // Map items to nodes, then to edges
-        let edges = items
-            .into_iter()
-            .enumerate()
-            .map(|(index, item)| TaggedItemEdge {
-                node: TaggedItemNode {
+        let edges = TaggedItemEdge::from_nodes(
+            items.into_iter().map(|item| {
+                TaggedItemNode {
                     item,
                     // Tag data isn't present yet, defer loading it
                     tags: None,
-                },
-                cursor: Cursor::from_offset_index(offset, index),
-            })
-            .collect();
+                }
+            }),
+            offset,
+        );
 
         Ok(edges)
     }

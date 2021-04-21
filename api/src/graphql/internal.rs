@@ -5,14 +5,13 @@
 //! This also holds implementations (both plain and trait implementations) on
 //! GraphQL types, because the implementations are only used within this module.
 
-use std::{backtrace::Backtrace, str::FromStr};
-
 use crate::{
     error::{ApiError, ApiResult},
-    graphql::{Item, SpotifyUri},
+    graphql::{Cursor, Item, SpotifyUri},
     util::UserId,
 };
 use derive_more::Display;
+use std::{backtrace::Backtrace, str::FromStr};
 
 // ===== Node =====
 
@@ -117,5 +116,39 @@ impl Clone for Item {
             }
             Self::Artist(artist) => Self::Artist(artist.clone()),
         }
+    }
+}
+
+// ===== Generic Edge =====
+
+/// Helper type to handle GQL edge types. Edges consist of a cursor, to locate
+/// the edge within a Connection, and an associated node.
+pub struct GenericEdge<N> {
+    node: N,
+    cursor: Cursor,
+}
+
+impl<N> GenericEdge<N> {
+    pub fn node(&self) -> &N {
+        &self.node
+    }
+
+    pub fn cursor(&self) -> &Cursor {
+        &self.cursor
+    }
+
+    /// Convert a list of nodes into edges. The edges will keep the same
+    /// ordering, and each edge will be generated a cursor based on the given
+    /// offset plus that edge's location in the list.
+    pub fn from_nodes(
+        rows: impl Iterator<Item = N>,
+        offset: usize,
+    ) -> Vec<Self> {
+        rows.enumerate()
+            .map(|(index, node)| Self {
+                node,
+                cursor: Cursor::from_offset_index(offset, index),
+            })
+            .collect()
     }
 }

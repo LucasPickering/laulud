@@ -3,8 +3,9 @@ use std::convert::TryInto;
 use crate::{
     error::ApiResult,
     graphql::{
-        core::PageInfo, item::TaggedItemConnection, Cursor, RequestContext,
-        SpotifyUri, TagConnectionFields, TagEdgeFields, TagNodeFields,
+        core::PageInfo, internal::GenericEdge, item::TaggedItemConnection,
+        Cursor, RequestContext, SpotifyUri, TagConnectionFields, TagEdgeFields,
+        TagNodeFields,
     },
     util,
 };
@@ -59,10 +60,7 @@ impl TagNodeFields for TagNode {
     }
 }
 
-pub struct TagEdge {
-    pub node: TagNode,
-    pub cursor: Cursor,
-}
+pub type TagEdge = GenericEdge<TagNode>;
 
 impl TagEdgeFields for TagEdge {
     fn field_node(
@@ -70,14 +68,14 @@ impl TagEdgeFields for TagEdge {
         _executor: &Executor<'_, '_, RequestContext>,
         _trail: &QueryTrail<'_, TagNode, Walked>,
     ) -> &TagNode {
-        &self.node
+        self.node()
     }
 
     fn field_cursor(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> &Cursor {
-        &self.cursor
+        self.cursor()
     }
 }
 
@@ -178,19 +176,14 @@ impl TagConnectionFields for TagConnection {
         };
 
         // Map individual tags into graphql edges
-        let edges = tags
-            .into_iter()
-            // TODO de-dupe edge logic with other places
-            .enumerate()
-            .map(|(index, tag)| TagEdge {
-                node: TagNode {
-                    tag,
-                    // Defer loading the items for this tag until needed
-                    item_uris: None,
-                },
-                cursor: Cursor::from_offset_index(0, index),
-            })
-            .collect();
+        let edges = TagEdge::from_nodes(
+            tags.into_iter().map(|tag| TagNode {
+                tag,
+                // Defer loading the items for this tag until needed
+                item_uris: None,
+            }),
+            0,
+        );
         Ok(edges)
     }
 }

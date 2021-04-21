@@ -66,7 +66,6 @@ jobs:
         working-directory: ui/
         run: npm install
 
-      # TODO this is probably broken currently
       - name: Type-check
         working-directory: ui/
         run: npx tsc
