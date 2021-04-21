@@ -34,36 +34,6 @@ const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
 
 // TODO move the rest of these types below the main struct
 
-/// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
-#[derive(Clone, Debug, Deserialize)]
-pub struct TracksResponse {
-    pub tracks: Vec<Option<Track>>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/albums/get-several-albums/
-#[derive(Clone, Debug, Deserialize)]
-pub struct AlbumsResponse {
-    /// The response actually includes full album objects, but we use
-    /// simplified here to keep compatibility with the search endpoint
-    pub albums: Vec<Option<AlbumSimplified>>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/artists/get-several-artists/
-#[derive(Clone, Debug, Deserialize)]
-pub struct ArtistsResponse {
-    pub artists: Vec<Option<Artist>>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/#category-search
-/// The search method is hard-coded to always request these item categories,
-/// so we can hard-code them here. If we wanted to make that dynamic though, we
-/// could use a HashMap instead of this struct.
-#[derive(Clone, Debug, Deserialize)]
-pub struct SearchResponse {
-    pub tracks: PaginatedResponse<Track>,
-    pub albums: PaginatedResponse<AlbumSimplified>,
-    pub artists: PaginatedResponse<Artist>,
-}
 
 /// A client for accessing the Spotify web API
 #[derive(Debug)]
@@ -346,6 +316,7 @@ impl Spotify {
     }
 }
 
+// Make it easy to grab a spotify instance for any request handler
 #[async_trait]
 impl<'r> FromRequest<'r> for Spotify {
     type Error = ApiError;
@@ -353,6 +324,10 @@ impl<'r> FromRequest<'r> for Spotify {
     async fn from_request(
         request: &'r rocket::Request<'_>,
     ) -> rocket::request::Outcome<Self, Self::Error> {
+        // We'll generate a Spotify instance by reading the user's spotify
+        // creds from their cookies. If the cookies are missing/invalid, we'll
+        // return an error.
+
         /// Helper to build the client, which returns a result
         async fn build_client(
             oauth_client: Arc<BasicClient>,
@@ -388,6 +363,38 @@ impl<'r> FromRequest<'r> for Spotify {
             }
         }
     }
+}
+
+
+/// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
+#[derive(Clone, Debug, Deserialize)]
+pub struct TracksResponse {
+    pub tracks: Vec<Option<Track>>,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/albums/get-several-albums/
+#[derive(Clone, Debug, Deserialize)]
+pub struct AlbumsResponse {
+    /// The response actually includes full album objects, but we use
+    /// simplified here to keep compatibility with the search endpoint
+    pub albums: Vec<Option<AlbumSimplified>>,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/artists/get-several-artists/
+#[derive(Clone, Debug, Deserialize)]
+pub struct ArtistsResponse {
+    pub artists: Vec<Option<Artist>>,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/#category-search
+/// The search method is hard-coded to always request these item categories,
+/// so we can hard-code them here. If we wanted to make that dynamic though, we
+/// could use a HashMap instead of this struct.
+#[derive(Clone, Debug, Deserialize)]
+pub struct SearchResponse {
+    pub tracks: PaginatedResponse<Track>,
+    pub albums: PaginatedResponse<AlbumSimplified>,
+    pub artists: PaginatedResponse<Artist>,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object
