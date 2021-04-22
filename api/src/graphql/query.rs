@@ -4,9 +4,10 @@
 use crate::{
     error::ApiResult,
     graphql::{
-        internal::NodeType, Cursor, ItemSearch, PrivateUser, QueryFields,
-        RequestContext, SpotifyUri, TagConnection, TagNode,
-        TaggedItemConnection, TaggedItemNode,
+        internal::{LimitOffset, NodeType},
+        Cursor, ItemSearch, PrivateUser, QueryFields, RequestContext,
+        SpotifyUri, TagConnection, TagNode, TaggedItemConnection,
+        TaggedItemNode,
     },
 };
 use async_trait::async_trait;
@@ -14,7 +15,6 @@ use juniper::{futures::StreamExt, Executor};
 use juniper_from_schema::{QueryTrail, Walked};
 use mongodb::bson::doc;
 use serde::Deserialize;
-use std::convert::TryInto;
 
 /// Root GraphQL query
 pub struct Query;
@@ -100,18 +100,17 @@ impl QueryFields for Query {
         first: Option<i32>,
         after: Option<Cursor>,
     ) -> ApiResult<ItemSearch> {
-        // We need to run the search through spotify, then join tag data
         let context = executor.context();
-        // TODO replace unwrap with some input validation logic
-        let limit: Option<usize> = first.map(|first| first.try_into().unwrap());
-        let offset: Option<usize> = after.map(|cursor| cursor.offset());
+        // Validate pagination params
+        let limit_offset = LimitOffset::try_from_first_after(first, after)?;
 
         // Run the search query through spotify. This returns a mapping of
         // results, grouped by item type. i.e. one PaginatedResponse for each
         // type (track/album/artist)
-        // TODO pass limit/offset
-        let mut search_response =
-            context.spotify.search_items(&query, limit, offset).await?;
+        let mut search_response = context
+            .spotify
+            .search_items(&query, limit_offset.limit(), limit_offset.offset())
+            .await?;
 
         // Pull out the item types we care about. This should always exhaust
         // the map (with no missing types), because the fields we return here

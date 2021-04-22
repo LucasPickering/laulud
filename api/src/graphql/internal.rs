@@ -6,14 +6,119 @@
 //! GraphQL types, because the implementations are only used within this module.
 
 use crate::{
-    error::{ApiError, ApiResult},
+    error::{ApiError, ApiResult, InputValidationError},
     graphql::{Cursor, Item, SpotifyUri},
     util::UserId,
 };
 use derive_more::Display;
-use std::{backtrace::Backtrace, str::FromStr};
+use std::{backtrace::Backtrace, convert::TryInto, str::FromStr};
 
-// ===== Node =====
+// region: Pagination
+
+/// TODO
+#[derive(Clone, Debug)]
+pub struct ValidCursor {
+    offset: usize,
+}
+
+impl ValidCursor {
+    /// Get the pre-parsed offset for this cursor. A cursor is just an
+    /// obfuscated number that indicates the element's offset into the
+    /// collection. These offsets can be used with Spotify or Mongo to find
+    /// the element.
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    /// Get a cursor for an edge based on the offset of the page that if came
+    /// from and the index of the edge _within that page_. These two values
+    /// together tell us the total offset of the edge, which is used to
+    /// generate a cursor.
+    pub fn from_offset_index(offset: usize, index: usize) -> Self {
+        Self {
+            offset: offset + index,
+        }
+    }
+}
+
+impl Validate for Cursor {
+    type Output = ValidCursor;
+
+    fn validate(
+        self,
+        field: &str,
+    ) -> Result<Self::Output, InputValidationError> {
+        // Parse the string as a plain number
+        let offset =
+            self.0.parse::<usize>().map_err(|_| InputValidationError {
+                // That's the big NG
+                field: field.into(),
+                message: "Invalid pagination cursor".into(),
+                value: self.0.into(),
+            })?;
+        Ok(ValidCursor { offset })
+    }
+}
+
+// Convert this internal-only cursor into a stringified cursor that can be
+// returned to the user
+impl From<ValidCursor> for Cursor {
+    fn from(valid_cursor: ValidCursor) -> Self {
+        // Right now we just stringify the offset
+        // TODO use a fancy encoding here like hex or base64 to look cool
+        Self(valid_cursor.offset.to_string())
+    }
+}
+
+/// TODO
+#[derive(Clone, Debug)]
+pub struct LimitOffset {
+    limit: Option<usize>,
+    offset: Option<usize>,
+}
+
+impl LimitOffset {
+    /// TODO
+    pub fn try_from_first_after(
+        first: Option<i32>,
+        after: Option<Cursor>,
+    ) -> Result<Self, InputValidationError> {
+        let limit: Option<usize> = match first {
+            Some(first) => {
+                let limit: usize =
+                    first.try_into().map_err(|_| InputValidationError {
+                        field: "first".into(),
+                        message:
+                            "Invalid quantity, must be non-negative integer"
+                                .into(),
+                        value: first.into(),
+                    })?;
+                Some(limit)
+            }
+            None => None,
+        };
+        let offset: Option<usize> = match after {
+            Some(cursor) => {
+                let cursor = cursor.validate("after")?;
+                Some(cursor.offset())
+            }
+            None => None,
+        };
+        Ok(Self { limit, offset })
+    }
+
+    pub fn limit(&self) -> Option<usize> {
+        self.limit
+    }
+
+    pub fn offset(&self) -> Option<usize> {
+        self.offset
+    }
+}
+
+// endregion
+
+// region: Node
 
 // For some reason, rust-analyzer throws an error when you try to import `Node`,
 // so we use the qualified path here for dev QoL
@@ -91,9 +196,9 @@ impl FromStr for NodeType {
         }
     }
 }
+// endregion
 
-// ===== Item =====
-
+// region: Item
 impl Item {
     /// Get the URI for this item
     pub fn uri(&self) -> &SpotifyUri {
@@ -118,13 +223,16 @@ impl Clone for Item {
         }
     }
 }
+// endregion
 
-// ===== Generic Edge =====
+// region: Edge
 
 /// Helper type to handle GQL edge types. Edges consist of a cursor, to locate
 /// the edge within a Connection, and an associated node.
 pub struct GenericEdge<N> {
     node: N,
+    // If we end up needing to use this value as an offset, we can replace this
+    // with `ValidCursor`, but using `Cursor` here seems to be simpler for now
     cursor: Cursor,
 }
 
@@ -147,8 +255,24 @@ impl<N> GenericEdge<N> {
         rows.enumerate()
             .map(|(index, node)| Self {
                 node,
-                cursor: Cursor::from_offset_index(offset, index),
+                cursor: ValidCursor::from_offset_index(offset, index).into(),
             })
             .collect()
     }
 }
+// endregion
+
+// region: Validation
+
+/// TODO
+pub trait Validate: Sized {
+    type Output;
+
+    /// TODO
+    fn validate(
+        self,
+        field: &str,
+    ) -> Result<Self::Output, InputValidationError>;
+}
+
+// endregion

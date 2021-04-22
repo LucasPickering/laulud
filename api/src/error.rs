@@ -79,11 +79,11 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
-    // Invalid input data
-    #[error("Invalid input: {source}")]
-    Validation {
+    /// User passed some invalid input via GraphQL
+    #[error("{source}")]
+    InvalidInput {
         #[from]
-        source: validator::ValidationErrors,
+        source: InputValidationError,
         backtrace: Backtrace,
     },
 
@@ -151,7 +151,7 @@ impl ApiError {
     pub fn to_status(&self) -> Status {
         match self {
             // 400
-            Self::Validation { .. }
+            Self::InvalidInput { .. }
             | Self::Utf8Error { .. }
             | Self::ParseError { .. }
             | Self::UnsupportedObjectType { .. } => Status::BadRequest,
@@ -222,4 +222,13 @@ impl IntoFieldError for ApiError {
         self.log();
         FieldError::new(self.to_string(), juniper::Value::Null)
     }
+}
+
+/// TODO
+#[derive(Debug, Error)]
+#[error("Invalid input on field {field}: {message}")]
+pub struct InputValidationError {
+    pub field: String,
+    pub message: String,
+    pub value: juniper::Value,
 }

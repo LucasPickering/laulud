@@ -1,7 +1,9 @@
 //! Basic, generic GraphQL types, that aren't specific to any part of the API or
 //! any particular data type
 
-use crate::graphql::{Cursor, PageInfoFields, RequestContext};
+use crate::graphql::{
+    internal::ValidCursor, Cursor, PageInfoFields, RequestContext,
+};
 use juniper::Executor;
 
 // TODO make these dedicated graphql scalar types, so we can get the type
@@ -9,29 +11,6 @@ use juniper::Executor;
 pub type SpotifyId = String;
 pub type SpotifyUri = String;
 // TODO add a scalar type for Tag as well
-
-impl Cursor {
-    /// Parse the cursor into an offset value. A cursor is just an obfuscated
-    /// number that indicates the element's offset into the collection. These
-    /// offsets can be used with Spotify or Mongo to find the element.
-    ///
-    /// TODO make this return a result and Err if the value isn't a valid usize
-    pub fn offset(&self) -> usize {
-        // TODO cursor validation and remove unwrap
-        self.0.parse::<usize>().unwrap() + 1
-    }
-
-    /// Get a cursor for an edge based on the offset of the page that if came
-    /// from and the index of the edge _within that page_. These two values
-    /// together tell us the total offset of the edge, which is used to
-    /// generate a cursor.
-    pub fn from_offset_index(offset: usize, index: usize) -> Self {
-        // For now, cursors are just the stringified numbers
-        // TODO make cursors more complex to seem more official
-        // https://relay.dev/graphql/connections.htm#sec-Cursor
-        Self((offset + index).to_string())
-    }
-}
 
 /// GQL type to display information about a page of data. See the Relay
 /// Connections spec: https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo
@@ -53,7 +32,7 @@ impl PageInfoFields for PageInfo {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> Option<Cursor> {
         if self.page_len > 0 {
-            Some(Cursor::from_offset_index(self.offset, 0))
+            Some(ValidCursor::from_offset_index(self.offset, 0).into())
         } else {
             None
         }
@@ -65,7 +44,10 @@ impl PageInfoFields for PageInfo {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> Option<Cursor> {
         if self.page_len > 0 {
-            Some(Cursor::from_offset_index(self.offset, self.page_len - 1))
+            Some(
+                ValidCursor::from_offset_index(self.offset, self.page_len - 1)
+                    .into(),
+            )
         } else {
             None
         }

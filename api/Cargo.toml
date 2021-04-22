@@ -5,6 +5,10 @@ license = "MIT"
 name = "laulud-api"
 version = "0.1.0"
 
+[profile.dev]
+# https://jakedeichert.com/blog/reducing-rust-incremental-compilation-times-on-macos-by-70-percent/
+split-debuginfo = "unpacked"
+
 [dependencies]
 async-trait = "0.1"
 derive_more = "0.99"
@@ -12,22 +16,16 @@ env_logger = "0.8"
 itertools = "0.9"
 juniper = "0.15"
 juniper-from-schema = {git = "https://github.com/LucasPickering/juniper-from-schema", branch = "137-multiple-schema-files"}
-# lazy_static = "1"
 log = "0.4"
 mongodb = {version = "2.0.0-alpha.1", default-features = false, features = ["tokio-runtime"]}
-oauth2 = "4.0.0-beta.1"
-# regex = "1"
+oauth2 = "4.0.0"
 reqwest = "0.11"
 rocket = {git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["secrets"]}
 # TODO maybe we can ditch this crate?
 rocket_contrib = {git = "https://github.com/SergioBenitez/Rocket.git", branch = "master"}
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
-# serde_with = "1.6"
 thiserror = "1.0"
 time = {version = "0.2", features = ["serde"]}
 tokio = {version = "1.4", features = ["full"]}
-# typescript-definitions = {git = "https://github.com/onelson/typescript-definitions", branch = "no-debug-attrs"}
 uuid = "0.8"
-# TODO remove this
-validator = {version = "0.11", features = ["derive"]}
