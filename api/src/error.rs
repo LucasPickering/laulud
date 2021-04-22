@@ -218,7 +218,8 @@ impl<'r> Responder<'r, 'static> for ApiError {
 impl IntoFieldError for ApiError {
     fn into_field_error(self) -> FieldError {
         // Temporary method to log errors
-        // TODO write a ticket for this
+        // TODO log this in juniper instead of when we generate the error
+        // after https://github.com/graphql-rust/juniper/issues/423
         self.log();
 
         // TODO generate an error code for each variant that the UI can check

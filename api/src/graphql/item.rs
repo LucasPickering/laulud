@@ -15,11 +15,16 @@ use juniper::{futures::TryStreamExt, Executor};
 use juniper_from_schema::{QueryTrail, Walked};
 use mongodb::bson::doc;
 
-/// TODO
+/// A Spotify item with its applied tags. The item is always preloaded while the
+/// tags can be fetched eagerly (preloaded) or lazily (loaded from the DB
+/// when requested).
 #[derive(Clone)]
 pub struct TaggedItemNode {
     pub item: Item,
-    /// TODO describe eager vs lazy
+    /// `None` means lazy-load the tags. This will map to a lazy version of
+    /// [TagConnection], which will only load data as needed. `Some` means the
+    /// tags are all preloaded and [TagConnection] won't have to make any
+    /// queries for its field resolutions.
     pub tags: Option<Vec<String>>,
 }
 
@@ -80,15 +85,37 @@ impl TaggedItemEdgeFields for TaggedItemEdge {
 }
 
 /// "Connection" is a concept from Relay. Read more: https://graphql.org/learn/pagination/
-/// TODO explain lazy vs eager behavior
+/// This struct provides data about a particular collection of tagged items.
+/// The data may be loaded eagerly or lazily. See individual variants for the
+/// possible options.
 pub enum TaggedItemConnection {
-    /// TODO
+    /// All item data is preloaded from the Spotify API. The first level of
+    /// field resolutions for this variant will be immediate, and not require
+    /// any I/O (nested fields may require additional I/O, but that's beyond
+    /// the concern of this struct).
+    ///
+    /// This variant should be used whenever item data is already present, but
+    /// you shouldn't prefetch data just for the purposes of using this
+    /// variant. In those cases, use one of the lazily loaded variants instead.
     Preloaded {
         paginated_response: PaginatedResponse<Item>,
     },
-    /// TODO
+
+    /// Lazily load item data, where the items in the collection are defined by
+    /// a list of URIs. When item data is needed, all the items will be fetched
+    /// from the Spotify API in a single request.
+    ///
+    /// This variant currently doesn't support pagination, but that can be
+    /// added if necessary.
     ByUris { uris: Vec<SpotifyUri> },
-    /// TODO
+
+    /// Lazily load item data, where the items in the collection are defined by
+    /// a single tag. When item data is needed, the list of items that match
+    /// the tag will be fetched from the DB, _then_ those items will be fetched
+    /// from the Spotify API.
+    ///
+    /// This variant currently doesn't support pagination, but that can be
+    /// added if necessary.
     ByTag { tag: String },
 }
 

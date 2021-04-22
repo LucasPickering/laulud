@@ -13,11 +13,21 @@ use async_trait::async_trait;
 use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
 
-/// TODO
+/// A user-defined tag. Tags have a many-to-many relationship with Spotify
+/// items, and all tag data is stored in the local DB. The items associated
+/// with this tag can be loaded (preloaded) or lazily (loaded from the DB
+/// when requested).
 #[derive(Clone, Debug)]
 pub struct TagNode {
     pub tag: String,
-    /// TODO explain eager vs lazy
+    /// `None` means lazy-load the list of item URIs. This will map to a lazy
+    /// version of [TaggedItemConnection], which will only load the list of
+    /// items as needed. `Some` means the list of item URIs is preloaded
+    /// and [TaggedNodeConnection] won't have to make any DB queries to get the
+    /// list of items that match the tag. Note that in either case, we're only
+    /// loading item **URIs**, not the full item data. So either way, the
+    /// full item data won't be preloaded from the Spotify API, we're just
+    /// saving a DB query in the eager case.
     pub item_uris: Option<Vec<SpotifyUri>>,
 }
 
@@ -80,13 +90,32 @@ impl TagEdgeFields for TagEdge {
 }
 
 /// "Connection" is a concept from Relay. Read more: https://graphql.org/learn/pagination/
-/// TODO explain lazy vs eager
+/// This struct provides data about a particular collection of tags. The list
+/// of tags may be loaded eagerly or lazily. See individual variants for the
+/// possible options.
 pub enum TagConnection {
-    /// TODO
+    /// The list of tags is preloaded from the DB. The first level of
+    /// field resolutions for this variant will be immediate, and not require
+    /// any I/O (nested fields may require additional I/O, but that's beyond
+    /// the concern of this struct).
+    ///
+    /// This variant should be used whenever tag data is already present, but
+    /// you shouldn't prefetch data just for the purposes of using this
+    /// variant. In those cases, use one of the lazily loaded variants instead.
     Preloaded { tags: Vec<String> },
-    /// TODO
+
+    /// Lazily load tag data for **all** tags defined by this user. The list of
+    /// tags that this user has created will be fetched lazily, as needed.
+    ///
+    /// This variant currently doesn't support pagination, but that can be
+    /// added if necessary.
     All,
-    /// TODO
+
+    /// Lazily load tag data, where the list of tags is defined by an item URI.
+    /// Any tag that is applied to the item will be included.
+    ///
+    /// This variant currently doesn't support pagination, but that can be
+    /// added if necessary.
     ByItem { item_uri: SpotifyUri },
 }
 
