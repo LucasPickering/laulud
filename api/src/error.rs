@@ -142,7 +142,12 @@ pub enum ApiError {
 }
 
 impl ApiError {
-    /// Convert this error to an HTTP status code
+    /// Convert this error to an HTTP status code. For most types the exact
+    /// code doesn't matter because we don't actually return HTTP errors in
+    /// GraphQL. So in most cases, the only thing that matters is 4xx vs 5xx to
+    /// determine the logging level. For error types that can be returned
+    /// from oauth routes though, the exact code matters because those are pure
+    /// HTTP (no GraphQL).
     pub fn to_status(&self) -> Status {
         match self {
             // 400
@@ -185,7 +190,9 @@ impl ApiError {
             log_level,
             "API Error: {}\n{}",
             self,
-            self.backtrace().expect("No backtrace available :(")
+            self.backtrace()
+                .map(|bt| bt.to_string())
+                .unwrap_or_else(String::new)
         );
     }
 }
