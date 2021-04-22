@@ -7,12 +7,12 @@
 //! https://developer.spotify.com/documentation/web-api/reference/
 
 use crate::{
-    error::{ApiError, ApiResult},
+    error::{ApiError, ApiResult, InputValidationError},
     graphql::{
         AlbumSimplified, Artist, Item, PrivateUser, SpotifyId,
         SpotifyObjectType, SpotifyUri, Track,
     },
-    util::{IdentityState, OAuthHandler},
+    util::{IdentityState, OAuthHandler, Validate},
 };
 use async_trait::async_trait;
 use itertools::Itertools;
@@ -30,6 +30,9 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{backtrace::Backtrace, collections::HashMap, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
+
+// TODO split this into multiple modules (main Spotify type in one, mini structs
+// in others)
 
 /// A client for accessing the Spotify web API
 #[derive(Debug)]
@@ -450,5 +453,56 @@ impl From<ItemDeserialize> for Item {
             ItemDeserialize::Album(album) => Item::AlbumSimplified(album),
             ItemDeserialize::Artist(artist) => Item::Artist(artist),
         }
+    }
+}
+
+/// A parsed and validated Spotify URI. This should be used for any internal
+/// logic that passes around URIs, so that we always know they're valid. It
+/// can be converted _from_ [SpotifyUri] fallibly, and _to_ [SpotifyUri]
+/// infallibly. Note that in this context, "valid" just means it's not
+/// _malformed_. It **doesn't** mean that the URI actually exists in Spotify.
+pub struct ValidSpotifyUri {
+    item_type: SpotifyObjectType,
+    id: SpotifyId,
+}
+
+impl Validate for SpotifyUri {
+    type Output = ValidSpotifyUri;
+
+    /// Parse the raw Spotify ID into an item type+ID. See
+    /// https://developer.spotify.com/documentation/web-api/ for a description
+    /// of URIs.
+    fn validate(
+        self,
+        field: &str,
+    ) -> Result<Self::Output, InputValidationError> {
+        // Expect URIs of the format "spotify:<type>:<id>"
+        // We have to generate errors as strings first, then map to a proper
+        // error type, cause borrowck
+        let parsed: Result<ValidSpotifyUri, String> =
+            match self.split(':').collect::<Vec<&str>>().as_slice() {
+                ["spotify", item_type, id] => {
+                    // Parse item type. It's possible we get a valid item type
+                    // that we just don't support, just going to treat those
+                    // as invalid for now.
+                    match item_type.parse::<SpotifyObjectType>() {
+                        Ok(item_type) => Ok(ValidSpotifyUri {
+                            item_type,
+                            id: (*id).into(),
+                        }),
+                        // Big NG
+                        Err(_) => Err(format!(
+                            "Invalid Spotify URI: unknown item type {}",
+                            item_type
+                        )),
+                    }
+                }
+                _ => Err("Invalid Spotify URI: invalid format".into()),
+            };
+        parsed.map_err(|message| InputValidationError {
+            field: field.into(),
+            message,
+            value: self.into(),
+        })
     }
 }

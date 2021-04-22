@@ -1,3 +1,13 @@
+//! All Spotify API types _that are exposed externally_ get defined here.
+//! Spotify API types that we only use within the server (and don't ever
+//! send/receive via GraphQL) will be defined in the main [crate::spotify]
+//! module. Some types are missing fields from the API spec, because they were
+//! annoying to implement and not needed. See the GraphQL schema file for
+//! exactly which fields are omitted.
+//!
+//! TODO move all these struct definitions to the spotify module, just put impls
+//! here
+
 use std::{backtrace::Backtrace, str::FromStr};
 
 use crate::{
@@ -13,9 +23,14 @@ use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
 use serde::{Deserialize, Serialize};
 
-/// All Spotify API types get defined here. Some types are missing fields from
-/// the API spec, because they were annoying to implement and not needed. See
-/// the GraphQL schema file for exactly which fields are omitted.
+/// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ArtistSimplified {
+    pub href: String,
+    pub id: SpotifyId,
+    pub name: String,
+    pub uri: SpotifyUri,
+}
 
 impl ArtistSimplifiedFields for ArtistSimplified {
     fn field_href(
@@ -406,15 +421,6 @@ impl PrivateUserFields for PrivateUser {
     ) -> &Vec<Image> {
         &self.images
     }
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ArtistSimplified {
-    pub href: String,
-    pub id: SpotifyId,
-    pub name: String,
-    pub uri: SpotifyUri,
 }
 
 /// Any object type that can get a URI
