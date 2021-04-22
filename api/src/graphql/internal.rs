@@ -15,7 +15,13 @@ use std::{backtrace::Backtrace, convert::TryInto, str::FromStr};
 
 // region: Pagination
 
-/// TODO
+/// A vaildated version of [Cursor]. A cursor is just some offset value
+/// converted into a string, so this struct represents the unconverted version.
+/// This makes it easy to pass around the raw offset internally while also
+/// forcing us to validate user-provided cursors before using them. Best
+/// practice is to immediately convert any user-provided [Cursor] to a
+/// [ValidCursor], then pass around the [ValidCursor] internally as needed.
+/// To convert back to a [Cursor], use the [From] implementation.
 #[derive(Clone, Debug)]
 pub struct ValidCursor {
     offset: usize,
@@ -70,7 +76,10 @@ impl From<ValidCursor> for Cursor {
     }
 }
 
-/// TODO
+/// A parsed version of user pagination params, to make it easy to paginate
+/// through Mongo or Spotify data. This struct is guaranteed to hold valid
+/// values, so it can be passed around internally. To map from user pagination
+/// input into this struct, use [Self::try_from_first_after].
 #[derive(Clone, Debug)]
 pub struct LimitOffset {
     limit: Option<usize>,
@@ -78,11 +87,18 @@ pub struct LimitOffset {
 }
 
 impl LimitOffset {
-    /// TODO
+    /// Map from a user's `first` and `after` pagination params to limit/offset
+    /// values that we can use internally with Spotify and Mongo. If either of
+    /// the input values are invalid, an error will be returned here so it can
+    /// be propagated to the user.
+    ///
+    /// See the [GraphQL spec](https://relay.dev/graphql/connections.htm) for
+    /// more info on first/after.
     pub fn try_from_first_after(
         first: Option<i32>,
         after: Option<Cursor>,
     ) -> Result<Self, InputValidationError> {
+        // Convert `first` to a usize
         let limit: Option<usize> = match first {
             Some(first) => {
                 let limit: usize =
@@ -97,13 +113,20 @@ impl LimitOffset {
             }
             None => None,
         };
+
+        // Parse `after` as a cursor then convert to a number
         let offset: Option<usize> = match after {
             Some(cursor) => {
                 let cursor = cursor.validate("after")?;
-                Some(cursor.offset())
+                // We want to include the first element _after_ the cursor, so
+                // add 1 to the offset. E.g. if we request `after: "cursor-0"`,
+                // then the first element we want to show is #1, so offset
+                // should be 1
+                Some(cursor.offset() + 1)
             }
             None => None,
         };
+
         Ok(Self { limit, offset })
     }
 
@@ -210,7 +233,6 @@ impl Item {
     }
 }
 
-// TODO consolidate impls on Item and other gql types
 // TODO replace with derive after https://github.com/davidpdrsn/juniper-from-schema/issues/139
 impl Clone for Item {
     fn clone(&self) -> Self {
@@ -264,11 +286,23 @@ impl<N> GenericEdge<N> {
 
 // region: Validation
 
-/// TODO
+/// A trait that denotes that this type represents some user input that needs
+/// to be validated, and in the process of validation will be converted to
+/// some other output type. Typically, any type that implements this trait is
+/// **always** considered invalid, and should generally be validated as soon as
+/// possible in the API chain. Then, the validated version of the type can be
+/// used internally and we know for sure that the value is valid.
+///
+/// Valid structs should _only_ be constructable via this trait implementation,
+/// to prevent sidestepping validation by directly creating the "valid" value.
 pub trait Validate: Sized {
     type Output;
 
-    /// TODO
+    /// Validate the user-provided value. If it's valid, return the validated
+    /// form of it. If not, return a validation error.
+    ///
+    /// `field` represents the GraphQL field that is being validated. This is
+    /// used in the event of an error, to tell the user which field was invalid.
     fn validate(
         self,
         field: &str,

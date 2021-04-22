@@ -224,11 +224,18 @@ impl IntoFieldError for ApiError {
     }
 }
 
-/// TODO
+/// An error indicating the user passed invalid input via the GraphQL API. This
+/// is its own type so we can be more specific about what errors we return from
+/// validation procedures. This has a corresponding variant on [ApiError], so
+/// it can easily be returned from the API.
 #[derive(Debug, Error)]
 #[error("Invalid input on field {field}: {message}")]
 pub struct InputValidationError {
+    /// The GraphQL field that contained the error. This will be reported back
+    /// to the user to tell them what was invalid
     pub field: String,
+    /// Description of what was invalid about the input
     pub message: String,
+    /// The invalid input value, as passed by the user
     pub value: juniper::Value,
 }
