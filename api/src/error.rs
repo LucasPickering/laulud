@@ -1,5 +1,5 @@
 use crate::graphql::SpotifyObjectType;
-use juniper::{FieldError, IntoFieldError};
+use juniper::{graphql_value, FieldError, IntoFieldError};
 use log::{log, Level};
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
@@ -220,7 +220,21 @@ impl IntoFieldError for ApiError {
         // Temporary method to log errors
         // TODO write a ticket for this
         self.log();
-        FieldError::new(self.to_string(), juniper::Value::Null)
+
+        // TODO generate an error code for each variant that the UI can check
+        match self {
+            // Input validation errors are designed to be user-friendly, so we
+            // can map those back to juniper errors easily
+            Self::InvalidInput { source, .. } => FieldError::new(
+                source.to_string(),
+                graphql_value!({
+                    "field": (source.field),
+                    "message": (source.message),
+                    "value": (source.value),
+                }),
+            ),
+            _ => FieldError::new(self.to_string(), juniper::Value::Null),
+        }
     }
 }
 
