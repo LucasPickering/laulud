@@ -449,7 +449,6 @@ impl SpotifyObjectType {
     }
 }
 
-// TODO try removing this, it may be unused
 impl FromStr for SpotifyObjectType {
     type Err = ApiError;
 

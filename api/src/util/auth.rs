@@ -157,7 +157,8 @@ impl<'r> FromRequest<'r> for UserId {
     async fn from_request(
         request: &'r rocket::Request<'_>,
     ) -> Outcome<Self, Self::Error> {
-        // TODO clean this up with utility funcs
+        // Check for the identity cookie in the request, and if present grab
+        // the user ID from it
         match IdentityState::from_request(request).await {
             Outcome::Success(IdentityState::PostAuth { user_id, .. }) => {
                 Outcome::Success(user_id)
