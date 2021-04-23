@@ -1,5 +1,5 @@
 use crate::{
-    error::ApiResult, graphql::SpotifyUri, util::UserId, LauludConfig,
+    error::ApiResult, spotify::ValidSpotifyUri, util::UserId, LauludConfig,
 };
 use derive_more::{Deref, From};
 use juniper::futures::StreamExt;
@@ -96,7 +96,7 @@ impl TaggedItemsCollection {
     pub async fn count_tags_by_item(
         &self,
         user_id: &UserId,
-        item_uri: &SpotifyUri,
+        item_uri: &ValidSpotifyUri,
     ) -> ApiResult<i64> {
         self.count_tags_helper(Self::filter_by_item(user_id, item_uri))
             .await
@@ -112,7 +112,7 @@ impl TaggedItemsCollection {
     pub async fn find_tags_by_item(
         &self,
         user_id: &UserId,
-        item_uri: &SpotifyUri,
+        item_uri: &ValidSpotifyUri,
     ) -> ApiResult<Vec<String>> {
         self.find_tags_helper(Self::filter_by_item(user_id, item_uri))
             .await
@@ -126,7 +126,10 @@ impl TaggedItemsCollection {
         doc! {"user_id": user_id, "tags":tag}
     }
 
-    fn filter_by_item(user_id: &UserId, item_uri: &SpotifyUri) -> Document {
+    fn filter_by_item(
+        user_id: &UserId,
+        item_uri: &ValidSpotifyUri,
+    ) -> Document {
         doc! {"user_id": user_id, "uri": item_uri}
     }
 
@@ -206,10 +209,7 @@ impl TaggedItemsCollection {
 pub struct TaggedItemDocument {
     pub user_id: UserId,
     pub tags: Vec<String>,
-    /// Uniquely identifies both the document type (track, album, etc.) and the
-    /// document itself.
-    /// https://developer.spotify.com/documentation/web-api/#spotify-uris-and-ids
-    pub uri: SpotifyUri,
+    pub uri: ValidSpotifyUri,
 }
 
 /// A Mongo document that counts a single `count` field. Useful when

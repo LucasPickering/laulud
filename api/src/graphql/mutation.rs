@@ -6,6 +6,7 @@ use crate::{
         AddTagInput, AddTagPayloadFields, DeleteTagInput,
         DeleteTagPayloadFields, MutationFields, RequestContext, TaggedItemNode,
     },
+    util::Validate,
 };
 use async_trait::async_trait;
 use juniper::Executor;
@@ -28,18 +29,19 @@ impl MutationFields for Mutation {
         input: AddTagInput,
     ) -> ApiResult<AddTagPayload> {
         let context = executor.context();
-        // TODO input validation
+        // TODO validate tag (must be non-empty)
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
         // TODO return none if item doesn't exist
-        let spotify_item = context.spotify.get_item(&input.item_uri).await?;
+        let uri = input.item_uri.validate("input.item_uri")?;
+        let spotify_item = context.spotify.get_item(&uri).await?;
 
         // Do the update query
         let item_doc = context
             .db_handler
             .collection_tagged_items()
             .find_one_and_update(
-                doc! {"uri": &input.item_uri, "user_id": &context.user_id},
+                doc! {"uri": &uri, "user_id": &context.user_id},
                 // Add each tag to the doc if it isn't present already
                 doc! {"$addToSet": {"tags": &input.tag}},
                 Some(
@@ -72,19 +74,20 @@ impl MutationFields for Mutation {
         _trail: &QueryTrail<'r, DeleteTagPayload, Walked>,
         input: DeleteTagInput,
     ) -> ApiResult<DeleteTagPayload> {
-        // TODO input validation
         let context = executor.context();
+        // TODO validate tag (must be non-empty)
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
         // TODO return none if item doesn't exist
-        let spotify_item = context.spotify.get_item(&input.item_uri).await?;
+        let uri = input.item_uri.validate("input.item_uri")?;
+        let spotify_item = context.spotify.get_item(&uri).await?;
 
         // Look up tags in mongo - will return None if item doesn't exist
         let item_doc_opt = context
             .db_handler
             .collection_tagged_items()
             .find_one_and_update(
-                doc! {"uri": &input.item_uri, "user_id": &context.user_id},
+                doc! {"uri": &uri, "user_id": &context.user_id},
                 // Remove the tag from the doc
                 doc! {"$pull": {"tags": &input.tag}},
                 Some(

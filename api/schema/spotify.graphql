@@ -14,7 +14,7 @@ type Artist {
   images: [Image!]! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
   popularity: Int! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -26,7 +26,7 @@ type ArtistSimplified {
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -46,7 +46,7 @@ type AlbumSimplified {
   releaseDate: String! @juniper(infallible: true)
   releaseDatePrecision: String! @juniper(infallible: true)
   # Skipping `restrictions`
-  uri: String! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -69,7 +69,7 @@ type Track {
   popularity: Int! @juniper(infallible: true)
   previewUrl: String @juniper(infallible: true)
   trackNumber: Int! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -89,7 +89,7 @@ https://developer.spotify.com/documentation/web-api/reference/#object-privateuse
 type PrivateUser {
   id: String! @juniper(infallible: true)
   href: String! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true, ownership: "owned")
   displayName: String @juniper(infallible: true)
   images: [Image!]! @juniper(infallible: true)
 }

@@ -8,7 +8,8 @@ use crate::{
         Cursor, ItemSearch, QueryFields, RequestContext, SpotifyUri,
         TagConnection, TagNode, TaggedItemConnection, TaggedItemNode,
     },
-    spotify::PrivateUser,
+    spotify::{PrivateUser, ValidSpotifyUri},
+    util::Validate,
 };
 use async_trait::async_trait;
 use juniper::{futures::StreamExt, Executor};
@@ -45,7 +46,7 @@ impl QueryFields for Query {
             NodeType::TaggedItemNode => {
                 // For items, the value ID is the URI. Look up the item in the
                 // Spotify API
-                let item_uri = value_id;
+                let item_uri: ValidSpotifyUri = value_id.validate("")?;
                 // TODO figure out a clean way to map missing items to None
                 let item = context.spotify.get_item(&item_uri).await?;
                 Some(TaggedItemNode { item, tags: None }.into())
@@ -80,6 +81,7 @@ impl QueryFields for Query {
     ) -> ApiResult<Option<TaggedItemNode>> {
         let context = executor.context();
         // TODO figure out a clean way to map missing items to None
+        let uri = uri.validate("uri")?;
         let spotify_item = context.spotify.get_item(&uri).await?;
 
         Ok(Some(TaggedItemNode {

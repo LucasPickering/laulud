@@ -2,15 +2,15 @@
 //! relate closely to the Spotify API. Everything in this module will be
 //! exported to the entire crate!
 
-use std::{backtrace::Backtrace, str::FromStr};
-
 use crate::{
     error::{ApiError, InputValidationError},
     graphql::{SpotifyId, SpotifyUri},
     util::Validate,
 };
 use derive_more::Display;
+use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
+use std::{backtrace::Backtrace, convert::TryFrom, str::FromStr};
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
 #[derive(Clone, Debug, Deserialize)]
@@ -18,7 +18,7 @@ pub struct ArtistSimplified {
     pub href: String,
     pub id: SpotifyId,
     pub name: String,
-    pub uri: SpotifyUri,
+    pub uri: ValidSpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-full
@@ -30,7 +30,7 @@ pub struct Artist {
     pub images: Vec<Image>,
     pub name: String,
     pub popularity: i32,
-    pub uri: SpotifyUri,
+    pub uri: ValidSpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#album-object-simplified
@@ -46,7 +46,7 @@ pub struct AlbumSimplified {
     pub name: String,
     pub release_date: String,
     pub release_date_precision: String,
-    pub uri: SpotifyUri,
+    pub uri: ValidSpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
@@ -65,7 +65,7 @@ pub struct Track {
     pub popularity: i32,
     pub preview_url: Option<String>,
     pub track_number: i32,
-    pub uri: SpotifyUri,
+    pub uri: ValidSpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object
@@ -81,7 +81,7 @@ pub struct Image {
 pub struct PrivateUser {
     pub id: SpotifyId,
     pub href: String,
-    pub uri: SpotifyUri,
+    pub uri: ValidSpotifyUri,
     pub display_name: Option<String>,
     pub images: Vec<Image>,
 }
@@ -167,21 +167,6 @@ pub enum SpotifyObjectType {
     User,
 }
 
-impl SpotifyObjectType {
-    /// Parse a Spotify URI into its components. URIs have the format:
-    /// `spotify:<type>:<id>`, where the object type is one of the stringified
-    /// values of [SpotifyObjectType].
-    pub fn parse_uri(uri: &SpotifyUri) -> (Self, SpotifyId) {
-        match uri.split(':').collect::<Vec<&str>>().as_slice() {
-            ["spotify", object_type, id] => {
-                (object_type.parse().unwrap(), (*id).to_owned())
-            }
-            // TODO figure out better way to handle this
-            _ => panic!("Malformatted Spotify URI: {}", uri),
-        }
-    }
-}
-
 impl FromStr for SpotifyObjectType {
     type Err = ApiError;
 
@@ -204,9 +189,24 @@ impl FromStr for SpotifyObjectType {
 /// can be converted _from_ [SpotifyUri] fallibly, and _to_ [SpotifyUri]
 /// infallibly. Note that in this context, "valid" just means it's not
 /// _malformed_. It **doesn't** mean that the URI actually exists in Spotify.
+///
+/// This can only be constructed via its [Validate] implementation.
+#[derive(Clone, Debug, Display, Serialize, Deserialize)]
+#[display(fmt = "spotify:{}:{}", item_type, id)]
+#[serde(try_from = "SpotifyUri", into = "SpotifyUri")]
 pub struct ValidSpotifyUri {
     item_type: SpotifyObjectType,
     id: SpotifyId,
+}
+
+impl ValidSpotifyUri {
+    pub fn item_type(&self) -> SpotifyObjectType {
+        self.item_type
+    }
+
+    pub fn id(&self) -> &SpotifyId {
+        &self.id
+    }
 }
 
 impl Validate for SpotifyUri {
@@ -247,5 +247,28 @@ impl Validate for SpotifyUri {
             message,
             value: self.into(),
         })
+    }
+}
+
+impl From<ValidSpotifyUri> for SpotifyUri {
+    fn from(uri: ValidSpotifyUri) -> Self {
+        uri.to_string()
+    }
+}
+
+impl From<&ValidSpotifyUri> for Bson {
+    fn from(uri: &ValidSpotifyUri) -> Self {
+        uri.to_string().into()
+    }
+}
+
+impl TryFrom<SpotifyUri> for ValidSpotifyUri {
+    type Error = InputValidationError;
+
+    fn try_from(value: SpotifyUri) -> Result<Self, Self::Error> {
+        // This is kinda bullshit but just assume the field name. Most of the
+        // time, we're going to be using this when deserializing from the
+        // Spotify API or DB so the field name matches
+        value.validate("uri")
     }
 }

@@ -7,7 +7,8 @@
 
 use crate::{
     error::{ApiError, ApiResult, InputValidationError},
-    graphql::{Cursor, Item, SpotifyUri},
+    graphql::{Cursor, Item},
+    spotify::ValidSpotifyUri,
     util::{UserId, Validate},
 };
 use derive_more::Display;
@@ -163,8 +164,8 @@ impl crate::graphql::Node {
     pub fn id(&self, user_id: &UserId) -> juniper::ID {
         let node_type = self.node_type();
         let value_id = match self {
-            Self::TaggedItemNode(node) => node.item.uri(),
-            Self::TagNode(node) => &node.tag,
+            Self::TaggedItemNode(node) => node.item.uri().to_string(),
+            Self::TagNode(node) => node.tag.clone(),
         };
 
         juniper::ID::new(format!("{}_{}_{}", node_type, value_id, user_id))
@@ -228,7 +229,7 @@ impl FromStr for NodeType {
 // region: Item
 impl Item {
     /// Get the URI for this item
-    pub fn uri(&self) -> &SpotifyUri {
+    pub fn uri(&self) -> &ValidSpotifyUri {
         match self {
             Self::Track(track) => &track.uri,
             Self::AlbumSimplified(album) => &album.uri,

@@ -229,6 +229,7 @@ impl IntoFieldError for ApiError {
             Self::InvalidInput { source, .. } => FieldError::new(
                 source.to_string(),
                 graphql_value!({
+                    // TODO map field names to camelCase
                     "field": (source.field),
                     "message": (source.message),
                     "value": (source.value),

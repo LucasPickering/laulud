@@ -39,8 +39,8 @@ impl ArtistSimplifiedFields for ArtistSimplified {
     fn field_uri(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyUri {
-        &self.uri
+    ) -> SpotifyUri {
+        self.uri.to_string()
     }
 }
 
@@ -91,8 +91,8 @@ impl ArtistFields for Artist {
     fn field_uri(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyUri {
-        &self.uri
+    ) -> SpotifyUri {
+        self.uri.to_string()
     }
 }
 
@@ -172,8 +172,8 @@ impl AlbumSimplifiedFields for AlbumSimplified {
     fn field_uri(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyUri {
-        &self.uri
+    ) -> SpotifyUri {
+        self.uri.to_string()
     }
 }
 
@@ -274,8 +274,8 @@ impl TrackFields for Track {
     fn field_uri(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyUri {
-        &self.uri
+    ) -> SpotifyUri {
+        self.uri.to_string()
     }
 }
 
@@ -320,8 +320,8 @@ impl PrivateUserFields for PrivateUser {
     fn field_uri(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyUri {
-        &self.uri
+    ) -> SpotifyUri {
+        self.uri.to_string()
     }
 
     fn field_display_name(

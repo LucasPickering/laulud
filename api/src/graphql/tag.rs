@@ -4,9 +4,10 @@ use crate::{
     error::ApiResult,
     graphql::{
         core::PageInfo, internal::GenericEdge, item::TaggedItemConnection,
-        Cursor, RequestContext, SpotifyUri, TagConnectionFields, TagEdgeFields,
+        Cursor, RequestContext, TagConnectionFields, TagEdgeFields,
         TagNodeFields,
     },
+    spotify::ValidSpotifyUri,
     util,
 };
 use async_trait::async_trait;
@@ -28,7 +29,7 @@ pub struct TagNode {
     /// loading item **URIs**, not the full item data. So either way, the
     /// full item data won't be preloaded from the Spotify API, we're just
     /// saving a DB query in the eager case.
-    pub item_uris: Option<Vec<SpotifyUri>>,
+    pub item_uris: Option<Vec<ValidSpotifyUri>>,
 }
 
 impl TagNodeFields for TagNode {
@@ -116,7 +117,7 @@ pub enum TagConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByItem { item_uri: SpotifyUri },
+    ByItem { item_uri: ValidSpotifyUri },
 }
 
 #[async_trait]

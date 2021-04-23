@@ -4,10 +4,10 @@ use crate::{
     error::ApiResult,
     graphql::{
         internal::GenericEdge, Cursor, Item, ItemSearchFields, PageInfo,
-        RequestContext, SpotifyUri, TagConnection, TaggedItemConnectionFields,
+        RequestContext, TagConnection, TaggedItemConnectionFields,
         TaggedItemEdgeFields, TaggedItemNodeFields,
     },
-    spotify::PaginatedResponse,
+    spotify::{PaginatedResponse, ValidSpotifyUri},
     util,
 };
 use async_trait::async_trait;
@@ -107,7 +107,7 @@ pub enum TaggedItemConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByUris { uris: Vec<SpotifyUri> },
+    ByUris { uris: Vec<ValidSpotifyUri> },
 
     /// Lazily load item data, where the items in the collection are defined by
     /// a single tag. When item data is needed, the list of items that match
@@ -221,7 +221,7 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
                     .collection_tagged_items()
                     .find_by_tag(&context.user_id, tag)
                     .await?;
-                let uris: Vec<SpotifyUri> =
+                let uris: Vec<ValidSpotifyUri> =
                     cursor.map_ok(|doc| doc.uri).try_collect().await?;
 
                 let items = context.spotify.get_items(uris.iter()).await?;

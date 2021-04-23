@@ -13,7 +13,7 @@ pub use types::*;
 
 use crate::{
     error::{ApiError, ApiResult},
-    graphql::{Item, SpotifyId, SpotifyUri},
+    graphql::{Item, SpotifyId},
     spotify::internal::ItemDeserialize,
     util::{IdentityState, OAuthHandler},
 };
@@ -201,13 +201,12 @@ impl Spotify {
 
     /// Get an item of any type from the API. This will call the correct
     /// endpoint based on the item's type (track, album, etc.).
-    pub async fn get_item(&self, uri: &SpotifyUri) -> ApiResult<Item> {
-        let (object_type, id) = SpotifyObjectType::parse_uri(uri);
-        let item = match object_type {
+    pub async fn get_item(&self, uri: &ValidSpotifyUri) -> ApiResult<Item> {
+        let item = match uri.item_type() {
             // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
             SpotifyObjectType::Track => self
                 .get_endpoint::<&[&str], Track>(
-                    &format!("/v1/tracks/{}", id,),
+                    &format!("/v1/tracks/{}", uri.id()),
                     &[],
                 )
                 .await?
@@ -215,7 +214,7 @@ impl Spotify {
             // https://developer.spotify.com/documentation/web-api/reference/albums/get-album/
             SpotifyObjectType::Album => self
                 .get_endpoint::<&[&str], AlbumSimplified>(
-                    &format!("/v1/albums/{}", id,),
+                    &format!("/v1/albums/{}", uri.id()),
                     &[],
                 )
                 .await?
@@ -223,7 +222,7 @@ impl Spotify {
             // https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
             SpotifyObjectType::Artist => self
                 .get_endpoint::<&[&str], Artist>(
-                    &format!("/v1/artists/{}", id,),
+                    &format!("/v1/artists/{}", uri.id()),
                     &[],
                 )
                 .await?
@@ -253,11 +252,11 @@ impl Spotify {
     /// invalid/non-matching URIs.
     pub async fn get_items(
         &self,
-        uris: impl Iterator<Item = &SpotifyUri>,
+        uris: impl Iterator<Item = &ValidSpotifyUri>,
     ) -> ApiResult<Vec<Item>> {
         // Group URIs by type so we can make one request per type
-        let ids_by_type: HashMap<SpotifyObjectType, Vec<SpotifyId>> =
-            uris.map(SpotifyObjectType::parse_uri).into_group_map();
+        let ids_by_type: HashMap<SpotifyObjectType, Vec<&SpotifyId>> =
+            uris.map(|uri| (uri.item_type(), uri.id())).into_group_map();
 
         // Make one request to the Spotify API for each item type
         // TODO run these requests concurrently with something like join_all
@@ -269,19 +268,19 @@ impl Spotify {
             // those missing results though, so just filter those out
             match object_type {
                 SpotifyObjectType::Track => {
-                    let response = self.get_tracks(ids.iter()).await?;
+                    let response = self.get_tracks(ids.into_iter()).await?;
                     items.extend(
                         response.tracks.into_iter().flatten().map(Item::from),
                     );
                 }
                 SpotifyObjectType::Album => {
-                    let response = self.get_albums(ids.iter()).await?;
+                    let response = self.get_albums(ids.into_iter()).await?;
                     items.extend(
                         response.albums.into_iter().flatten().map(Item::from),
                     );
                 }
                 SpotifyObjectType::Artist => {
-                    let response = self.get_artists(ids.iter()).await?;
+                    let response = self.get_artists(ids.into_iter()).await?;
                     items.extend(
                         response.artists.into_iter().flatten().map(Item::from),
                     );
