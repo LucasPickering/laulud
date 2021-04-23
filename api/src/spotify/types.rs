@@ -150,13 +150,15 @@ impl<T> PaginatedResponse<T> {
     }
 }
 
-/// Any object type that can get a URI
-/// TODO rename to SpotifyItemType
+/// Any item type that can get a URI
+///
+/// Note: we don't actually support every Spotify type here yet, just the ones
+/// we use. Add more as needed.
 #[derive(
     Copy, Clone, Debug, Display, PartialEq, Eq, Hash, Serialize, Deserialize,
 )]
 #[serde(rename_all = "lowercase")]
-pub enum SpotifyObjectType {
+pub enum SpotifyItemType {
     #[display("track")]
     Track,
     #[display("album")]
@@ -167,15 +169,15 @@ pub enum SpotifyObjectType {
     User,
 }
 
-impl FromStr for SpotifyObjectType {
+impl FromStr for SpotifyItemType {
     type Err = ApiError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "track" => Ok(SpotifyObjectType::Track),
-            "album" => Ok(SpotifyObjectType::Album),
-            "artist" => Ok(SpotifyObjectType::Artist),
-            "user" => Ok(SpotifyObjectType::User),
+            "track" => Ok(SpotifyItemType::Track),
+            "album" => Ok(SpotifyItemType::Album),
+            "artist" => Ok(SpotifyItemType::Artist),
+            "user" => Ok(SpotifyItemType::User),
             _ => Err(ApiError::ParseError {
                 message: format!("Unknown Spotify object type: {}", s),
                 backtrace: Backtrace::capture(),
@@ -195,12 +197,12 @@ impl FromStr for SpotifyObjectType {
 #[display(fmt = "spotify:{}:{}", item_type, id)]
 #[serde(try_from = "SpotifyUri", into = "SpotifyUri")]
 pub struct ValidSpotifyUri {
-    item_type: SpotifyObjectType,
+    item_type: SpotifyItemType,
     id: SpotifyId,
 }
 
 impl ValidSpotifyUri {
-    pub fn item_type(&self) -> SpotifyObjectType {
+    pub fn item_type(&self) -> SpotifyItemType {
         self.item_type
     }
 
@@ -228,7 +230,7 @@ impl Validate for SpotifyUri {
                     // Parse item type. It's possible we get a valid item type
                     // that we just don't support, just going to treat those
                     // as invalid for now.
-                    match item_type.parse::<SpotifyObjectType>() {
+                    match item_type.parse::<SpotifyItemType>() {
                         Ok(item_type) => Ok(ValidSpotifyUri {
                             item_type,
                             id: (*id).into(),

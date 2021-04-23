@@ -1,4 +1,4 @@
-use crate::spotify::SpotifyObjectType;
+use crate::spotify::SpotifyItemType;
 use juniper::{graphql_value, FieldError, IntoFieldError};
 use log::{log, Level};
 use mongodb::bson;
@@ -114,10 +114,10 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
-    /// Tried to tag an object of an unsupported type
-    #[error("Tagging not supported for object of type: {object_type}")]
-    UnsupportedObjectType {
-        object_type: SpotifyObjectType,
+    /// Tried to tag an item of an unsupported type
+    #[error("Tagging not supported for item of type: {item_type}")]
+    UnsupportedItemType {
+        item_type: SpotifyItemType,
         backtrace: Backtrace,
     },
 
@@ -154,7 +154,7 @@ impl ApiError {
             Self::InvalidInput { .. }
             | Self::Utf8Error { .. }
             | Self::ParseError { .. }
-            | Self::UnsupportedObjectType { .. } => Status::BadRequest,
+            | Self::UnsupportedItemType { .. } => Status::BadRequest,
 
             // 401
             Self::Unauthenticated { .. }

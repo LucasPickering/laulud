@@ -204,7 +204,7 @@ impl Spotify {
     pub async fn get_item(&self, uri: &ValidSpotifyUri) -> ApiResult<Item> {
         let item = match uri.item_type() {
             // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
-            SpotifyObjectType::Track => self
+            SpotifyItemType::Track => self
                 .get_endpoint::<&[&str], Track>(
                     &format!("/v1/tracks/{}", uri.id()),
                     &[],
@@ -212,7 +212,7 @@ impl Spotify {
                 .await?
                 .into(),
             // https://developer.spotify.com/documentation/web-api/reference/albums/get-album/
-            SpotifyObjectType::Album => self
+            SpotifyItemType::Album => self
                 .get_endpoint::<&[&str], AlbumSimplified>(
                     &format!("/v1/albums/{}", uri.id()),
                     &[],
@@ -220,7 +220,7 @@ impl Spotify {
                 .await?
                 .into(),
             // https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
-            SpotifyObjectType::Artist => self
+            SpotifyItemType::Artist => self
                 .get_endpoint::<&[&str], Artist>(
                     &format!("/v1/artists/{}", uri.id()),
                     &[],
@@ -228,9 +228,9 @@ impl Spotify {
                 .await?
                 .into(),
             // We don't support tagging any other object types
-            object_type => {
-                return Err(ApiError::UnsupportedObjectType {
-                    object_type,
+            item_type => {
+                return Err(ApiError::UnsupportedItemType {
+                    item_type,
                     backtrace: Backtrace::capture(),
                 })
             }
@@ -255,39 +255,39 @@ impl Spotify {
         uris: impl Iterator<Item = &ValidSpotifyUri>,
     ) -> ApiResult<Vec<Item>> {
         // Group URIs by type so we can make one request per type
-        let ids_by_type: HashMap<SpotifyObjectType, Vec<&SpotifyId>> =
+        let ids_by_type: HashMap<SpotifyItemType, Vec<&SpotifyId>> =
             uris.map(|uri| (uri.item_type(), uri.id())).into_group_map();
 
         // Make one request to the Spotify API for each item type
         // TODO run these requests concurrently with something like join_all
         let mut items: Vec<Item> = Vec::new();
-        for (object_type, ids) in ids_by_type {
+        for (item_type, ids) in ids_by_type {
             // Each of these get_x methods returns a Vec<Option>, where the
             // order corresponds to the requested IDs and any element will be
             // null if nothing was found for that ID. We don't care about
             // those missing results though, so just filter those out
-            match object_type {
-                SpotifyObjectType::Track => {
+            match item_type {
+                SpotifyItemType::Track => {
                     let response = self.get_tracks(ids.into_iter()).await?;
                     items.extend(
                         response.tracks.into_iter().flatten().map(Item::from),
                     );
                 }
-                SpotifyObjectType::Album => {
+                SpotifyItemType::Album => {
                     let response = self.get_albums(ids.into_iter()).await?;
                     items.extend(
                         response.albums.into_iter().flatten().map(Item::from),
                     );
                 }
-                SpotifyObjectType::Artist => {
+                SpotifyItemType::Artist => {
                     let response = self.get_artists(ids.into_iter()).await?;
                     items.extend(
                         response.artists.into_iter().flatten().map(Item::from),
                     );
                 }
                 _ => {
-                    return Err(ApiError::UnsupportedObjectType {
-                        object_type,
+                    return Err(ApiError::UnsupportedItemType {
+                        item_type,
                         backtrace: Backtrace::capture(),
                     })
                 }
