@@ -5,10 +5,10 @@ use crate::{
     error::ApiResult,
     graphql::{
         internal::{LimitOffset, NodeType},
-        Cursor, ItemSearch, PrivateUser, QueryFields, RequestContext,
-        SpotifyUri, TagConnection, TagNode, TaggedItemConnection,
-        TaggedItemNode,
+        Cursor, ItemSearch, QueryFields, RequestContext, SpotifyUri,
+        TagConnection, TagNode, TaggedItemConnection, TaggedItemNode,
     },
+    spotify::PrivateUser,
 };
 use async_trait::async_trait;
 use juniper::{futures::StreamExt, Executor};

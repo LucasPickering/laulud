@@ -1,4 +1,4 @@
-use crate::graphql::SpotifyObjectType;
+use crate::spotify::SpotifyObjectType;
 use juniper::{graphql_value, FieldError, IntoFieldError};
 use log::{log, Level};
 use mongodb::bson;

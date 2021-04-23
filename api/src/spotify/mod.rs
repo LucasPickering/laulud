@@ -1,18 +1,21 @@
-//! A binding for the Spotify Web API. Most of the mapped types are defined
-//! in GraphQL schema, then juniper_from_schema generates the Rust types that
-//! we use here. Some extra types are defined here though, as well as the main
-//! [Spotify] type that handles auth and wraps over common requests.
+//! A binding for the Spotify Web API. The main struct here is [Spotify]. That
+//! provides all the interactions you will need to do with the API. This module
+//! also contains Rust definitions of the different types that the Spotify API
+//! accepts and returns.
 //!
 //! The Spotify API has really good docs at
 //! https://developer.spotify.com/documentation/web-api/reference/
 
+mod internal;
+mod types;
+
+pub use types::*;
+
 use crate::{
-    error::{ApiError, ApiResult, InputValidationError},
-    graphql::{
-        AlbumSimplified, Artist, Item, PrivateUser, SpotifyId,
-        SpotifyObjectType, SpotifyUri, Track,
-    },
-    util::{IdentityState, OAuthHandler, Validate},
+    error::{ApiError, ApiResult},
+    graphql::{Item, SpotifyId, SpotifyUri},
+    spotify::internal::ItemDeserialize,
+    util::{IdentityState, OAuthHandler},
 };
 use async_trait::async_trait;
 use itertools::Itertools;
@@ -20,13 +23,13 @@ use log::{debug, trace};
 use oauth2::basic::BasicClient;
 use reqwest::{
     header::{self, HeaderValue},
-    Client, StatusCode,
+    Client,
 };
 use rocket::{
     request::{FromRequest, Outcome},
     State,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 use std::{backtrace::Backtrace, collections::HashMap, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
@@ -343,166 +346,5 @@ impl<'r> FromRequest<'r> for Spotify {
                 rocket::request::Outcome::Failure((err.to_status(), err))
             }
         }
-    }
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
-#[derive(Clone, Debug, Deserialize)]
-pub struct TracksResponse {
-    pub tracks: Vec<Option<Track>>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/albums/get-several-albums/
-#[derive(Clone, Debug, Deserialize)]
-pub struct AlbumsResponse {
-    /// The response actually includes full album objects, but we use
-    /// simplified here to keep compatibility with the search endpoint
-    pub albums: Vec<Option<AlbumSimplified>>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/artists/get-several-artists/
-#[derive(Clone, Debug, Deserialize)]
-pub struct ArtistsResponse {
-    pub artists: Vec<Option<Artist>>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/#category-search
-/// The search method is hard-coded to always request these item categories,
-/// so we can hard-code them here. If we wanted to make that dynamic though, we
-/// could use a HashMap instead of this struct.
-#[derive(Clone, Debug, Deserialize)]
-pub struct SearchResponse {
-    pub tracks: PaginatedResponse<Track>,
-    pub albums: PaginatedResponse<AlbumSimplified>,
-    pub artists: PaginatedResponse<Artist>,
-}
-
-/// https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object
-#[derive(Clone, Debug, Deserialize)]
-pub struct PaginatedResponse<T> {
-    pub href: String,
-    pub limit: usize,
-    pub offset: usize,
-    pub total: usize,
-    pub next: Option<String>,
-    pub previous: Option<String>,
-    pub items: Vec<T>,
-}
-
-impl<T> PaginatedResponse<T> {
-    /// Create a new struct instance that has all the same values as this
-    /// instance, except the `items` field has had the mapper function applied
-    /// to it. Useful for type transformations on the `items` field.
-    pub fn map_items<U>(
-        self,
-        mut mapper: impl FnMut(Vec<T>) -> Vec<U>,
-    ) -> PaginatedResponse<U> {
-        PaginatedResponse {
-            // Can't use .. syntax because the generic param changes
-            href: self.href,
-            limit: self.limit,
-            offset: self.offset,
-            total: self.total,
-            next: self.next,
-            previous: self.previous,
-            items: mapper(self.items),
-        }
-    }
-}
-
-/// Customization options for requests we make to the Spotify API
-#[derive(Copy, Clone, Debug)]
-struct RequestOptions<'a, P: Serialize> {
-    /// Query params - typically a slice of (&str, &str)
-    params: P,
-    /// These error status codes will be propagated up, instead of being
-    /// converted to a 500
-    propagate_errors: &'a [StatusCode],
-}
-
-impl<'a> Default for RequestOptions<'a, ()> {
-    fn default() -> Self {
-        RequestOptions {
-            params: (),
-            propagate_errors: &[],
-        }
-    }
-}
-
-/// A struct to define how to deserialize items from the Spotify API. This is
-/// essentially the same thing as the [Item] type that's generated for the
-/// API, but we can't define macro attributes on auto-generated types, so we
-/// need this mirror type to be able to use serde's attributes.
-///
-/// We could get around this if
-/// https://github.com/davidpdrsn/juniper-from-schema/issues/139 happens.
-#[derive(Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum ItemDeserialize {
-    Track(Track),
-    Album(AlbumSimplified),
-    Artist(Artist),
-}
-
-// Convert from a Spotify API item to a GraphQL item. These are basically the
-// same thing, just with different types
-impl From<ItemDeserialize> for Item {
-    fn from(other: ItemDeserialize) -> Self {
-        match other {
-            ItemDeserialize::Track(track) => Item::Track(track),
-            ItemDeserialize::Album(album) => Item::AlbumSimplified(album),
-            ItemDeserialize::Artist(artist) => Item::Artist(artist),
-        }
-    }
-}
-
-/// A parsed and validated Spotify URI. This should be used for any internal
-/// logic that passes around URIs, so that we always know they're valid. It
-/// can be converted _from_ [SpotifyUri] fallibly, and _to_ [SpotifyUri]
-/// infallibly. Note that in this context, "valid" just means it's not
-/// _malformed_. It **doesn't** mean that the URI actually exists in Spotify.
-pub struct ValidSpotifyUri {
-    item_type: SpotifyObjectType,
-    id: SpotifyId,
-}
-
-impl Validate for SpotifyUri {
-    type Output = ValidSpotifyUri;
-
-    /// Parse the raw Spotify ID into an item type+ID. See
-    /// https://developer.spotify.com/documentation/web-api/ for a description
-    /// of URIs.
-    fn validate(
-        self,
-        field: &str,
-    ) -> Result<Self::Output, InputValidationError> {
-        // Expect URIs of the format "spotify:<type>:<id>"
-        // We have to generate errors as strings first, then map to a proper
-        // error type, cause borrowck
-        let parsed: Result<ValidSpotifyUri, String> =
-            match self.split(':').collect::<Vec<&str>>().as_slice() {
-                ["spotify", item_type, id] => {
-                    // Parse item type. It's possible we get a valid item type
-                    // that we just don't support, just going to treat those
-                    // as invalid for now.
-                    match item_type.parse::<SpotifyObjectType>() {
-                        Ok(item_type) => Ok(ValidSpotifyUri {
-                            item_type,
-                            id: (*id).into(),
-                        }),
-                        // Big NG
-                        Err(_) => Err(format!(
-                            "Invalid Spotify URI: unknown item type {}",
-                            item_type
-                        )),
-                    }
-                }
-                _ => Err("Invalid Spotify URI: invalid format".into()),
-            };
-        parsed.map_err(|message| InputValidationError {
-            field: field.into(),
-            message,
-            value: self.into(),
-        })
     }
 }
