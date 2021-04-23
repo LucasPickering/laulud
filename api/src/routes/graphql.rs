@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use juniper::http::GraphQLRequest;
 use rocket::{
     http::{ContentType, Status},
@@ -7,10 +5,11 @@ use rocket::{
     Response, State,
 };
 use rocket_contrib::json::Json;
+use std::{backtrace::Backtrace, sync::Arc};
 
 use crate::{
     db::DbHandler,
-    error::ApiResult,
+    error::{ApiError, ApiResult},
     graphql::{GraphQLSchema, RequestContext},
     spotify::Spotify,
     util::UserId,
@@ -41,8 +40,13 @@ pub async fn route_graphql(
 
     let graphql_response =
         graphql_request.execute(&graphql_schema, &context).await;
-    // TODO no unwrap
-    let body = serde_json::to_string(&graphql_response).unwrap();
+    // Serialization should never fail
+    let body = serde_json::to_string(&graphql_response).map_err(|err| {
+        ApiError::Unknown {
+            message: err.to_string(),
+            backtrace: Backtrace::capture(),
+        }
+    })?;
     Ok(Response::build()
         .status(Status::Ok)
         .header(ContentType::JSON)

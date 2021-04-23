@@ -100,6 +100,7 @@ pub enum ApiError {
     CsrfError { backtrace: Backtrace },
 
     /// User passed in some bad UTF-8 string
+    /// TODO can we remove this variant?
     #[error("Invalid UTF-8 input")]
     Utf8Error {
         #[from]
@@ -108,6 +109,7 @@ pub enum ApiError {
     },
 
     /// Error while running some custom parsing
+    /// TODO can we remove this variant?
     #[error("Parse error: {message}")]
     ParseError {
         message: String,

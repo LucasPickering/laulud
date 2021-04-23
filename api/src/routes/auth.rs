@@ -5,7 +5,6 @@ use crate::{
 };
 use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken};
 use rocket::{get, http::CookieJar, post, response::Redirect, State};
-use rocket_contrib::json::Json;
 use serde::Deserialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -83,7 +82,6 @@ pub async fn route_auth_callback(
 }
 
 #[post("/logout")]
-pub async fn route_logout(cookies: &CookieJar<'_>) -> Json<()> {
+pub async fn route_logout(cookies: &CookieJar<'_>) {
     IdentityState::remove_cookie(cookies);
-    Json(())
 }

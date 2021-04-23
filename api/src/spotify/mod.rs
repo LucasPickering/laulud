@@ -34,9 +34,6 @@ use std::{backtrace::Backtrace, collections::HashMap, sync::Arc};
 
 const SPOTIFY_BASE_URL: &str = "https://api.spotify.com";
 
-// TODO split this into multiple modules (main Spotify type in one, mini structs
-// in others)
-
 /// A client for accessing the Spotify web API
 #[derive(Debug)]
 pub struct Spotify {

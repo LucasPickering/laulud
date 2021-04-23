@@ -8,7 +8,6 @@ use crate::{
         TaggedItemEdgeFields, TaggedItemNodeFields,
     },
     spotify::{PaginatedResponse, ValidSpotifyUri},
-    util,
 };
 use async_trait::async_trait;
 use juniper::{futures::TryStreamExt, Executor};
@@ -131,18 +130,17 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
         let context = executor.context();
         let total_count = match self {
             Self::Preloaded { paginated_response } => {
-                util::to_i32(paginated_response.total)
+                paginated_response.total.try_into()?
             }
             // These URIs aren't paginated, they represent the full data set
-            Self::ByUris { uris } => util::to_i32(uris.len()),
+            Self::ByUris { uris } => uris.len().try_into()?,
             // Count the number of matching docs in the DB
-            Self::ByTag { tag } => util::to_i32(
-                context
-                    .db_handler
-                    .collection_tagged_items()
-                    .count_by_tag(&context.user_id, tag)
-                    .await?,
-            ),
+            Self::ByTag { tag } => context
+                .db_handler
+                .collection_tagged_items()
+                .count_by_tag(&context.user_id, tag)
+                .await?
+                .try_into()?,
         };
         Ok(total_count)
     }

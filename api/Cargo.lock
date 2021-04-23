@@ -1047,7 +1047,6 @@ dependencies = [
  "thiserror",
  "time 0.2.26",
  "tokio",
- "uuid",
 ]
 
 [[package]]

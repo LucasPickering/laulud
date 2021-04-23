@@ -8,7 +8,6 @@ use crate::{
         TagNodeFields,
     },
     spotify::ValidSpotifyUri,
-    util,
 };
 use async_trait::async_trait;
 use juniper::Executor;
@@ -130,17 +129,16 @@ impl TagConnectionFields for TagConnection {
         let collection = context.db_handler.collection_tagged_items();
 
         let total_count = match self {
-            Self::Preloaded { tags } => util::to_i32(tags.len()),
+            Self::Preloaded { tags } => tags.len().try_into()?,
             // Count all tags in the DB for this user
             Self::All => {
-                util::to_i32(collection.count_tags(&context.user_id).await?)
+                collection.count_tags(&context.user_id).await?.try_into()?
             }
             // Count all tags in the DB for a single user+item
-            Self::ByItem { item_uri } => util::to_i32(
-                collection
-                    .count_tags_by_item(&context.user_id, item_uri)
-                    .await?,
-            ),
+            Self::ByItem { item_uri } => collection
+                .count_tags_by_item(&context.user_id, item_uri)
+                .await?
+                .try_into()?,
         };
 
         Ok(total_count)
