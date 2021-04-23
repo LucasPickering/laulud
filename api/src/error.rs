@@ -4,9 +4,7 @@ use log::{log, Level};
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
-use std::{
-    backtrace::Backtrace, error::Error, num::TryFromIntError, str::Utf8Error,
-};
+use std::{backtrace::Backtrace, error::Error, num::TryFromIntError};
 use thiserror::Error;
 
 pub type ApiResult<T> = Result<T, ApiError>;
@@ -99,15 +97,6 @@ pub enum ApiError {
     #[error("CSRF token was not provided or did not match the expected value")]
     CsrfError { backtrace: Backtrace },
 
-    /// User passed in some bad UTF-8 string
-    /// TODO can we remove this variant?
-    #[error("Invalid UTF-8 input")]
-    Utf8Error {
-        #[from]
-        source: Utf8Error,
-        backtrace: Backtrace,
-    },
-
     /// Error while running some custom parsing
     /// TODO roll this in with InvalidInput (will require some finaglry)
     #[error("Parse error: {message}")]
@@ -154,7 +143,6 @@ impl ApiError {
         match self {
             // 400
             Self::InvalidInput { .. }
-            | Self::Utf8Error { .. }
             | Self::ParseError { .. }
             | Self::UnsupportedItemType { .. } => Status::BadRequest,
 

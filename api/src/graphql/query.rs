@@ -1,14 +1,16 @@
 //! This module holds the top-level GraphQL query object. All query subtypes
 //! should be defined elsewhere.
 
+use std::backtrace::Backtrace;
+
 use crate::{
-    error::ApiResult,
+    error::{ApiError, ApiResult},
     graphql::{
         internal::{LimitOffset, NodeType},
-        Cursor, ItemSearch, QueryFields, RequestContext, SpotifyUri,
+        Cursor, Item, ItemSearch, QueryFields, RequestContext, SpotifyUri,
         TagConnection, TagNode, TaggedItemConnection, TaggedItemNode,
     },
-    spotify::{PrivateUser, ValidSpotifyUri},
+    spotify::{PaginatedResponse, PrivateUser, ValidSpotifyUri},
     util::Validate,
 };
 use async_trait::async_trait;
@@ -113,19 +115,32 @@ impl QueryFields for Query {
             .search_items(&query, limit_offset.limit(), limit_offset.offset())
             .await?;
 
+        // Helper to pull a type out of the search response and error if missing
+        let mut load_item_type =
+            |field: &str| -> ApiResult<PaginatedResponse<Item>> {
+                search_response
+                    .remove(field)
+                    .ok_or_else(|| ApiError::Unknown {
+                        message: format!(
+                            "Missing field {} in Spotify search response",
+                            field
+                        ),
+                        backtrace: Backtrace::capture(),
+                    })
+            };
+
         // Pull out the item types we care about. This should always exhaust
         // the map (with no missing types), because the fields we return here
         // line up with the types requested from Spotify
         let rv = ItemSearch {
-            // TODO clean up unwraps
             tracks: TaggedItemConnection::Preloaded {
-                paginated_response: search_response.remove("tracks").unwrap(),
+                paginated_response: load_item_type("tracks")?,
             },
             albums: TaggedItemConnection::Preloaded {
-                paginated_response: search_response.remove("albums").unwrap(),
+                paginated_response: load_item_type("albums")?,
             },
             artists: TaggedItemConnection::Preloaded {
-                paginated_response: search_response.remove("artists").unwrap(),
+                paginated_response: load_item_type("artists")?,
             },
         };
 
