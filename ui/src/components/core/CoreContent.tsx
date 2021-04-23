@@ -5,11 +5,10 @@ import { Redirect, Route, Switch } from "react-router-dom";
 import HomePage from "pages/Home/HomePage";
 import NotFoundPage from "pages/NotFound/NotFoundPage";
 import PageContainer from "./PageContainer";
-import { UserContext } from "util/UserContext";
 import LoginPage from "pages/Login/LoginPage";
 import TagsPage from "pages/Tags/TagsPage";
 import SearchPage from "pages/Search/SearchPage";
-import useLauludQuery from "hooks/useLauludQuery";
+import useAuthState from "hooks/useAuthState";
 
 const useStyles = makeStyles({
   loadingWrapper: {
@@ -23,13 +22,9 @@ const useStyles = makeStyles({
 
 const CoreContent: React.FC = () => {
   const classes = useStyles();
-  const { isLoading, data: currentUser } = useLauludQuery(
-    ["users", "current"],
-    undefined,
-    { retry: 0 }
-  );
+  const authState = useAuthState();
 
-  if (isLoading) {
+  if (authState === "loading") {
     return (
       <div className={classes.loadingWrapper}>
         <CircularProgress size="8rem" />
@@ -37,7 +32,7 @@ const CoreContent: React.FC = () => {
     );
   }
 
-  if (!currentUser) {
+  if (!authState) {
     // User is not logged in - redirect everything to the login page
     return (
       <PageContainer>
@@ -55,28 +50,26 @@ const CoreContent: React.FC = () => {
 
   // If we get this far, we know the user is logged in
   return (
-    <UserContext.Provider value={currentUser}>
-      <PageContainer>
-        <Switch>
-          <Redirect from="/login" to="/" exact />
+    <PageContainer>
+      <Switch>
+        <Redirect from="/login" to="/" exact />
 
-          <Route path="/" exact>
-            <HomePage />
-          </Route>
-          <Route path="/search/:selectedUri?" exact>
-            <SearchPage />
-          </Route>
-          <Route path="/tags/:tag?" exact>
-            <TagsPage />
-          </Route>
+        <Route path="/" exact>
+          <HomePage />
+        </Route>
+        <Route path="/search/:selectedUri?" exact>
+          <SearchPage />
+        </Route>
+        <Route path="/tags/:tag?" exact>
+          <TagsPage />
+        </Route>
 
-          {/* Fallback route */}
-          <Route>
-            <NotFoundPage />
-          </Route>
-        </Switch>
-      </PageContainer>
-    </UserContext.Provider>
+        {/* Fallback route */}
+        <Route>
+          <NotFoundPage />
+        </Route>
+      </Switch>
+    </PageContainer>
   );
 };
 

@@ -70,6 +70,7 @@ async fn main() {
                 // auth
                 routes::auth::route_auth_redirect,
                 routes::auth::route_auth_callback,
+                routes::auth::route_auth_check,
                 routes::auth::route_logout,
                 // graphql
                 routes::graphql::route_graphql,

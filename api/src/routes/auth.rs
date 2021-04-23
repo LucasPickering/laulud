@@ -81,6 +81,16 @@ pub async fn route_auth_callback(
     Ok(Redirect::found(identity_state.next().to_owned()))
 }
 
+/// Simple endpoint to check if the user is authed. Returns 200 if they are
+/// fully authed (have completed the whole OAuth flow), 401 if not. This is
+/// useful because the entire GraphQL API requires authentication, so this
+/// endpoint provides an easy way to check if we're allowed to make GraphQL
+/// requests.
+#[get("/auth-check")]
+pub async fn route_auth_check(_user_id: UserId) {
+    // grabbing the user ID is enough to know that we're authed
+}
+
 #[post("/logout")]
 pub async fn route_logout(cookies: &CookieJar<'_>) {
     IdentityState::remove_cookie(cookies);
