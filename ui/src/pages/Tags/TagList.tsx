@@ -7,12 +7,13 @@ import {
   Paper,
   Typography,
 } from "@material-ui/core";
-import DataContainer from "components/generic/DataContainer";
+import type graphql from "babel-plugin-relay/macro";
 import UnstyledLink from "components/generic/UnstyledLink";
 import { useHistory } from "react-router-dom";
 import TagChip from "components/TagChip";
 import Link from "components/generic/Link";
-import useLauludQuery from "hooks/useLauludQuery";
+import { useLazyLoadQuery } from "react-relay";
+import { TagListQuery } from "./__generated__/TagListQuery.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -27,49 +28,65 @@ interface Props {
   selectedTag?: string;
 }
 
+/**
+ * Show a list of tags, with one of them optionally selected. The selected tag
+ * will be highlighted, but no extra data rendered (that should be handled by
+ * the parent).
+ */
 const TagList: React.FC<Props> = ({ selectedTag }) => {
   const classes = useStyles();
   const history = useHistory();
-  const state = useLauludQuery(["tags"]);
+
+  const tags = useLazyLoadQuery<TagListQuery>(
+    graphql`
+      query TagListQuery {
+        tags {
+          totalCount
+          edges {
+            node {
+              id
+              tag
+              items {
+                totalCount
+              }
+            }
+          }
+        }
+      }
+    `,
+    {}
+  );
 
   return (
     <Paper className={classes.container}>
-      <DataContainer {...state}>
-        {(tags) => {
-          if (tags.length === 0) {
-            return (
-              <div className={classes.emptyState}>
-                <Typography>
-                  No tags yet. <Link to="/search">Search for something</Link> to
-                  create your first tag.
-                </Typography>
-              </div>
-            );
-          }
-
-          return (
-            <List>
-              {tags.map((tagSummary) => (
-                <ListItem
-                  key={tagSummary.tag}
-                  button
-                  selected={tagSummary.tag === selectedTag}
-                  component={UnstyledLink}
-                  to={{
-                    ...history.location,
-                    pathname: `/tags/${encodeURIComponent(tagSummary.tag)}`,
-                  }}
-                >
-                  <ListItemText
-                    primary={<TagChip tag={tagSummary.tag} />}
-                    secondary={`${tagSummary.num_items} items`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          );
-        }}
-      </DataContainer>
+      {tags.totalCount > 0 ? (
+        <List>
+          {tags.edges.map(({ node: tagNode }) => (
+            <ListItem
+              key={node.id}
+              button
+              selected={tagNode.tag === selectedTag}
+              component={UnstyledLink}
+              to={{
+                ...history.location,
+                pathname: `/tags/${encodeURIComponent(tagNode.tag)}`,
+              }}
+            >
+              <ListItemText
+                primary={<TagChip tag={tagNode.tag} />}
+                secondary={`${node.items.totalCount} items`}
+              />
+            </ListItem>
+          ))}
+        </List>
+      ) : (
+        <div className={classes.emptyState}>
+          <Typography>
+            No tags yet. <Link to="/search">Search for something</Link> to
+            create your first tag.
+          </Typography>
+        </div>
+      )}
     </Paper>
   );
 };

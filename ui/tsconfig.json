@@ -15,10 +15,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "outDir": "build/"
   },
   "rules": {
     "no-unused-vars": "off"
   },
-  "include": ["src", "./*.js"]
+  "include": ["src", "./*.js"],
+  "exclude": ["./build/**"]
 }
