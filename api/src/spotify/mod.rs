@@ -197,45 +197,57 @@ impl Spotify {
     }
 
     /// Get an item of any type from the API. This will call the correct
-    /// endpoint based on the item's type (track, album, etc.).
-    pub async fn get_item(&self, uri: &ValidSpotifyUri) -> ApiResult<Item> {
-        let item = match uri.item_type() {
+    /// endpoint based on the item's type (track, album, etc.). Returns `None`
+    /// iff the URI does not exist in Spotify (i.e. Spotify returned a 404).
+    /// This makes the method more usable in GraphQL, where missing resources
+    /// are typically returned as null.
+    pub async fn get_item(
+        &self,
+        uri: &ValidSpotifyUri,
+    ) -> ApiResult<Option<Item>> {
+        let result = match uri.item_type() {
             // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
             SpotifyItemType::Track => self
                 .get_endpoint::<&[&str], Track>(
                     &format!("/v1/tracks/{}", uri.id()),
                     &[],
                 )
-                .await?
-                .into(),
+                .await.map(Item::from),
             // https://developer.spotify.com/documentation/web-api/reference/albums/get-album/
             SpotifyItemType::Album => self
                 .get_endpoint::<&[&str], AlbumSimplified>(
                     &format!("/v1/albums/{}", uri.id()),
                     &[],
                 )
-                .await?
-                .into(),
+                .await.map(Item::from),
             // https://developer.spotify.com/documentation/web-api/reference/artists/get-artist/
             SpotifyItemType::Artist => self
                 .get_endpoint::<&[&str], Artist>(
                     &format!("/v1/artists/{}", uri.id()),
                     &[],
                 )
-                .await?
-                .into(),
+                .await
+                .map(Item::from)
+                ,
             // We don't support tagging any other object types
             item_type => {
-                return Err(ApiError::UnsupportedItemType {
+                 Err(ApiError::UnsupportedItemType {
                     item_type,
                     backtrace: Backtrace::capture(),
                 })
             }
         };
 
-        // TODO map 404s to None
-
-        Ok(item)
+        match result {
+            Ok(item) => Ok(Some(item)),
+            // Map 404 to None
+            Err(ApiError::SpotifyApiHttp { source, .. })
+                if source.status().map(|s| s.as_u16()) == Some(404) =>
+            {
+                Ok(None)
+            }
+            Err(err) => Err(err),
+        }
     }
 
     /// Fetch data for a list of items of any type. This will make one request

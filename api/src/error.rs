@@ -109,7 +109,7 @@ pub enum ApiError {
     },
 
     /// Error while running some custom parsing
-    /// TODO can we remove this variant?
+    /// TODO roll this in with InvalidInput (will require some finaglry)
     #[error("Parse error: {message}")]
     ParseError {
         message: String,

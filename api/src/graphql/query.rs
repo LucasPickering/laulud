@@ -47,9 +47,8 @@ impl QueryFields for Query {
                 // For items, the value ID is the URI. Look up the item in the
                 // Spotify API
                 let item_uri: ValidSpotifyUri = value_id.validate("")?;
-                // TODO figure out a clean way to map missing items to None
-                let item = context.spotify.get_item(&item_uri).await?;
-                Some(TaggedItemNode { item, tags: None }.into())
+                let item_opt = context.spotify.get_item(&item_uri).await?;
+                item_opt.map(|item| TaggedItemNode { item, tags: None }.into())
             }
             NodeType::TagNode => {
                 let tag = value_id;
@@ -80,14 +79,14 @@ impl QueryFields for Query {
         uri: SpotifyUri,
     ) -> ApiResult<Option<TaggedItemNode>> {
         let context = executor.context();
-        // TODO figure out a clean way to map missing items to None
         let uri = uri.validate("uri")?;
-        let spotify_item = context.spotify.get_item(&uri).await?;
-
-        Ok(Some(TaggedItemNode {
-            item: spotify_item,
-            tags: None,
-        }))
+        // Fetch the item from Spotify
+        let node = context
+            .spotify
+            .get_item(&uri)
+            .await?
+            .map(|item| TaggedItemNode { item, tags: None });
+        Ok(node)
     }
 
     /// Run a search term through spotify. We'll return items grouped by
