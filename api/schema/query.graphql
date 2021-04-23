@@ -21,8 +21,23 @@ type Query {
   """
   currentUser: PrivateUser! @juniper(async: true, ownership: "owned")
 
+  """
+  Get a single item by its unique URI. Return `null` if the URI does not exist
+  in Spotify
+  """
   item(uri: String!): TaggedItemNode @juniper(async: true, ownership: "owned")
 
+  """
+  Run a search query against all taggable Spotify items. The return value will
+  contain all the matching results (within the page of data), grouped by their
+  category.
+
+  The Spotify search API only supports paginating these results in lock-step,
+  meaning each item category (track, album, etc.) will use the same `first` and
+  `after` params.
+
+  https://developer.spotify.com/documentation/web-api/reference/#category-search
+  """
   itemSearch(
     query: String!
 
@@ -40,22 +55,38 @@ type Query {
     after: Cursor
   ): ItemSearch! @juniper(async: true, ownership: "owned")
 
+  # TODO support pagination on this
   """
-  TODO description
-  TODO support pagination on this
+  Get a list of all tags that the user has created
   """
   tags: TagConnection! @juniper(infallible: true, ownership: "owned")
 
+  """
+  Get a single tag that the user has created. This will always return a node,
+  even if the tag doesn't actually exist in the system. In that case, it will
+  be returned but show no tagged items
+  """
   tag(tag: String!): TagNode! @juniper(async: true, ownership: "owned")
 }
 
+"""
+A single tag and the items to which it has been applied. Each tag node is unique
+for the pairing of tag+user
+"""
 type TagNode implements Node {
+  """
+  Unique ID for this tag node, for Relay re-fetching
+  """
   id: ID! @juniper(infallible: true, ownership: "owned")
-  tag: String! @juniper(infallible: true)
 
   """
-  TODO description
-  TODO support pagination on this field
+  The tag that (along with the requesting user) uniquely identifies this node
+  """
+  tag: String! @juniper(infallible: true)
+
+  # TODO support pagination on this field
+  """
+  The items that have this tag applied
   """
   items: TaggedItemConnection! @juniper(infallible: true, ownership: "owned")
 }
@@ -75,6 +106,9 @@ type TagEdge implements Edge {
   cursor: Cursor! @juniper(infallible: true)
 }
 
+"""
+Connection for paginating through a list of TagNode
+"""
 type TagConnection implements ConnectionInterface {
   """
   See Connection definition.
@@ -98,13 +132,25 @@ types, e.g. user is not included in this.
 """
 union Item = Track | AlbumSimplified | Artist
 
+"""
+A Spotify item (track, album, artist) etc. that supports tags, with a reference
+to the list of tags that has been applied to it. Each of these nodes is unique
+to a pairing of item+user
+"""
 type TaggedItemNode implements Node {
+  """
+  Unique ID for this tag node, for Relay re-fetching
+  """
   id: ID! @juniper(infallible: true, ownership: "owned")
-  item: Item! @juniper(infallible: true)
 
   """
-  TODO description
-  TODO support pagination on this field
+  The tagged/taggable item, as fetched from Spotify
+  """
+  item: Item! @juniper(infallible: true)
+
+  # TODO support pagination on this field
+  """
+  All tags that have been applied to this item. _Can_ be empty
   """
   tags: TagConnection! @juniper(infallible: true, ownership: "owned")
 }
@@ -124,6 +170,9 @@ type TaggedItemEdge implements Edge {
   cursor: Cursor! @juniper(infallible: true)
 }
 
+"""
+Connection for paginating through a list of TaggedItemNode
+"""
 type TaggedItemConnection implements ConnectionInterface {
   """
   See Connection definition.
@@ -139,8 +188,24 @@ type TaggedItemConnection implements ConnectionInterface {
   edges: [TaggedItemEdge!]! @juniper(async: true, ownership: "owned")
 }
 
+"""
+The result of performing a search query on the Spotify API. This contains one
+subfield for every category of taggable items. See the itemSearch query field
+that returns this type for more info
+"""
 type ItemSearch {
+  """
+  Tracks that matched the search query
+  """
   tracks: TaggedItemConnection! @juniper(infallible: true)
+
+  """
+  Albums that matched the search query
+  """
   albums: TaggedItemConnection! @juniper(infallible: true)
+
+  """
+  Artists that matched the search query
+  """
   artists: TaggedItemConnection! @juniper(infallible: true)
 }

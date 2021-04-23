@@ -1,28 +1,77 @@
 # All logic specific to mutation. Types that are used in both queries and
 # mutations live in query.graphql
 
+"""
+Root mutation
+"""
 type Mutation {
-  addTag(input: AddTagInput!): AddTagPayload!
-    @juniper(async: true, ownership: "owned")
+  """
+  Apply a single tag to a single item. If the item does not exist, this will do nothing. If the tag does not exist, it will be created
+  """
+  addTag(
+    """
+    All input fields
+    """
+    input: AddTagInput!
+  ): AddTagPayload! @juniper(async: true, ownership: "owned")
 
-  deleteTag(input: DeleteTagInput!): DeleteTagPayload!
-    @juniper(async: true, ownership: "owned")
+  """
+  Delete a single tag from a single item. If the item or tag does not exist, this will do nothing
+  """
+  deleteTag(
+    """
+    All input fields
+    """
+    input: DeleteTagInput!
+  ): DeleteTagPayload! @juniper(async: true, ownership: "owned")
 }
 
+"""
+Input for the addTag mutation
+"""
 input AddTagInput {
+  """
+  Item to apply the tag to
+  """
   itemUri: String!
+  """
+  Tag to apply
+  """
   tag: String!
 }
 
+"""
+Output for the addTag mutation
+"""
 type AddTagPayload {
+  """
+  The tagged item. `null` if the item does not exist in Spotify
+  """
   item: TaggedItemNode @juniper(infallible: true)
 }
 
+"""
+Input for the deleteTag mutation
+"""
 input DeleteTagInput {
+  """
+  Item to delete the tag from
+  """
   itemUri: String!
+  """
+  Tag to be deleted
+  """
   tag: String!
 }
 
+"""
+Output for the deleteTag mutation
+"""
 type DeleteTagPayload {
+  """
+  The de-tagged item. `null` if the item does not exist in Spotify. If the item
+  exists but did not have the tag applied, then it will still be returned as if
+  the tag had been deleted
+  """
   item: TaggedItemNode @juniper(infallible: true)
 }
