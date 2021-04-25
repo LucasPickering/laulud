@@ -1,90 +1,125 @@
 import React from "react";
 import { QueryStatus } from "react-query";
 import { Card, CardContent, CardHeader, Snackbar } from "@material-ui/core";
-import { Item, SpotifyUri } from "schema";
 import ItemArt from "components/generic/ItemArt";
-import DataContainer from "components/generic/DataContainer";
 import NewTagChip from "../../components/NewTagChip";
 import TagChips from "components/TagChips";
 import SpotifyLink from "components/generic/SpotifyLink";
-import useMutationNewItemTag from "hooks/useMutationNewItemTag";
-import useMutationDeleteItemTag from "hooks/useMutationDeleteItemTag";
-import useLauludQuery from "hooks/useLauludQuery";
-import { ApiRouteItemSearch } from "api";
+import { useFragment } from "react-relay";
 import { Alert } from "@material-ui/lab";
+import {
+  ItemDetails_itemNode,
+  ItemDetails_itemNode$key,
+} from "./__generated__/ItemDetails_itemNode.graphql";
 
-const ItemHeader: React.FC<{ item: Item }> = ({ item }) => {
-  if (item.type === "track") {
-    const track = item.data;
-    return (
-      <CardHeader
-        title={track.name}
-        subheader={track.artists.map((artist) => artist.name).join(", ")}
-        avatar={<ItemArt item={track.album} />}
-        action={<SpotifyLink item={item} />}
-      />
-    );
+const ItemHeader: React.FC<{ itemNode: ItemDetails_itemNode }> = ({
+  itemNode,
+}) => {
+  switch (itemNode.item.__typename) {
+    case "Track": {
+      const track = itemNode.item;
+      return (
+        <CardHeader
+          title={track.name}
+          subheader={track.artists.map((artist) => artist.name).join(", ")}
+          avatar={<ItemArt item={track.album} />}
+          action={<SpotifyLink item={itemNode.item} />}
+        />
+      );
+    }
+
+    case "AlbumSimplified": {
+      const album = itemNode.item;
+      return (
+        <CardHeader
+          title={album.name}
+          subheader={album.artists.map((artist) => artist.name).join(", ")}
+          avatar={<ItemArt item={album} />}
+          action={<SpotifyLink item={itemNode.item} />}
+        />
+      );
+    }
+
+    case "Artist": {
+      const artist = itemNode.item;
+      return (
+        <CardHeader
+          title={artist.name}
+          avatar={<ItemArt item={artist} />}
+          action={<SpotifyLink item={itemNode.item} />}
+        />
+      );
+    }
+
+    case "%other":
+      throw new Error(`Unknown item type: ${itemNode.item.__typename}`);
   }
-
-  if (item.type === "album") {
-    const album = item.data;
-    return (
-      <CardHeader
-        title={album.name}
-        subheader={album.artists.map((artist) => artist.name).join(", ")}
-        avatar={<ItemArt item={album} />}
-        action={<SpotifyLink item={item} />}
-      />
-    );
-  }
-
-  if (item.type === "artist") {
-    const artist = item.data;
-    return (
-      <CardHeader
-        title={artist.name}
-        avatar={<ItemArt item={artist} />}
-        action={<SpotifyLink item={item} />}
-      />
-    );
-  }
-
-  throw new Error(`Invalid item: ${item}`);
 };
 
 const ItemDetails: React.FC<{
-  uri: SpotifyUri;
-  searchQueryKey?: ApiRouteItemSearch;
-}> = ({ uri, searchQueryKey }) => {
-  const { data: track, ...state } = useLauludQuery(["items", uri]);
-  const [
-    createTag,
-    { status: createTagStatus, reset: resetCreateTagStatus },
-  ] = useMutationNewItemTag(searchQueryKey);
-  const [deleteTag] = useMutationDeleteItemTag(searchQueryKey);
+  itemNodeKey: ItemDetails_itemNode$key;
+}> = ({ itemNodeKey }) => {
+  const itemNode = useFragment(
+    graphql`
+      fragment ItemDetails_itemNode on TaggedItemNode {
+        item {
+          __typename
+          ... on Track {
+            id
+            album {
+              name
+              images {
+                url
+              }
+            }
+            artists {
+              name
+            }
+            name
+            type
+          }
+          ... on AlbumSimplified {
+            id
+            artists {
+              name
+            }
+            images {
+              url
+            }
+            name
+            type
+          }
+          ... on Artist {
+            id
+            images {
+              url
+            }
+            name
+            type
+          }
+        }
+        ...TagChips_itemNode
+      }
+    `,
+    itemNodeKey
+  );
 
   return (
     <>
       <Card>
-        <DataContainer {...state} data={track}>
-          {(item) => (
-            <>
-              <ItemHeader item={item.item} />
-              <CardContent>
-                <TagChips
-                  tags={item.tags}
-                  deleteTag={(tag) => deleteTag({ uri, tag })}
-                >
-                  <NewTagChip
-                    color="primary"
-                    status={createTagStatus}
-                    createTag={(tag) => createTag({ uri, tag })}
-                  />
-                </TagChips>
-              </CardContent>
-            </>
-          )}
-        </DataContainer>
+        <ItemHeader itemNode={itemNode} />
+        <CardContent>
+          <TagChips
+            tags={itemNode}
+            deleteTag={(tag) => deleteTag({ uri, tag })}
+          >
+            <NewTagChip
+              color="primary"
+              status={createTagStatus}
+              createTag={(tag) => createTag({ uri, tag })}
+            />
+          </TagChips>
+        </CardContent>
       </Card>
       <Snackbar
         open={createTagStatus === QueryStatus.Error}

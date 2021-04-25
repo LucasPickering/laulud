@@ -12,6 +12,7 @@ type Artist {
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   images: [Image!]! @juniper(infallible: true)
+  itemType: String! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
   popularity: Int! @juniper(infallible: true)
   uri: String! @juniper(infallible: true, ownership: "owned")
@@ -25,6 +26,7 @@ type ArtistSimplified {
   # Skipping `externalUrls`
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
+  itemType: String! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
   uri: String! @juniper(infallible: true, ownership: "owned")
 }
@@ -42,6 +44,7 @@ type AlbumSimplified {
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   images: [Image!]! @juniper(infallible: true)
+  itemType: String! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
   releaseDate: String! @juniper(infallible: true)
   releaseDatePrecision: String! @juniper(infallible: true)
@@ -64,6 +67,7 @@ type Track {
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   isPlayable: Boolean @juniper(infallible: true)
+  itemType: String! @juniper(infallible: true)
   # Skipping `linkedFrom`
   name: String! @juniper(infallible: true)
   popularity: Int! @juniper(infallible: true)

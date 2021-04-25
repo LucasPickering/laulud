@@ -2,6 +2,8 @@ import React from "react";
 import { makeStyles } from "@material-ui/core";
 import clsx from "clsx";
 import TagChip from "./TagChip";
+import { useFragment } from "react-relay";
+import { TagChips_itemNode$key } from "./__generated__/TagChips_itemNode.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
   tags: {
@@ -15,26 +17,45 @@ const useStyles = makeStyles(({ spacing }) => ({
 
 interface Props {
   className?: string;
-  tags: string[];
-  deleteTag?: (tag: string) => void;
+  itemNodeKey: TagChips_itemNode$key;
+  showAdd?: boolean;
+  showDelete?: boolean;
 }
 
+/**
+ * Show a list of tags for an item, with optional add+delete buttons
+ */
 const TagChips: React.FC<Props> = ({
   className,
-  tags,
-  deleteTag,
+  itemNodeKey,
+  showAdd = false,
+  showDelete = false,
   children,
 }) => {
   const classes = useStyles();
+  const itemNode = useFragment(
+    graphql`
+      fragment TagChips_itemNode on TaggedItemNode {
+        tags {
+          edges {
+            node {
+              tag
+            }
+          }
+        }
+      }
+    `,
+    itemNodeKey
+  );
 
   return (
     <div className={clsx(classes.tags, className)}>
-      {tags.map((tag) => (
+      {itemNode.tags.edges.map(({ node: { tag } }) => (
         <TagChip
           key={tag}
           className={classes.tag}
           tag={tag}
-          onDelete={deleteTag && (() => deleteTag(tag))}
+          onDelete={showDelete && (() => deleteTag(tag))}
         />
       ))}
       {children}

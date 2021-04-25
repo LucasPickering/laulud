@@ -1,8 +1,6 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core";
 
-import { Image } from "schema";
-
 const useStyles = makeStyles(() => ({
   small: {
     width: 48,
@@ -18,9 +16,11 @@ const useStyles = makeStyles(() => ({
 }));
 
 interface Props {
-  item: {
-    name: string;
-    images: Image[];
+  readonly item: {
+    readonly name: string;
+    readonly images: readonly {
+      readonly url: string;
+    }[];
   };
   size?: "small" | "medium" | "large";
 }

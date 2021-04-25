@@ -18,6 +18,8 @@ pub struct ArtistSimplified {
     pub href: String,
     pub id: SpotifyId,
     pub name: String,
+    #[serde(rename = "type")] // `type` is a rust keyword
+    pub item_type: String,
     pub uri: ValidSpotifyUri,
 }
 
@@ -30,6 +32,8 @@ pub struct Artist {
     pub images: Vec<Image>,
     pub name: String,
     pub popularity: i32,
+    #[serde(rename = "type")] // `type` is a rust keyword
+    pub item_type: String,
     pub uri: ValidSpotifyUri,
 }
 
@@ -46,6 +50,8 @@ pub struct AlbumSimplified {
     pub name: String,
     pub release_date: String,
     pub release_date_precision: String,
+    #[serde(rename = "type")] // `type` is a rust keyword
+    pub item_type: String,
     pub uri: ValidSpotifyUri,
 }
 
@@ -65,6 +71,8 @@ pub struct Track {
     pub popularity: i32,
     pub preview_url: Option<String>,
     pub track_number: i32,
+    #[serde(rename = "type")] // `type` is a rust keyword
+    pub item_type: String,
     pub uri: ValidSpotifyUri,
 }
 
