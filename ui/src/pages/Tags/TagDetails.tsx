@@ -52,8 +52,8 @@ const TagDetails: React.FC<Props> = ({ tag }) => {
             <ItemList items={tagDetails.items} showIcons />
             {isAdding ? (
               <ItemSearchList
-                query={addingQuery}
-                setQuery={setAddingQuery}
+                searchQuery={addingQuery}
+                setSearchQuery={setAddingQuery}
                 // Attach the selected take to this item
                 mapAction={(item) => (
                   <IconButton

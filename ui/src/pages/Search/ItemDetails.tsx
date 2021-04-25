@@ -76,7 +76,7 @@ const ItemDetails: React.FC<{
               name
             }
             name
-            type
+            itemType
           }
           ... on AlbumSimplified {
             id
@@ -87,7 +87,7 @@ const ItemDetails: React.FC<{
               url
             }
             name
-            type
+            itemType
           }
           ... on Artist {
             id
@@ -95,7 +95,7 @@ const ItemDetails: React.FC<{
               url
             }
             name
-            type
+            itemType
           }
         }
         ...TagChips_itemNode

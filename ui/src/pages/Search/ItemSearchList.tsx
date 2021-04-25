@@ -8,6 +8,7 @@ import useRouteQuery from "hooks/useRouteQuery";
 import { useHistory } from "react-router-dom";
 import ItemList from "components/ItemList";
 import useLauludQuery from "hooks/useLauludQuery";
+import { useFragment } from "react-relay";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -41,17 +42,35 @@ function getListItems(
 }
 
 interface Props extends Omit<React.ComponentProps<typeof ItemList>, "items"> {
-  query: string;
-  setQuery: (query: string) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
-const ItemSearchList: React.FC<Props> = ({ query, setQuery, ...rest }) => {
+const ItemSearchList: React.FC<Props> = ({
+  searchQuery,
+  setSearchQuery,
+  ...rest
+}) => {
   const classes = useStyles();
   const history = useHistory();
   const { q } = useRouteQuery();
   const [selectedTab, setSelectedTab] = useState<
     "tracks" | "albums" | "artists"
   >("tracks");
+  const itemSearch = useFragment(
+    graphql`
+      fragment ItemSearchList_itemSearch on ItemSearch {
+        tracks {
+          edges {
+            node {
+              ...ItemDetails_itemNode
+            }
+          }
+        }
+      }
+    `,
+    { query: searchQuery }
+  );
 
   const state = useLauludQuery(["items", "search", query], undefined, {
     enabled: Boolean(query),

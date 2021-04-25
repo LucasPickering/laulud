@@ -53,15 +53,6 @@ module.exports = {
       { ignoreParameters: true },
     ],
     "@typescript-eslint/camelcase": "off",
-
-    "no-restricted-syntax": [
-      "error",
-      {
-        message:
-          "Call useLauludQuery instead of useQuery for better type enforcement",
-        selector: 'CallExpression > .callee[name="useQuery"]',
-      },
-    ],
   },
   overrides: [
     {

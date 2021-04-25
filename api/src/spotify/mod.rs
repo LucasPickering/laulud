@@ -162,12 +162,12 @@ impl Spotify {
     /// https://developer.spotify.com/documentation/web-api/reference/#category-search
     pub async fn search_items(
         &self,
-        query: &str,
+        search_query: &str,
         limit: Option<usize>,
         offset: Option<usize>,
     ) -> ApiResult<HashMap<String, PaginatedResponse<Item>>> {
         let mut query_params = vec![
-            ("q", query.to_owned()),
+            ("q", search_query.to_owned()),
             ("type", "track,album,artist".to_owned()),
         ];
 
@@ -179,7 +179,7 @@ impl Spotify {
         }
 
         let responses: HashMap<String, PaginatedResponse<ItemDeserialize>> =
-            self.get_endpoint("/v1/search", &query).await?;
+            self.get_endpoint("/v1/search", &query_params).await?;
         // Map each ItemDeserialize to an Item. Check the ItemDeserialize doc
         // comment for an explanation of the difference (there isn't much).
         let responses = responses

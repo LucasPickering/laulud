@@ -36,13 +36,6 @@ impl ArtistSimplifiedFields for ArtistSimplified {
         &self.name
     }
 
-    fn field_item_type(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &String {
-        &self.item_type
-    }
-
     fn field_uri(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
@@ -93,13 +86,6 @@ impl ArtistFields for Artist {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> &i32 {
         &self.popularity
-    }
-
-    fn field_item_type(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &String {
-        &self.item_type
     }
 
     fn field_uri(
@@ -181,13 +167,6 @@ impl AlbumSimplifiedFields for AlbumSimplified {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> &String {
         &self.release_date_precision
-    }
-
-    fn field_item_type(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &String {
-        &self.item_type
     }
 
     fn field_uri(
@@ -290,13 +269,6 @@ impl TrackFields for Track {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> &i32 {
         &self.track_number
-    }
-
-    fn field_item_type(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &String {
-        &self.item_type
     }
 
     fn field_uri(

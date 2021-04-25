@@ -6,7 +6,7 @@ import UnstyledLink from "./UnstyledLink";
 interface Props {
   readonly item: {
     readonly id: string;
-    readonly type: string;
+    readonly itemType: string;
   };
 }
 
@@ -16,7 +16,7 @@ interface Props {
 const SpotifyLink: React.FC<Props> = ({ item }) => (
   <IconButton
     component={UnstyledLink}
-    to={`https://open.spotify.com/${item.type}/${item.id}`}
+    to={`https://open.spotify.com/${item.itemType}/${item.id}`}
   >
     <Tooltip title="Open in Spotify">
       <IconOpenInNew />
