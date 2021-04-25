@@ -7,7 +7,6 @@ import {
   Paper,
   Typography,
 } from "@material-ui/core";
-import type graphql from "babel-plugin-relay/macro";
 import UnstyledLink from "components/generic/UnstyledLink";
 import { useHistory } from "react-router-dom";
 import TagChip from "components/TagChip";
