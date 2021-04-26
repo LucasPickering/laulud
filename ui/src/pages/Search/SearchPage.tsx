@@ -12,7 +12,7 @@ interface RouteParams {
 
 const SearchPage: React.FC = () => {
   const { selectedUri } = useParams<RouteParams>();
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("asdf");
   const history = useHistory();
   const itemSearch = useLazyLoadQuery<SearchPageQuery>(
     graphql`

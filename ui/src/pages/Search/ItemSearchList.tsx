@@ -69,20 +69,16 @@ const ItemSearchList: React.FC<Props> = ({
         }
       }
     `,
-    { query: searchQuery }
+    {}
   );
-
-  const state = useLauludQuery(["items", "search", query], undefined, {
-    enabled: Boolean(query),
-  });
 
   // Whenever the search changes, update the URL
   useEffect(() => {
     history.replace({
       ...history.location,
-      search: queryString.stringify({ q: query }),
+      search: queryString.stringify({ q: searchQuery }),
     });
-  }, [history, query]);
+  }, [history, searchQuery]);
 
   return (
     <Paper className={classes.container}>
@@ -90,42 +86,20 @@ const ItemSearchList: React.FC<Props> = ({
         className={classes.searchBar}
         initialQuery={(q ?? "").toString()}
         placeholder="Search tracks, albums, and artists…"
-        onSearch={setQuery}
+        onSearch={setSearchQuery}
       />
 
-      <DataContainer {...state}>
-        {(data) => (
-          <>
-            <Tabs
-              classes={{ root: classes.tabs }}
-              value={selectedTab}
-              variant="fullWidth"
-              onChange={(e, newSelectedTab) => setSelectedTab(newSelectedTab)}
-            >
-              <Tab
-                classes={{ root: classes.tab }}
-                value="tracks"
-                label="Tracks"
-              />
-              <Tab
-                classes={{ root: classes.tab }}
-                value="albums"
-                label="Albums"
-              />
-              <Tab
-                classes={{ root: classes.tab }}
-                value="artists"
-                label="Artists"
-              />
-            </Tabs>
-            <ItemList
-              items={getListItems(data, selectedTab)}
-              showTags
-              {...rest}
-            />
-          </>
-        )}
-      </DataContainer>
+      <Tabs
+        classes={{ root: classes.tabs }}
+        value={selectedTab}
+        variant="fullWidth"
+        onChange={(e, newSelectedTab) => setSelectedTab(newSelectedTab)}
+      >
+        <Tab classes={{ root: classes.tab }} value="tracks" label="Tracks" />
+        <Tab classes={{ root: classes.tab }} value="albums" label="Albums" />
+        <Tab classes={{ root: classes.tab }} value="artists" label="Artists" />
+      </Tabs>
+      <ItemList items={getListItems(data, selectedTab)} showTags {...rest} />
     </Paper>
   );
 };

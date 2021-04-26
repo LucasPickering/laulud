@@ -4,17 +4,26 @@
 use crate::{
     graphql::{
         AlbumSimplifiedFields, ArtistFields, ArtistSimplifiedFields,
-        ImageFields, PrivateUserFields, RequestContext, SpotifyId, SpotifyUri,
-        TrackFields,
+        ExternalUrlsFields, ImageFields, PrivateUserFields, RequestContext,
+        SpotifyId, SpotifyUri, TrackFields,
     },
     spotify::{
-        AlbumSimplified, Artist, ArtistSimplified, Image, PrivateUser, Track,
+        AlbumSimplified, Artist, ArtistSimplified, ExternalUrls, Image,
+        PrivateUser, Track,
     },
 };
 use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
 
 impl ArtistSimplifiedFields for ArtistSimplified {
+    fn field_external_urls(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+        _trail: &QueryTrail<'_, ExternalUrls, Walked>,
+    ) -> &ExternalUrls {
+        &self.external_urls
+    }
+
     fn field_href(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
@@ -45,6 +54,14 @@ impl ArtistSimplifiedFields for ArtistSimplified {
 }
 
 impl ArtistFields for Artist {
+    fn field_external_urls(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+        _trail: &QueryTrail<'_, ExternalUrls, Walked>,
+    ) -> &ExternalUrls {
+        &self.external_urls
+    }
+
     fn field_genres(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
@@ -124,6 +141,14 @@ impl AlbumSimplifiedFields for AlbumSimplified {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> &Vec<String> {
         &self.available_markets
+    }
+
+    fn field_external_urls(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+        _trail: &QueryTrail<'_, ExternalUrls, Walked>,
+    ) -> &ExternalUrls {
+        &self.external_urls
     }
 
     fn field_href(
@@ -222,6 +247,14 @@ impl TrackFields for Track {
         &self.explicit
     }
 
+    fn field_external_urls(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+        _trail: &QueryTrail<'_, ExternalUrls, Walked>,
+    ) -> &ExternalUrls {
+        &self.external_urls
+    }
+
     fn field_href(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
@@ -276,6 +309,15 @@ impl TrackFields for Track {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> SpotifyUri {
         self.uri.to_string()
+    }
+}
+
+impl ExternalUrlsFields for ExternalUrls {
+    fn field_spotify(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> &String {
+        &self.spotify
     }
 }
 

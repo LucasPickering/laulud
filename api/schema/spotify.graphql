@@ -7,7 +7,8 @@ Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-artistobject
 """
 type Artist {
-  # Skipping `externalUrls` and `followers`
+  externalUrls: ExternalUrls! @juniper(infallible: true)
+  # Skipping `followers`
   genres: [String!]! @juniper(infallible: true)
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
@@ -22,7 +23,7 @@ Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-simplifiedartistobject
 """
 type ArtistSimplified {
-  # Skipping `externalUrls`
+  externalUrls: ExternalUrls! @juniper(infallible: true)
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
@@ -38,7 +39,7 @@ type AlbumSimplified {
   albumType: String! @juniper(infallible: true)
   artists: [ArtistSimplified!]! @juniper(infallible: true)
   availableMarkets: [String!]! @juniper(infallible: true)
-  # Skipping `externalUrls`
+  externalUrls: ExternalUrls! @juniper(infallible: true)
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   images: [Image!]! @juniper(infallible: true)
@@ -60,7 +61,8 @@ type Track {
   discNumber: Int! @juniper(infallible: true)
   durationMs: Int! @juniper(infallible: true)
   explicit: Boolean! @juniper(infallible: true)
-  # Skipping `externalIds` and `externalUrls`
+  # Skipping `externalIds`
+  externalUrls: ExternalUrls! @juniper(infallible: true)
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   isPlayable: Boolean @juniper(infallible: true)
@@ -70,6 +72,14 @@ type Track {
   previewUrl: String @juniper(infallible: true)
   trackNumber: Int! @juniper(infallible: true)
   uri: String! @juniper(infallible: true, ownership: "owned")
+}
+
+"""
+Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/#object-externalurlobject
+"""
+type ExternalUrls {
+  spotify: String! @juniper(infallible: true)
 }
 
 """

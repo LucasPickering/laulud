@@ -15,6 +15,7 @@ use std::{backtrace::Backtrace, convert::TryFrom, str::FromStr};
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
 #[derive(Clone, Debug, Deserialize)]
 pub struct ArtistSimplified {
+    pub external_urls: ExternalUrls,
     pub href: String,
     pub id: SpotifyId,
     pub name: String,
@@ -24,6 +25,7 @@ pub struct ArtistSimplified {
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-full
 #[derive(Clone, Debug, Deserialize)]
 pub struct Artist {
+    pub external_urls: ExternalUrls,
     pub genres: Vec<String>,
     pub href: String,
     pub id: SpotifyId,
@@ -40,6 +42,7 @@ pub struct AlbumSimplified {
     pub album_type: String,
     pub artists: Vec<ArtistSimplified>,
     pub available_markets: Vec<String>,
+    pub external_urls: ExternalUrls,
     pub href: String,
     pub id: SpotifyId,
     pub images: Vec<Image>,
@@ -58,6 +61,7 @@ pub struct Track {
     pub disc_number: i32,
     pub duration_ms: i32,
     pub explicit: bool,
+    pub external_urls: ExternalUrls,
     pub href: String,
     pub id: SpotifyId,
     pub is_playable: Option<bool>,
@@ -66,6 +70,12 @@ pub struct Track {
     pub preview_url: Option<String>,
     pub track_number: i32,
     pub uri: ValidSpotifyUri,
+}
+
+/// https://developer.spotify.com/documentation/web-api/reference/#object-externalurlobject
+#[derive(Clone, Debug, Deserialize)]
+pub struct ExternalUrls {
+    pub spotify: String,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object

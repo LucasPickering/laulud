@@ -75,27 +75,33 @@ const ItemDetails: React.FC<{
             artists {
               name
             }
+            externalUrls {
+              spotify
+            }
             name
-            itemType
           }
           ... on AlbumSimplified {
             id
             artists {
               name
             }
+            externalUrls {
+              spotify
+            }
             images {
               url
             }
             name
-            itemType
           }
           ... on Artist {
             id
+            externalUrls {
+              spotify
+            }
             images {
               url
             }
             name
-            itemType
           }
         }
         ...TagChips_itemNode

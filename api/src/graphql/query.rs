@@ -1,10 +1,8 @@
 //! This module holds the top-level GraphQL query object. All query subtypes
 //! should be defined elsewhere.
 
-use std::backtrace::Backtrace;
-
 use crate::{
-    error::{ApiError, ApiResult},
+    error::{ApiError, ApiResult, InputValidationError},
     graphql::{
         internal::{LimitOffset, NodeType},
         Cursor, Item, ItemSearch, QueryFields, RequestContext, SpotifyUri,
@@ -18,6 +16,7 @@ use juniper::{futures::StreamExt, Executor};
 use juniper_from_schema::{QueryTrail, Walked};
 use mongodb::bson::doc;
 use serde::Deserialize;
+use std::backtrace::Backtrace;
 
 /// Root GraphQL query
 pub struct Query;
@@ -104,7 +103,16 @@ impl QueryFields for Query {
         after: Option<Cursor>,
     ) -> ApiResult<ItemSearch> {
         let context = executor.context();
-        // Validate pagination params
+
+        // Validate params
+        if query.is_empty() {
+            return Err(InputValidationError {
+                field: "query".into(),
+                message: "Search query must not be empty".into(),
+                value: query.into(),
+            }
+            .into());
+        }
         let limit_offset = LimitOffset::try_from_first_after(first, after)?;
 
         // Run the search query through spotify. This returns a mapping of
