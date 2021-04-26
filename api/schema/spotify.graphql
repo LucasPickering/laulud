@@ -6,7 +6,7 @@
 Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-artistobject
 """
-type Artist {
+type Artist implements Item {
   externalUrls: ExternalUrls! @juniper(infallible: true)
   # Skipping `followers`
   genres: [String!]! @juniper(infallible: true)
@@ -34,7 +34,7 @@ type ArtistSimplified {
 Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-simplifiedalbumobject
 """
-type AlbumSimplified {
+type AlbumSimplified implements Item {
   albumGroup: String @juniper(infallible: true)
   albumType: String! @juniper(infallible: true)
   artists: [ArtistSimplified!]! @juniper(infallible: true)
@@ -54,7 +54,7 @@ type AlbumSimplified {
 Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-trackobject
 """
-type Track {
+type Track implements Item {
   album: AlbumSimplified! @juniper(infallible: true)
   artists: [ArtistSimplified!]! @juniper(infallible: true)
   availableMarkets: [String!]! @juniper(infallible: true)
