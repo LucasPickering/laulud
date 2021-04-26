@@ -2,13 +2,11 @@ import React, { useEffect, useState } from "react";
 import { makeStyles, Paper, Tab, Tabs } from "@material-ui/core";
 import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
-import DataContainer from "components/generic/DataContainer";
-import { ItemSearchResponse, TaggedItem } from "schema";
 import useRouteQuery from "hooks/useRouteQuery";
 import { useHistory } from "react-router-dom";
 import ItemList from "components/ItemList";
-import useLauludQuery from "hooks/useLauludQuery";
 import { useFragment } from "react-relay";
+import { ItemSearchList_itemSearch$key } from "./__generated__/ItemSearchList_itemSearch.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -42,11 +40,13 @@ function getListItems(
 }
 
 interface Props extends Omit<React.ComponentProps<typeof ItemList>, "items"> {
+  itemSearchNodeKey: ItemSearchList_itemSearch$key;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
 
 const ItemSearchList: React.FC<Props> = ({
+  itemSearchNodeKey,
   searchQuery,
   setSearchQuery,
   ...rest
@@ -61,6 +61,7 @@ const ItemSearchList: React.FC<Props> = ({
     graphql`
       fragment ItemSearchList_itemSearch on ItemSearch {
         tracks {
+          ...ItemList_taggedItemConnection
           edges {
             node {
               ...ItemDetails_itemNode
@@ -69,7 +70,7 @@ const ItemSearchList: React.FC<Props> = ({
         }
       }
     `,
-    {}
+    itemSearchNodeKey
   );
 
   // Whenever the search changes, update the URL

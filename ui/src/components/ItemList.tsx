@@ -14,6 +14,8 @@ import ItemArt from "./generic/ItemArt";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";
 import SpotifyLinkIcon from "./generic/SpotifyLink";
+import { useFragment } from "react-relay";
+import { ItemList_taggedItemConnection$key } from "./__generated__/ItemList_taggedItemConnection.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
   listItem: {
@@ -73,7 +75,7 @@ function ItemListEntry({ item }: { item: TaggedItem }): React.ReactElement {
 
 interface Props {
   className?: string;
-  items: TaggedItem[];
+  taggedItemConnectionNodeKey: ItemList_taggedItemConnection$key;
   selectedUri?: SpotifyUri;
   showIcons?: boolean;
   showTags?: boolean;
@@ -87,7 +89,7 @@ interface Props {
  */
 function ItemList({
   className,
-  items,
+  taggedItemConnectionNodeKey,
   selectedUri,
   showIcons = false,
   showTags = false,
@@ -96,11 +98,34 @@ function ItemList({
   onSelect,
 }: Props): React.ReactElement {
   const classes = useStyles();
+  const itemConnection = useFragment(
+    graphql`
+      fragment ItemList_taggedItemConnection on TaggedItemConnection {
+        edges {
+          node {
+            item {
+              __typename
+              ... on Track {
+                uri
+              }
+              ... on AlbumSimplified {
+                uri
+              }
+              ... on Artist {
+                uri
+              }
+            }
+          }
+        }
+      }
+    `,
+    taggedItemConnectionNodeKey
+  );
 
   return (
     <List className={className}>
-      {items.map((item) => {
-        const uri = item.item.data.uri;
+      {itemConnection.edges.map(({ node }) => {
+        const uri = node.item.uri;
         const action = mapAction && mapAction(item.item);
 
         // Render as a button if we have a link or onSelect

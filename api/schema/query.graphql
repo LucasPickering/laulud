@@ -129,6 +129,8 @@ type TagConnection implements ConnectionInterface {
 """
 Any Spotify item that can be tagged. This does **not** include all Spotify
 types, e.g. user is not included in this.
+
+TODO make this an interface with some common fields (uri,id,etc.)
 """
 union Item = Track | AlbumSimplified | Artist
 
