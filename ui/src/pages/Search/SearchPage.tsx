@@ -3,7 +3,7 @@ import { useHistory, useParams } from "react-router-dom";
 import { Grid } from "@material-ui/core";
 import ItemSearchList from "./ItemSearchList";
 import ItemDetails from "./ItemDetails";
-import { useLazyLoadQuery } from "react-relay";
+import { graphql, useLazyLoadQuery } from "react-relay";
 import { SearchPageQuery } from "./__generated__/SearchPageQuery.graphql";
 
 interface RouteParams {
@@ -32,16 +32,17 @@ const SearchPage: React.FC = () => {
           selectedUri={selectedUri}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          mapRoute={(item) => ({
+          itemSearchKey={itemSearch}
+          mapRoute={(uri) => ({
             ...history.location,
-            pathname: `/search/${item.data.uri}`,
+            pathname: `/search/${uri}`,
           })}
         />
       </Grid>
       {/* {selectedUri && (
         <Grid item xs={12} sm={6} md={8}>
           <ItemDetails
-            itemNodeKey={itemSearch}
+            taggedItemNodeKey={itemSearch}
           />
         </Grid>
       )} */}

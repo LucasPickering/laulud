@@ -1,21 +1,13 @@
 import React from "react";
-import {
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemIcon,
-  ListItemText,
-  makeStyles,
-} from "@material-ui/core";
+import { List, ListItem, ListItemIcon, makeStyles } from "@material-ui/core";
 import UnstyledLink from "components/generic/UnstyledLink";
 import { LocationDescriptorObject } from "history";
-import { Item, SpotifyUri, TaggedItem } from "schema";
-import ItemArt from "./generic/ItemArt";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";
-import SpotifyLinkIcon from "./generic/SpotifyLink";
-import { useFragment } from "react-relay";
+import SpotifyLink from "./generic/SpotifyLink";
+import { graphql, useFragment } from "react-relay";
 import { ItemList_taggedItemConnection$key } from "./__generated__/ItemList_taggedItemConnection.graphql";
+import ItemListEntry from "./ItemListEntry";
 
 const useStyles = makeStyles(({ spacing }) => ({
   listItem: {
@@ -29,59 +21,15 @@ const useStyles = makeStyles(({ spacing }) => ({
   },
 }));
 
-function ItemListEntry({ item }: { item: TaggedItem }): React.ReactElement {
-  const classes = useStyles();
-
-  switch (item.item.type) {
-    case "track":
-      return (
-        <>
-          <ListItemAvatar className={classes.listItemAvatar}>
-            <ItemArt item={item.item.data.album} size="small" />
-          </ListItemAvatar>
-          <ListItemText
-            primary={item.item.data.name}
-            secondary={item.item.data.artists
-              .map((artist) => artist.name)
-              .join(", ")}
-          />
-        </>
-      );
-    case "album":
-      return (
-        <>
-          <ListItemAvatar className={classes.listItemAvatar}>
-            <ItemArt item={item.item.data} size="small" />
-          </ListItemAvatar>
-          <ListItemText
-            primary={item.item.data.name}
-            secondary={item.item.data.artists
-              .map((artist) => artist.name)
-              .join(", ")}
-          />
-        </>
-      );
-    case "artist":
-      return (
-        <>
-          <ListItemAvatar className={classes.listItemAvatar}>
-            <ItemArt item={item.item.data} size="small" />
-          </ListItemAvatar>
-          <ListItemText primary={item.item.data.name} />
-        </>
-      );
-  }
-}
-
 interface Props {
   className?: string;
-  taggedItemConnectionNodeKey: ItemList_taggedItemConnection$key;
-  selectedUri?: SpotifyUri;
+  taggedItemConnectionKey: ItemList_taggedItemConnection$key;
+  selectedUri?: string;
   showIcons?: boolean;
   showTags?: boolean;
-  mapAction?: (item: Item) => React.ReactNode;
-  mapRoute?: (item: Item) => string | LocationDescriptorObject;
-  onSelect?: (uri: SpotifyUri) => void;
+  mapAction?: (uri: string) => React.ReactNode;
+  mapRoute?: (uri: string) => string | LocationDescriptorObject;
+  onSelect?: (uri: string) => void;
 }
 
 /**
@@ -89,7 +37,7 @@ interface Props {
  */
 function ItemList({
   className,
-  taggedItemConnectionNodeKey,
+  taggedItemConnectionKey,
   selectedUri,
   showIcons = false,
   showTags = false,
@@ -98,35 +46,30 @@ function ItemList({
   onSelect,
 }: Props): React.ReactElement {
   const classes = useStyles();
-  const itemConnection = useFragment(
+  const taggedItemConnection = useFragment(
     graphql`
       fragment ItemList_taggedItemConnection on TaggedItemConnection {
         edges {
           node {
             item {
-              __typename
-              ... on Track {
-                uri
-              }
-              ... on AlbumSimplified {
-                uri
-              }
-              ... on Artist {
-                uri
-              }
+              uri
+              ...ItemIcon_item
+              ...SpotifyLink_item
             }
+            ...ItemListEntry_taggedItemNode
+            ...TagChips_taggedItemNode
           }
         }
       }
     `,
-    taggedItemConnectionNodeKey
+    taggedItemConnectionKey
   );
 
   return (
     <List className={className}>
-      {itemConnection.edges.map(({ node }) => {
+      {taggedItemConnection.edges.map(({ node }) => {
         const uri = node.item.uri;
-        const action = mapAction && mapAction(item.item);
+        const action = mapAction && mapAction(uri);
 
         // Render as a button if we have a link or onSelect
         // The typing on ListItem is really shitty so this has to be super jank
@@ -140,7 +83,7 @@ function ItemList({
           }
           if (mapRoute) {
             buttonProps.component = UnstyledLink;
-            buttonProps.to = mapRoute(item.item);
+            buttonProps.to = mapRoute(uri);
           }
         }
 
@@ -150,21 +93,24 @@ function ItemList({
             className={classes.listItem}
             {...buttonProps}
           >
-            <ItemListEntry item={item} />
+            <ItemListEntry taggedItemNodeKey={node} />
             {showIcons && (
               <>
                 <ListItemIcon>
-                  <ItemIcon item={item.item} />
+                  <ItemIcon itemKey={node.item} />
                 </ListItemIcon>
                 <ListItemIcon>
-                  <SpotifyLinkIcon item={item.item} />
+                  <SpotifyLink itemKey={node.item} />
                 </ListItemIcon>
               </>
             )}
             {action}
 
             {showTags && (
-              <TagChips className={classes.listItemTags} tags={item.tags} />
+              <TagChips
+                className={classes.listItemTags}
+                taggedItemNodeKey={node}
+              />
             )}
           </ListItem>
         );

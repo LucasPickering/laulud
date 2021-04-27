@@ -5,118 +5,57 @@ import ItemArt from "components/generic/ItemArt";
 import NewTagChip from "../../components/NewTagChip";
 import TagChips from "components/TagChips";
 import SpotifyLink from "components/generic/SpotifyLink";
-import { useFragment } from "react-relay";
+import { graphql, useFragment } from "react-relay";
 import { Alert } from "@material-ui/lab";
 import {
-  ItemDetails_itemNode,
-  ItemDetails_itemNode$key,
-} from "./__generated__/ItemDetails_itemNode.graphql";
-
-const ItemHeader: React.FC<{ itemNode: ItemDetails_itemNode }> = ({
-  itemNode,
-}) => {
-  switch (itemNode.item.__typename) {
-    case "Track": {
-      const track = itemNode.item;
-      return (
-        <CardHeader
-          title={track.name}
-          subheader={track.artists.map((artist) => artist.name).join(", ")}
-          avatar={<ItemArt item={track.album} />}
-          action={<SpotifyLink item={itemNode.item} />}
-        />
-      );
-    }
-
-    case "AlbumSimplified": {
-      const album = itemNode.item;
-      return (
-        <CardHeader
-          title={album.name}
-          subheader={album.artists.map((artist) => artist.name).join(", ")}
-          avatar={<ItemArt item={album} />}
-          action={<SpotifyLink item={itemNode.item} />}
-        />
-      );
-    }
-
-    case "Artist": {
-      const artist = itemNode.item;
-      return (
-        <CardHeader
-          title={artist.name}
-          avatar={<ItemArt item={artist} />}
-          action={<SpotifyLink item={itemNode.item} />}
-        />
-      );
-    }
-
-    case "%other":
-      throw new Error(`Unknown item type: ${itemNode.item.__typename}`);
-  }
-};
+  ItemDetails_taggedItemNode,
+  ItemDetails_taggedItemNode$key,
+} from "./__generated__/ItemDetails_taggedItemNode.graphql";
+import { UnknownItemTypeError } from "util/errors";
 
 const ItemDetails: React.FC<{
-  itemNodeKey: ItemDetails_itemNode$key;
-}> = ({ itemNodeKey }) => {
-  const itemNode = useFragment(
+  taggedItemNodeKey: ItemDetails_taggedItemNode$key;
+}> = ({ taggedItemNodeKey }) => {
+  const taggedItemNode = useFragment(
     graphql`
-      fragment ItemDetails_itemNode on TaggedItemNode {
+      fragment ItemDetails_taggedItemNode on TaggedItemNode {
         item {
           __typename
+          id
+          externalUrls {
+            spotify
+          }
           ... on Track {
-            id
-            album {
-              name
-              images {
-                url
-              }
-            }
             artists {
               name
-            }
-            externalUrls {
-              spotify
             }
             name
           }
           ... on AlbumSimplified {
-            id
             artists {
               name
-            }
-            externalUrls {
-              spotify
-            }
-            images {
-              url
             }
             name
           }
           ... on Artist {
-            id
-            externalUrls {
-              spotify
-            }
-            images {
-              url
-            }
             name
           }
+          ...ItemArt_item
+          ...SpotifyLink_item
         }
-        ...TagChips_itemNode
+        ...TagChips_taggedItemNode
       }
     `,
-    itemNodeKey
+    taggedItemNodeKey
   );
 
   return (
     <>
       <Card>
-        <ItemHeader itemNode={itemNode} />
+        <ItemHeader taggedItemNode={taggedItemNode} />
         <CardContent>
           <TagChips
-            tags={itemNode}
+            taggedItemNodeKey={taggedItemNode}
             deleteTag={(tag) => deleteTag({ uri, tag })}
           >
             <NewTagChip
@@ -136,6 +75,50 @@ const ItemDetails: React.FC<{
       </Snackbar>
     </>
   );
+};
+
+const ItemHeader: React.FC<{ taggedItemNode: ItemDetails_taggedItemNode }> = ({
+  taggedItemNode,
+}) => {
+  switch (taggedItemNode.item.__typename) {
+    case "Track": {
+      const track = taggedItemNode.item;
+      return (
+        <CardHeader
+          title={track.name}
+          subheader={track.artists!.map((artist) => artist.name).join(", ")}
+          avatar={<ItemArt itemKey={taggedItemNode.item} />}
+          action={<SpotifyLink itemKey={taggedItemNode.item} />}
+        />
+      );
+    }
+
+    case "AlbumSimplified": {
+      const album = taggedItemNode.item;
+      return (
+        <CardHeader
+          title={album.name}
+          subheader={album.artists!.map((artist) => artist.name).join(", ")}
+          avatar={<ItemArt itemKey={taggedItemNode.item} />}
+          action={<SpotifyLink itemKey={taggedItemNode.item} />}
+        />
+      );
+    }
+
+    case "Artist": {
+      const artist = taggedItemNode.item;
+      return (
+        <CardHeader
+          title={artist.name}
+          avatar={<ItemArt itemKey={taggedItemNode.item} />}
+          action={<SpotifyLink itemKey={taggedItemNode.item} />}
+        />
+      );
+    }
+
+    default:
+      throw new UnknownItemTypeError(taggedItemNode.item.__typename);
+  }
 };
 
 export default ItemDetails;

@@ -55,10 +55,8 @@ const TagDetails: React.FC<Props> = ({ tag }) => {
                 searchQuery={addingQuery}
                 setSearchQuery={setAddingQuery}
                 // Attach the selected take to this item
-                mapAction={(item) => (
-                  <IconButton
-                    onClick={() => createTag({ uri: item.data.uri, tag })}
-                  >
+                mapAction={(uri) => (
+                  <IconButton onClick={() => createTag({ uri, tag })}>
                     <IconAdd />
                   </IconButton>
                 )}

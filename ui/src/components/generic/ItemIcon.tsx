@@ -1,32 +1,49 @@
 import React from "react";
 import { Tooltip } from "@material-ui/core";
-import { Item } from "schema";
 import {
   AlbumOutlined as AlbumIcon,
   AudiotrackOutlined as AudiotrackIcon,
   PersonOutlined as PersonIcon,
 } from "@material-ui/icons";
+import { useFragment } from "react-relay";
+import { ItemIcon_item$key } from "./__generated__/ItemIcon_item.graphql";
+import { UnknownItemTypeError } from "util/errors";
 
-function ItemIcon({ item }: { item: Item }): React.ReactElement {
-  switch (item.type) {
-    case "track":
+interface Props {
+  itemKey: ItemIcon_item$key;
+}
+
+function ItemIcon({ itemKey }: Props): React.ReactElement {
+  const item = useFragment(
+    graphql`
+      fragment ItemIcon_item on Item {
+        __typename
+      }
+    `,
+    itemKey
+  );
+
+  switch (item.__typename) {
+    case "Track":
       return (
         <Tooltip title="Track">
           <AudiotrackIcon />
         </Tooltip>
       );
-    case "album":
+    case "AlbumSimplified":
       return (
         <Tooltip title="Album">
           <AlbumIcon />
         </Tooltip>
       );
-    case "artist":
+    case "Artist":
       return (
         <Tooltip title="Artist">
           <PersonIcon />
         </Tooltip>
       );
+    default:
+      throw new UnknownItemTypeError(item.__typename);
   }
 }
 

@@ -5,7 +5,7 @@ import SearchBar from "components/generic/SearchBar";
 import useRouteQuery from "hooks/useRouteQuery";
 import { useHistory } from "react-router-dom";
 import ItemList from "components/ItemList";
-import { useFragment } from "react-relay";
+import { graphql, useFragment } from "react-relay";
 import { ItemSearchList_itemSearch$key } from "./__generated__/ItemSearchList_itemSearch.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
@@ -25,28 +25,21 @@ const useStyles = makeStyles(({ spacing }) => ({
   },
 }));
 
-function getListItems(
-  data: ItemSearchResponse,
-  selectedTab: "tracks" | "albums" | "artists"
-): TaggedItem[] {
-  switch (selectedTab) {
-    case "tracks":
-      return data.tracks;
-    case "albums":
-      return data.albums;
-    case "artists":
-      return data.artists;
-  }
-}
-
-interface Props extends Omit<React.ComponentProps<typeof ItemList>, "items"> {
-  itemSearchNodeKey: ItemSearchList_itemSearch$key;
+interface Props
+  extends Omit<
+    React.ComponentProps<typeof ItemList>,
+    "taggedItemConnectionKey"
+  > {
+  itemSearchKey: ItemSearchList_itemSearch$key;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
 
+/**
+ * A searchable list of items
+ */
 const ItemSearchList: React.FC<Props> = ({
-  itemSearchNodeKey,
+  itemSearchKey,
   searchQuery,
   setSearchQuery,
   ...rest
@@ -62,15 +55,16 @@ const ItemSearchList: React.FC<Props> = ({
       fragment ItemSearchList_itemSearch on ItemSearch {
         tracks {
           ...ItemList_taggedItemConnection
-          edges {
-            node {
-              ...ItemDetails_itemNode
-            }
-          }
+        }
+        albums {
+          ...ItemList_taggedItemConnection
+        }
+        artists {
+          ...ItemList_taggedItemConnection
         }
       }
     `,
-    itemSearchNodeKey
+    itemSearchKey
   );
 
   // Whenever the search changes, update the URL
@@ -100,7 +94,11 @@ const ItemSearchList: React.FC<Props> = ({
         <Tab classes={{ root: classes.tab }} value="albums" label="Albums" />
         <Tab classes={{ root: classes.tab }} value="artists" label="Artists" />
       </Tabs>
-      <ItemList items={getListItems(data, selectedTab)} showTags {...rest} />
+      <ItemList
+        taggedItemConnectionKey={itemSearch[selectedTab]}
+        showTags
+        {...rest}
+      />
     </Paper>
   );
 };
