@@ -4,9 +4,15 @@ import { Add as IconAdd } from "@material-ui/icons";
 import ItemList from "components/ItemList";
 import ItemSearchList from "pages/Search/ItemSearchList";
 import { Alert } from "@material-ui/lab";
-import { graphql, useFragment, useMutation } from "react-relay";
+import {
+  graphql,
+  useFragment,
+  useLazyLoadQuery,
+  useMutation,
+} from "react-relay";
 import { TagDetails_tagNode$key } from "./__generated__/TagDetails_tagNode.graphql";
 import { TagDetailsAddTagMutation } from "./__generated__/TagDetailsAddTagMutation.graphql";
+import { TagDetailsSearchQuery } from "./__generated__/TagDetailsSearchQuery.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -48,6 +54,23 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
   // Stuff to allow adding more items to this tag
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [addingQuery, setAddingQuery] = useState<string>("");
+  // TODO figure out if we can merge this into the parent query
+  const searchData = useLazyLoadQuery<TagDetailsSearchQuery>(
+    graphql`
+      query TagDetailsSearchQuery(
+        $searchQuery: String!
+        $skipSearch: Boolean!
+      ) {
+        itemSearch(query: $searchQuery) @skip(if: $skipSearch) {
+          ...ItemSearchList_itemSearch
+        }
+      }
+    `,
+    {
+      searchQuery: addingQuery,
+      skipSearch: !addingQuery,
+    }
+  );
   const [addTag, isAddInFlight] = useMutation<TagDetailsAddTagMutation>(graphql`
     mutation TagDetailsAddTagMutation($input: AddTagInput!) {
       addTag(input: $input) {
@@ -63,6 +86,7 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
       <ItemList taggedItemConnectionKey={tagNode.items} showIcons />
       {isAdding ? (
         <ItemSearchList
+          itemSearchKey={searchData.itemSearch}
           searchQuery={addingQuery}
           setSearchQuery={setAddingQuery}
           // Attach the selected take to this item
