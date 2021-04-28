@@ -16,13 +16,13 @@ const SearchPage: React.FC = () => {
   const history = useHistory();
   const data = useLazyLoadQuery<SearchPageQuery>(
     graphql`
-      query SearchPageQuery($query: String!) {
-        itemSearch(query: $query) {
+      query SearchPageQuery($query: String!, $skip: Boolean!) {
+        itemSearch(query: $query) @skip(if: $skip) {
           ...ItemSearchList_itemSearch
         }
       }
     `,
-    { query: searchQuery }
+    { query: searchQuery, skip: !searchQuery }
   );
 
   return (

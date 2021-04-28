@@ -30,13 +30,15 @@ interface Props
     React.ComponentProps<typeof ItemList>,
     "taggedItemConnectionKey"
   > {
-  itemSearchKey: ItemSearchList_itemSearch$key;
+  itemSearchKey?: ItemSearchList_itemSearch$key;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
 
 /**
- * A searchable list of items
+ * A searchable list of items. If itemSearchKey isn't provided, we assume no
+ * search has been made yet, so the search bar will be rendered but results
+ * won't.
  */
 const ItemSearchList: React.FC<Props> = ({
   itemSearchKey,
@@ -64,7 +66,7 @@ const ItemSearchList: React.FC<Props> = ({
         }
       }
     `,
-    itemSearchKey
+    itemSearchKey ?? null
   );
 
   // Whenever the search changes, update the URL
@@ -84,21 +86,37 @@ const ItemSearchList: React.FC<Props> = ({
         onSearch={setSearchQuery}
       />
 
-      <Tabs
-        classes={{ root: classes.tabs }}
-        value={selectedTab}
-        variant="fullWidth"
-        onChange={(e, newSelectedTab) => setSelectedTab(newSelectedTab)}
-      >
-        <Tab classes={{ root: classes.tab }} value="tracks" label="Tracks" />
-        <Tab classes={{ root: classes.tab }} value="albums" label="Albums" />
-        <Tab classes={{ root: classes.tab }} value="artists" label="Artists" />
-      </Tabs>
-      <ItemList
-        taggedItemConnectionKey={itemSearch[selectedTab]}
-        showTags
-        {...rest}
-      />
+      {itemSearch && (
+        <>
+          <Tabs
+            classes={{ root: classes.tabs }}
+            value={selectedTab}
+            variant="fullWidth"
+            onChange={(e, newSelectedTab) => setSelectedTab(newSelectedTab)}
+          >
+            <Tab
+              classes={{ root: classes.tab }}
+              value="tracks"
+              label="Tracks"
+            />
+            <Tab
+              classes={{ root: classes.tab }}
+              value="albums"
+              label="Albums"
+            />
+            <Tab
+              classes={{ root: classes.tab }}
+              value="artists"
+              label="Artists"
+            />
+          </Tabs>
+          <ItemList
+            taggedItemConnectionKey={itemSearch[selectedTab]}
+            showTags
+            {...rest}
+          />
+        </>
+      )}
     </Paper>
   );
 };
