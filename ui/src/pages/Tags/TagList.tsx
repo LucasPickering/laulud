@@ -11,8 +11,8 @@ import UnstyledLink from "components/generic/UnstyledLink";
 import { useHistory } from "react-router-dom";
 import TagChip from "components/TagChip";
 import Link from "components/generic/Link";
-import { useLazyLoadQuery } from "react-relay";
-import { TagListQuery } from "./__generated__/TagListQuery.graphql";
+import { graphql, useFragment, useLazyLoadQuery } from "react-relay";
+import { TagList_tagConnection$key } from "./__generated__/TagList_tagConnection.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
   container: {
@@ -24,6 +24,7 @@ const useStyles = makeStyles(({ spacing }) => ({
 }));
 
 interface Props {
+  tagConnectionKey: TagList_tagConnection$key;
   selectedTag?: string;
 }
 
@@ -32,37 +33,34 @@ interface Props {
  * will be highlighted, but no extra data rendered (that should be handled by
  * the parent).
  */
-const TagList: React.FC<Props> = ({ selectedTag }) => {
+const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
   const classes = useStyles();
   const history = useHistory();
-
-  const tags = useLazyLoadQuery<TagListQuery>(
+  const tagConnection = useFragment(
     graphql`
-      query TagListQuery {
-        tags {
-          totalCount
-          edges {
-            node {
-              id
-              tag
-              items {
-                totalCount
-              }
+      fragment TagList_tagConnection on TagConnection {
+        totalCount
+        edges {
+          node {
+            id
+            tag
+            items {
+              totalCount
             }
           }
         }
       }
     `,
-    {}
+    tagConnectionKey
   );
 
   return (
     <Paper className={classes.container}>
-      {tags.totalCount > 0 ? (
+      {tagConnection.totalCount > 0 ? (
         <List>
-          {tags.edges.map(({ node: tagNode }) => (
+          {tagConnection.edges.map(({ node: tagNode }) => (
             <ListItem
-              key={node.id}
+              key={tagNode.id}
               button
               selected={tagNode.tag === selectedTag}
               component={UnstyledLink}
@@ -73,7 +71,7 @@ const TagList: React.FC<Props> = ({ selectedTag }) => {
             >
               <ListItemText
                 primary={<TagChip tag={tagNode.tag} />}
-                secondary={`${node.items.totalCount} items`}
+                secondary={`${tagNode.items.totalCount} items`}
               />
             </ListItem>
           ))}
