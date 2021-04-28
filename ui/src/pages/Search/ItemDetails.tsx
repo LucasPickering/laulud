@@ -21,7 +21,7 @@ const ItemDetails: React.FC<{
       fragment ItemDetails_taggedItemNode on TaggedItemNode {
         item {
           __typename
-          id
+          uri
           externalUrls {
             spotify
           }
