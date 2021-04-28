@@ -7,31 +7,35 @@ import { graphql, useLazyLoadQuery } from "react-relay";
 import { TagsPageQuery } from "./__generated__/TagsPageQuery.graphql";
 
 interface RouteParams {
-  tag?: string;
+  selectedTag?: string;
 }
 
 const TagsPage: React.FC = () => {
   const params = useParams<RouteParams>();
-  const tag = params.tag && decodeURIComponent(params.tag);
+  const selectedTag =
+    params.selectedTag && decodeURIComponent(params.selectedTag);
   const data = useLazyLoadQuery<TagsPageQuery>(
     graphql`
-      query TagsPageQuery {
+      query TagsPageQuery($selectedTag: String!, $skipTag: Boolean!) {
         tags {
           ...TagList_tagConnection
         }
+        tag(tag: $selectedTag) @skip(if: $skipTag) {
+          ...TagDetails_tagNode
+        }
       }
     `,
-    {}
+    { selectedTag: selectedTag ?? "", skipTag: !selectedTag }
   );
 
   return (
     <Grid container spacing={2}>
       <Grid item xs={12} sm={6} md={4}>
-        <TagList tagConnectionKey={data.tags} selectedTag={tag} />
+        <TagList tagConnectionKey={data.tags} selectedTag={selectedTag} />
       </Grid>
-      {tag && (
+      {data.tag && (
         <Grid item xs={12} sm={6} md={8}>
-          <TagDetails tag={tag} />
+          <TagDetails tagNodeKey={data.tag} />
         </Grid>
       )}
     </Grid>

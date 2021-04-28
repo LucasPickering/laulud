@@ -42,10 +42,10 @@ const SearchPage: React.FC = () => {
     <Grid container spacing={2}>
       <Grid item xs={12} sm={6} md={4}>
         <ItemSearchList
+          itemSearchKey={data.itemSearch}
           selectedUri={selectedUri}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          itemSearchKey={data.itemSearch}
           mapRoute={(uri) => ({
             ...history.location,
             pathname: `/search/${uri}`,

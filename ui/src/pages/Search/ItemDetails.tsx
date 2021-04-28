@@ -57,6 +57,8 @@ const ItemDetails: React.FC<{
           <TagChips taggedItemNodeKey={taggedItemNode} showAdd showDelete />
         </CardContent>
       </Card>
+
+      {/* TODO enable snack bar */}
       {/* <Snackbar
         open={createTagStatus === QueryStatus.Error}
         autoHideDuration={5000}

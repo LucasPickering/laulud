@@ -60,7 +60,7 @@ const CoreContent: React.FC = () => {
         <Route path="/search/:selectedUri?" exact>
           <SearchPage />
         </Route>
-        <Route path="/tags/:tag?" exact>
+        <Route path="/tags/:selectedTag?" exact>
           <TagsPage />
         </Route>
 
