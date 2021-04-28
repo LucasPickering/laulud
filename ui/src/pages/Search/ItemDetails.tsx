@@ -40,10 +40,10 @@ const ItemDetails: React.FC<{
           ... on Artist {
             name
           }
-          ...ItemArt_item
-          ...SpotifyLink_item
         }
         ...TagChips_taggedItemNode
+        ...ItemArt_taggedItemNode
+        ...SpotifyLink_taggedItemNode
       }
     `,
     taggedItemNodeKey
@@ -87,8 +87,8 @@ const ItemHeader: React.FC<{ taggedItemNode: ItemDetails_taggedItemNode }> = ({
         <CardHeader
           title={track.name}
           subheader={track.artists!.map((artist) => artist.name).join(", ")}
-          avatar={<ItemArt itemKey={taggedItemNode.item} />}
-          action={<SpotifyLink itemKey={taggedItemNode.item} />}
+          avatar={<ItemArt taggedItemNodeKey={taggedItemNode} />}
+          action={<SpotifyLink taggedItemNodeKey={taggedItemNode} />}
         />
       );
     }
@@ -99,8 +99,8 @@ const ItemHeader: React.FC<{ taggedItemNode: ItemDetails_taggedItemNode }> = ({
         <CardHeader
           title={album.name}
           subheader={album.artists!.map((artist) => artist.name).join(", ")}
-          avatar={<ItemArt itemKey={taggedItemNode.item} />}
-          action={<SpotifyLink itemKey={taggedItemNode.item} />}
+          avatar={<ItemArt taggedItemNodeKey={taggedItemNode} />}
+          action={<SpotifyLink taggedItemNodeKey={taggedItemNode} />}
         />
       );
     }
@@ -110,8 +110,8 @@ const ItemHeader: React.FC<{ taggedItemNode: ItemDetails_taggedItemNode }> = ({
       return (
         <CardHeader
           title={artist.name}
-          avatar={<ItemArt itemKey={taggedItemNode.item} />}
-          action={<SpotifyLink itemKey={taggedItemNode.item} />}
+          avatar={<ItemArt taggedItemNodeKey={taggedItemNode} />}
+          action={<SpotifyLink taggedItemNodeKey={taggedItemNode} />}
         />
       );
     }

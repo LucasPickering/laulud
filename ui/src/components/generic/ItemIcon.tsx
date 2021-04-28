@@ -5,23 +5,27 @@ import {
   AudiotrackOutlined as AudiotrackIcon,
   PersonOutlined as PersonIcon,
 } from "@material-ui/icons";
-import { useFragment } from "react-relay";
-import { ItemIcon_item$key } from "./__generated__/ItemIcon_item.graphql";
+import { graphql, useFragment } from "react-relay";
+import { ItemIcon_taggedItemNode$key } from "./__generated__/ItemIcon_taggedItemNode.graphql";
 import { UnknownItemTypeError } from "util/errors";
 
 interface Props {
-  itemKey: ItemIcon_item$key;
+  taggedItemNodeKey: ItemIcon_taggedItemNode$key;
 }
 
-function ItemIcon({ itemKey }: Props): React.ReactElement {
-  const item = useFragment(
+function ItemIcon({ taggedItemNodeKey }: Props): React.ReactElement {
+  const taggedItemNode = useFragment(
     graphql`
-      fragment ItemIcon_item on Item {
-        __typename
+      # TODO convert to fragment on Item after https://github.com/graphql-rust/juniper/issues/922
+      fragment ItemIcon_taggedItemNode on TaggedItemNode {
+        item {
+          __typename
+        }
       }
     `,
-    itemKey
+    taggedItemNodeKey
   );
+  const item = taggedItemNode.item;
 
   switch (item.__typename) {
     case "Track":

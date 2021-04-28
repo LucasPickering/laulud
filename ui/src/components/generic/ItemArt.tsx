@@ -1,8 +1,8 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core";
-import { useFragment } from "react-relay";
+import { graphql, useFragment } from "react-relay";
 import { UnknownItemTypeError } from "util/errors";
-import { ItemArt_item$key } from "./__generated__/ItemArt_item.graphql";
+import { ItemArt_taggedItemNode$key } from "./__generated__/ItemArt_taggedItemNode.graphql";
 
 const useStyles = makeStyles(() => ({
   small: {
@@ -19,7 +19,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 interface Props {
-  itemKey: ItemArt_item$key;
+  taggedItemNodeKey: ItemArt_taggedItemNode$key;
   size?: "small" | "medium" | "large";
 }
 
@@ -27,36 +27,43 @@ interface Props {
  * Render an image for a Spotify item. For tracks and albums this will be the
  * album art. For artists it's the artist photo.
  */
-function ItemArt({ itemKey, size = "medium" }: Props): React.ReactElement {
+function ItemArt({
+  taggedItemNodeKey,
+  size = "medium",
+}: Props): React.ReactElement {
   const classes = useStyles();
-  const item = useFragment(
+  const taggedItemNode = useFragment(
     graphql`
-      fragment ItemArt_item on Item {
-        __typename
-        ... on Track {
-          album {
+      # TODO convert to fragment on Item after https://github.com/graphql-rust/juniper/issues/922
+      fragment ItemArt_taggedItemNode on TaggedItemNode {
+        item {
+          __typename
+          ... on Track {
+            album {
+              images {
+                url
+              }
+            }
+            name
+          }
+          ... on AlbumSimplified {
             images {
               url
             }
+            name
           }
-          name
-        }
-        ... on AlbumSimplified {
-          images {
-            url
+          ... on Artist {
+            images {
+              url
+            }
+            name
           }
-          name
-        }
-        ... on Artist {
-          images {
-            url
-          }
-          name
         }
       }
     `,
-    itemKey
+    taggedItemNodeKey
   );
+  const item = taggedItemNode.item;
 
   switch (item.__typename) {
     case "Track":

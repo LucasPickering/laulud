@@ -43,8 +43,8 @@ function ItemListEntry({
           ... on Artist {
             name
           }
-          ...ItemArt_item
         }
+        ...ItemArt_taggedItemNode
       }
     `,
     taggedItemNodeKey
@@ -55,7 +55,7 @@ function ItemListEntry({
       return (
         <>
           <ListItemAvatar className={classes.listItemAvatar}>
-            <ItemArt itemKey={taggedItemNode.item} size="small" />
+            <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
           </ListItemAvatar>
           <ListItemText
             primary={taggedItemNode.item.name}
@@ -70,7 +70,7 @@ function ItemListEntry({
       return (
         <>
           <ListItemAvatar className={classes.listItemAvatar}>
-            <ItemArt itemKey={taggedItemNode.item} size="small" />
+            <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
           </ListItemAvatar>
           <ListItemText
             primary={taggedItemNode.item.name}
@@ -85,7 +85,7 @@ function ItemListEntry({
       return (
         <>
           <ListItemAvatar className={classes.listItemAvatar}>
-            <ItemArt itemKey={taggedItemNode.item} size="small" />
+            <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
           </ListItemAvatar>
           <ListItemText primary={taggedItemNode.item.name} />
         </>

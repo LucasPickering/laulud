@@ -56,7 +56,7 @@ pub async fn init_spotify_client(config: &LauludConfig) -> BasicClient {
 #[rocket::main]
 async fn main() {
     env_logger::init();
-    let rocket = rocket::ignite();
+    let rocket = rocket::build();
     let config: LauludConfig = rocket.figment().extract().unwrap();
 
     let db_handler = DbHandler::connect(&config).await.unwrap();

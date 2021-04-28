@@ -53,9 +53,9 @@ function ItemList({
           node {
             item {
               uri
-              ...ItemIcon_item
-              ...SpotifyLink_item
             }
+            ...ItemIcon_taggedItemNode
+            ...SpotifyLink_taggedItemNode
             ...ItemListEntry_taggedItemNode
             ...TagChips_taggedItemNode
           }
@@ -97,10 +97,10 @@ function ItemList({
             {showIcons && (
               <>
                 <ListItemIcon>
-                  <ItemIcon itemKey={node.item} />
+                  <ItemIcon taggedItemNodeKey={node} />
                 </ListItemIcon>
                 <ListItemIcon>
-                  <SpotifyLink itemKey={node.item} />
+                  <SpotifyLink taggedItemNodeKey={node} />
                 </ListItemIcon>
               </>
             )}

@@ -14,7 +14,7 @@ const SearchPage: React.FC = () => {
   const { selectedUri } = useParams<RouteParams>();
   const [searchQuery, setSearchQuery] = useState<string>("asdf");
   const history = useHistory();
-  const itemSearch = useLazyLoadQuery<SearchPageQuery>(
+  const data = useLazyLoadQuery<SearchPageQuery>(
     graphql`
       query SearchPageQuery($query: String!) {
         itemSearch(query: $query) {
@@ -32,7 +32,7 @@ const SearchPage: React.FC = () => {
           selectedUri={selectedUri}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          itemSearchKey={itemSearch}
+          itemSearchKey={data.itemSearch}
           mapRoute={(uri) => ({
             ...history.location,
             pathname: `/search/${uri}`,
