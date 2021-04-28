@@ -16,13 +16,26 @@ const SearchPage: React.FC = () => {
   const history = useHistory();
   const data = useLazyLoadQuery<SearchPageQuery>(
     graphql`
-      query SearchPageQuery($query: String!, $skip: Boolean!) {
-        itemSearch(query: $query) @skip(if: $skip) {
+      query SearchPageQuery(
+        $searchQuery: String!
+        $skipSearch: Boolean!
+        $selectedUri: String!
+        $skipItem: Boolean!
+      ) {
+        itemSearch(query: $searchQuery) @skip(if: $skipSearch) {
           ...ItemSearchList_itemSearch
+        }
+        item(uri: $selectedUri) @skip(if: $skipItem) {
+          ...ItemDetails_taggedItemNode
         }
       }
     `,
-    { query: searchQuery, skip: !searchQuery }
+    {
+      searchQuery,
+      skipSearch: !searchQuery,
+      selectedUri: selectedUri ?? "",
+      skipItem: !selectedUri,
+    }
   );
 
   return (
@@ -39,13 +52,11 @@ const SearchPage: React.FC = () => {
           })}
         />
       </Grid>
-      {/* {selectedUri && (
+      {data.item && (
         <Grid item xs={12} sm={6} md={8}>
-          <ItemDetails
-            taggedItemNodeKey={itemSearch}
-          />
+          <ItemDetails taggedItemNodeKey={data.item} />
         </Grid>
-      )} */}
+      )}
     </Grid>
   );
 };
