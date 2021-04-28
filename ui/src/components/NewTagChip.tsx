@@ -7,7 +7,7 @@ import {
   makeStyles,
 } from "@material-ui/core";
 import { Add as AddIcon } from "@material-ui/icons";
-import { QueryStatus } from "react-query";
+import { MutationStatus } from "util/types";
 
 const useStyles = makeStyles(({ spacing }) => ({
   tag: {
@@ -20,18 +20,18 @@ const useStyles = makeStyles(({ spacing }) => ({
 }));
 
 interface Props extends React.ComponentProps<typeof Chip> {
-  status: QueryStatus;
-  createTag: (tag: string) => void;
+  status: MutationStatus;
+  addTag: (tag: string) => void;
 }
 
-const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
+const NewTagChip: React.FC<Props> = ({ status, addTag, ...rest }) => {
   const classes = useStyles();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [newTagText, setNewTagText] = useState<string>("");
 
   // After successfully creating a tag, reset state here
   useEffect(() => {
-    if (status === QueryStatus.Success) {
+    if (status === "success") {
       setIsEditing(false);
       setNewTagText("");
     }
@@ -43,7 +43,7 @@ const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
         {...rest}
         className={classes.tag}
         icon={
-          status === QueryStatus.Loading ? (
+          status === "loading" ? (
             <CircularProgress color="secondary" size={24} />
           ) : (
             <AddIcon />
@@ -55,7 +55,7 @@ const NewTagChip: React.FC<Props> = ({ status, createTag, ...rest }) => {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  createTag(newTagText);
+                  addTag(newTagText);
                   setIsEditing(false);
                 }}
               >

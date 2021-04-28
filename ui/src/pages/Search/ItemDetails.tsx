@@ -5,7 +5,7 @@ import ItemArt from "components/generic/ItemArt";
 import NewTagChip from "../../components/NewTagChip";
 import TagChips from "components/TagChips";
 import SpotifyLink from "components/generic/SpotifyLink";
-import { graphql, useFragment } from "react-relay";
+import { graphql, useFragment, useMutation } from "react-relay";
 import { Alert } from "@material-ui/lab";
 import {
   ItemDetails_taggedItemNode,
@@ -54,25 +54,16 @@ const ItemDetails: React.FC<{
       <Card>
         <ItemHeader taggedItemNode={taggedItemNode} />
         <CardContent>
-          <TagChips
-            taggedItemNodeKey={taggedItemNode}
-            deleteTag={(tag) => deleteTag({ uri, tag })}
-          >
-            <NewTagChip
-              color="primary"
-              status={createTagStatus}
-              createTag={(tag) => createTag({ uri, tag })}
-            />
-          </TagChips>
+          <TagChips taggedItemNodeKey={taggedItemNode} showAdd showDelete />
         </CardContent>
       </Card>
-      <Snackbar
+      {/* <Snackbar
         open={createTagStatus === QueryStatus.Error}
         autoHideDuration={5000}
         onClose={() => resetCreateTagStatus()}
       >
         <Alert severity="error">Error creating tag</Alert>
-      </Snackbar>
+      </Snackbar> */}
     </>
   );
 };
