@@ -169,13 +169,13 @@ impl<T> PaginatedResponse<T> {
 )]
 #[serde(rename_all = "lowercase")]
 pub enum SpotifyItemType {
-    #[display("track")]
+    #[display(fmt = "track")]
     Track,
-    #[display("album")]
+    #[display(fmt = "album")]
     Album,
-    #[display("artist")]
+    #[display(fmt = "artist")]
     Artist,
-    #[display("user")]
+    #[display(fmt = "user")]
     User,
 }
 
