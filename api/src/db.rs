@@ -177,9 +177,9 @@ impl TaggedItemsCollection {
             .collection
             .aggregate(
                 vec![
-                    doc! {"$match":match_filter},
-                    doc! {"$unwind":"$tags"},
-                    doc! {"$project":{"tag": "$_id", "_id": 0}},
+                    doc! {"$match": match_filter},
+                    doc! {"$unwind": "$tags"},
+                    doc! {"$project": {"tag": "$tags", "_id": 0}},
                     // Sort tags alphabetically
                     doc! {"$sort": {"tag": 1}},
                 ],
