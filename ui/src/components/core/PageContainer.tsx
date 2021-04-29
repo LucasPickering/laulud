@@ -1,6 +1,6 @@
-import { CircularProgress, makeStyles, Typography } from "@material-ui/core";
 import React, { Suspense } from "react";
-
+import { makeStyles, Typography } from "@material-ui/core";
+import Loading from "components/Loading";
 import Link from "../generic/Link";
 import Header from "./Header";
 
@@ -33,19 +33,23 @@ const useStyles = makeStyles(({ palette, spacing }) => ({
   },
 }));
 
+interface Props {
+  showHeader?: boolean;
+}
+
 /**
  * Container for all content on the page. This is used in the root to wrap all
  * pages.
  */
-const PageContainer: React.FC = ({ children }) => {
+const PageContainer: React.FC<Props> = ({ showHeader = true, children }) => {
   const classes = useStyles();
 
   return (
     <div className={classes.pageContainer}>
-      <Header />
+      {showHeader && <Header />}
 
       <div className={classes.pageBody}>
-        <Suspense fallback={<CircularProgress />}>{children}</Suspense>
+        <Suspense fallback={<Loading />}>{children}</Suspense>
       </div>
 
       <footer className={classes.pageFooter}>

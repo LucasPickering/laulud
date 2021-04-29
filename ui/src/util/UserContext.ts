@@ -1,3 +1,9 @@
 import React from "react";
 
-export const UserContext = React.createContext({});
+export interface UserContextType {
+  isLoggedIn: boolean;
+}
+
+export const UserContext = React.createContext<UserContextType>({
+  isLoggedIn: false,
+});

@@ -1,5 +1,5 @@
-import { CircularProgress } from "@material-ui/core";
 import React, { Suspense } from "react";
+import Loading from "components/Loading";
 
 /**
  * Wrap a component with a <Suspense> tag, so it gets a local loading spinner
@@ -7,7 +7,7 @@ import React, { Suspense } from "react";
  */
 function withSuspense<P>(Component: React.FC<P>): React.FC<P> {
   const WrappedComponent: React.FC<P> = (props: P) => (
-    <Suspense fallback={<CircularProgress />}>
+    <Suspense fallback={<Loading />}>
       <Component {...props} />
     </Suspense>
   );

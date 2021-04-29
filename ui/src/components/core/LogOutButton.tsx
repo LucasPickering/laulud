@@ -1,23 +1,19 @@
-import React, { useEffect } from "react";
-
+import React from "react";
 import { Button } from "@material-ui/core";
-import { useMutation } from "react-query";
-import { queryFn } from "util/queryCache";
 
 const LogOutButton: React.FC = () => {
-  const [mutate, { status }] = useMutation(() =>
-    queryFn({ url: "/api/logout", method: "POST" })
-  );
-
-  useEffect(() => {
-    if (status === "success") {
-      // fuckin yeet em back to the home page yeehaw
-      window.location.assign("/");
-    }
-  }, [status]);
+  const logOut = () =>
+    fetch("/api/logout", { method: "POST" })
+      .then((response) => {
+        if (response.ok) {
+          // fuckin yeet em back to the home page yeehaw
+          window.location.assign("/");
+        }
+      })
+      .catch(console.error);
 
   return (
-    <Button variant="outlined" onClick={() => mutate()}>
+    <Button variant="outlined" onClick={logOut}>
       Log Out
     </Button>
   );

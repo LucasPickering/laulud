@@ -1,8 +1,6 @@
 import React from "react";
-import { QueryStatus } from "react-query";
 import { Card, CardContent, CardHeader, Snackbar } from "@material-ui/core";
 import ItemArt from "components/generic/ItemArt";
-import NewTagChip from "../../components/NewTagChip";
 import TagChips from "components/TagChips";
 import SpotifyLink from "components/generic/SpotifyLink";
 import { graphql, useFragment, useMutation } from "react-relay";
