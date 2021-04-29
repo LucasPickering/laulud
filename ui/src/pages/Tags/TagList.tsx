@@ -11,8 +11,9 @@ import UnstyledLink from "components/generic/UnstyledLink";
 import { useHistory } from "react-router-dom";
 import TagChip from "components/TagChip";
 import Link from "components/generic/Link";
-import { graphql, useFragment, useLazyLoadQuery } from "react-relay";
+import { graphql, useFragment } from "react-relay";
 import { TagList_tagConnection$key } from "./__generated__/TagList_tagConnection.graphql";
+import { TagList_tagNode$key } from "./__generated__/TagList_tagNode.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
   emptyState: {
@@ -40,10 +41,7 @@ const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
         edges {
           node {
             id
-            tag
-            items {
-              totalCount
-            }
+            ...TagList_tagNode
           }
         }
       }
@@ -64,24 +62,51 @@ const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
 
   return (
     <List>
-      {tagConnection.edges.map(({ node: tagNode }) => (
-        <ListItem
-          key={tagNode.id}
-          button
-          selected={tagNode.tag === selectedTag}
-          component={UnstyledLink}
-          to={{
-            ...history.location,
-            pathname: `/tags/${encodeURIComponent(tagNode.tag)}`,
-          }}
-        >
-          <ListItemText
-            primary={<TagChip tag={tagNode.tag} />}
-            secondary={`${tagNode.items.totalCount} items`}
-          />
-        </ListItem>
+      {tagConnection.edges.map(({ node }) => (
+        <TagListItem
+          key={node.id}
+          tagNodeKey={node}
+          selectedTag={selectedTag}
+        />
       ))}
     </List>
+  );
+};
+
+const TagListItem: React.FC<{
+  tagNodeKey: TagList_tagNode$key;
+  selectedTag?: string;
+}> = ({ tagNodeKey, selectedTag }) => {
+  const history = useHistory();
+  const tagNode = useFragment(
+    graphql`
+      fragment TagList_tagNode on TagNode {
+        id
+        tag
+        items {
+          totalCount
+        }
+      }
+    `,
+    tagNodeKey
+  );
+
+  return (
+    <ListItem
+      key={tagNode.id}
+      button
+      selected={tagNode.tag === selectedTag}
+      component={UnstyledLink}
+      to={{
+        ...history.location,
+        pathname: `/tags/${encodeURIComponent(tagNode.tag)}`,
+      }}
+    >
+      <ListItemText
+        primary={<TagChip tag={tagNode.tag} />}
+        secondary={`${tagNode.items.totalCount} items`}
+      />
+    </ListItem>
   );
 };
 

@@ -33,8 +33,13 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
   const [addTag, isAddInFlight] = useMutation<TagDetailsAddTagMutation>(graphql`
     mutation TagDetailsAddTagMutation($input: AddTagInput!) {
       addTag(input: $input) {
-        item {
+        # Grab this data so relay can update it in the store
+        itemNode {
           ...TagChips_taggedItemNode
+        }
+        tagNode {
+          ...TagDetails_tagNode
+          ...TagList_tagNode
         }
       }
     }

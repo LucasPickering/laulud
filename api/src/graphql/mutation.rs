@@ -4,7 +4,8 @@ use crate::{
     error::{ApiError, ApiResult},
     graphql::{
         AddTagInput, AddTagPayloadFields, DeleteTagInput,
-        DeleteTagPayloadFields, MutationFields, RequestContext, TaggedItemNode,
+        DeleteTagPayloadFields, MutationFields, RequestContext, TagNode,
+        TaggedItemNode,
     },
     util::Validate,
 };
@@ -33,7 +34,7 @@ impl MutationFields for Mutation {
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
         let uri = input.item_uri.validate("input.item_uri")?;
-        let item = match context.spotify.get_item(&uri).await? {
+        let item_node = match context.spotify.get_item(&uri).await? {
             Some(spotify_item) => {
                 // Do the update query
                 let item_doc = context
@@ -67,8 +68,15 @@ impl MutationFields for Mutation {
             // URI doesn't exist in spotify
             None => None,
         };
+        let tag_node = TagNode {
+            tag: input.tag,
+            item_uris: None, // TODO grab this during the above query
+        };
 
-        Ok(AddTagPayload { item })
+        Ok(AddTagPayload {
+            item_node,
+            tag_node,
+        })
     }
 
     async fn field_delete_tag<'s, 'r, 'a>(
@@ -82,7 +90,7 @@ impl MutationFields for Mutation {
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
         let uri = input.item_uri.validate("input.item_uri")?;
-        let item = match context.spotify.get_item(&uri).await? {
+        let item_node = match context.spotify.get_item(&uri).await? {
             Some(spotify_item) => {
                 // Look up tags in mongo - will return None if item doesn't
                 // exist
@@ -115,35 +123,60 @@ impl MutationFields for Mutation {
             // URI doesn't exist in spotify
             None => None,
         };
+        let tag_node = TagNode {
+            tag: input.tag,
+            item_uris: None, // TODO grab this during the above query
+        };
 
-        Ok(DeleteTagPayload { item })
+        Ok(DeleteTagPayload {
+            item_node,
+            tag_node,
+        })
     }
 }
 
 pub struct AddTagPayload {
-    pub item: Option<TaggedItemNode>,
+    pub item_node: Option<TaggedItemNode>,
+    pub tag_node: TagNode,
 }
 
 impl AddTagPayloadFields for AddTagPayload {
-    fn field_item(
+    fn field_item_node(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
         _trail: &QueryTrail<'_, TaggedItemNode, Walked>,
     ) -> &Option<TaggedItemNode> {
-        &self.item
+        &self.item_node
+    }
+
+    fn field_tag_node(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+        _trail: &QueryTrail<'_, TagNode, Walked>,
+    ) -> &TagNode {
+        &self.tag_node
     }
 }
 
 pub struct DeleteTagPayload {
-    pub item: Option<TaggedItemNode>,
+    pub item_node: Option<TaggedItemNode>,
+    pub tag_node: TagNode,
 }
 
 impl DeleteTagPayloadFields for DeleteTagPayload {
-    fn field_item(
+    fn field_item_node(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
         _trail: &QueryTrail<'_, TaggedItemNode, Walked>,
     ) -> &Option<TaggedItemNode> {
-        &self.item
+        &self.item_node
+    }
+
+    fn field_tag_node(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+        _trail: &QueryTrail<'_, TagNode, Walked>,
+    ) -> &TagNode {
+        &self.tag_node
     }
 }

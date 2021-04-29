@@ -55,7 +55,8 @@ const TagChips: React.FC<Props> = ({
   const [deleteTag] = useMutation<TagChipsDeleteTagMutation>(graphql`
     mutation TagChipsDeleteTagMutation($input: DeleteTagInput!) {
       deleteTag(input: $input) {
-        item {
+        # Grab this data so relay can update it in the store
+        itemNode {
           ...TagChips_taggedItemNode
         }
       }
@@ -64,7 +65,8 @@ const TagChips: React.FC<Props> = ({
   const [addTag, isAddInFlight] = useMutation<TagChipsAddTagMutation>(graphql`
     mutation TagChipsAddTagMutation($input: AddTagInput!) {
       addTag(input: $input) {
-        item {
+        # Grab this data so relay can update it in the store
+        itemNode {
           ...TagChips_taggedItemNode
         }
       }

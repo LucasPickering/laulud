@@ -1,6 +1,8 @@
 # All logic specific to mutation. Types that are used in both queries and
 # mutations live in query.graphql
 
+# TODO make these return edges so we can append/prepend after mutations
+
 """
 Root mutation
 """
@@ -34,6 +36,7 @@ input AddTagInput {
   Item to apply the tag to
   """
   itemUri: String!
+
   """
   Tag to apply
   """
@@ -47,7 +50,14 @@ type AddTagPayload {
   """
   The tagged item. `null` if the item does not exist in Spotify
   """
-  item: TaggedItemNode @juniper(infallible: true)
+  itemNode: TaggedItemNode @juniper(infallible: true)
+
+  """
+  The modified tag, so the list of items for this tag can easily be grabbed.
+  If the item didn't exist, this is still returned, but its member items will
+  be the same as before the mutation
+  """
+  tagNode: TagNode! @juniper(infallible: true)
 }
 
 """
@@ -58,6 +68,7 @@ input DeleteTagInput {
   Item to delete the tag from
   """
   itemUri: String!
+
   """
   Tag to be deleted
   """
@@ -73,5 +84,12 @@ type DeleteTagPayload {
   exists but did not have the tag applied, then it will still be returned as if
   the tag had been deleted
   """
-  item: TaggedItemNode @juniper(infallible: true)
+  itemNode: TaggedItemNode @juniper(infallible: true)
+
+  """
+  The modified tag, so the list of items for this tag can easily be grabbed.
+  If the item didn't exist or didn't have this tag applied, this is still
+  returned, but its member items will be the same as before the mutation
+  """
+  tagNode: TagNode! @juniper(infallible: true)
 }
