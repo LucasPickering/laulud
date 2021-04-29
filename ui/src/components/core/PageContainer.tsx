@@ -1,5 +1,5 @@
-import { makeStyles, Typography } from "@material-ui/core";
-import React from "react";
+import { CircularProgress, makeStyles, Typography } from "@material-ui/core";
+import React, { Suspense } from "react";
 
 import Link from "../generic/Link";
 import Header from "./Header";
@@ -44,7 +44,9 @@ const PageContainer: React.FC = ({ children }) => {
     <div className={classes.pageContainer}>
       <Header />
 
-      <div className={classes.pageBody}>{children}</div>
+      <div className={classes.pageBody}>
+        <Suspense fallback={<CircularProgress />}>{children}</Suspense>
+      </div>
 
       <footer className={classes.pageFooter}>
         <Typography variant="body2">

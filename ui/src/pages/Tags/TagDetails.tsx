@@ -36,6 +36,9 @@ interface Props {
   tagNodeKey: TagDetails_tagNode$key;
 }
 
+/**
+ * Render pre-loaded data about a particular tag, including a list of its items
+ */
 const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
   const classes = useStyles();
 

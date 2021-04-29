@@ -31,7 +31,7 @@ interface Props {
 /**
  * Show a list of tags, with one of them optionally selected. The selected tag
  * will be highlighted, but no extra data rendered (that should be handled by
- * the parent).
+ * the parent). The tag list data should be pre-loaded.
  */
 const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
   const classes = useStyles();
