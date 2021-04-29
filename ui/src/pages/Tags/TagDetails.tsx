@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { makeStyles, Paper, IconButton, Snackbar } from "@material-ui/core";
+import { IconButton, Snackbar } from "@material-ui/core";
 import { Add as IconAdd } from "@material-ui/icons";
 import ItemList from "components/ItemList";
 import ItemSearchView from "pages/Search/ItemSearchView";
@@ -7,24 +7,6 @@ import { Alert } from "@material-ui/lab";
 import { graphql, useFragment, useMutation } from "react-relay";
 import { TagDetails_tagNode$key } from "./__generated__/TagDetails_tagNode.graphql";
 import { TagDetailsAddTagMutation } from "./__generated__/TagDetailsAddTagMutation.graphql";
-
-const useStyles = makeStyles(({ spacing }) => ({
-  container: {
-    padding: spacing(1),
-  },
-  searchBar: {
-    width: "100%",
-  },
-  listItem: {
-    flexWrap: "wrap",
-  },
-  listItemAvatar: {
-    marginRight: spacing(2),
-  },
-  listItemTags: {
-    flexBasis: "100%",
-  },
-}));
 
 interface Props {
   tagNodeKey: TagDetails_tagNode$key;
@@ -34,8 +16,6 @@ interface Props {
  * Render pre-loaded data about a particular tag, including a list of its items
  */
 const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
-  const classes = useStyles();
-
   const tagNode = useFragment(
     graphql`
       fragment TagDetails_tagNode on TagNode {
@@ -61,7 +41,7 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
   `);
 
   return (
-    <Paper className={classes.container}>
+    <>
       <ItemList taggedItemConnectionKey={tagNode.items} showIcons />
       {isAdding ? (
         <ItemSearchView
@@ -94,7 +74,7 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
       >
         <Alert severity="error">Error creating tag</Alert>
       </Snackbar> */}
-    </Paper>
+    </>
   );
 };
 

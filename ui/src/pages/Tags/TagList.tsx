@@ -15,9 +15,6 @@ import { graphql, useFragment, useLazyLoadQuery } from "react-relay";
 import { TagList_tagConnection$key } from "./__generated__/TagList_tagConnection.graphql";
 
 const useStyles = makeStyles(({ spacing }) => ({
-  container: {
-    padding: spacing(1),
-  },
   emptyState: {
     padding: spacing(2),
   },
@@ -54,37 +51,37 @@ const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
     tagConnectionKey
   );
 
+  if (tagConnection.totalCount === 0) {
+    return (
+      <div className={classes.emptyState}>
+        <Typography>
+          No tags yet. <Link to="/search">Search for something</Link> to create
+          your first tag.
+        </Typography>
+      </div>
+    );
+  }
+
   return (
-    <Paper className={classes.container}>
-      {tagConnection.totalCount > 0 ? (
-        <List>
-          {tagConnection.edges.map(({ node: tagNode }) => (
-            <ListItem
-              key={tagNode.id}
-              button
-              selected={tagNode.tag === selectedTag}
-              component={UnstyledLink}
-              to={{
-                ...history.location,
-                pathname: `/tags/${encodeURIComponent(tagNode.tag)}`,
-              }}
-            >
-              <ListItemText
-                primary={<TagChip tag={tagNode.tag} />}
-                secondary={`${tagNode.items.totalCount} items`}
-              />
-            </ListItem>
-          ))}
-        </List>
-      ) : (
-        <div className={classes.emptyState}>
-          <Typography>
-            No tags yet. <Link to="/search">Search for something</Link> to
-            create your first tag.
-          </Typography>
-        </div>
-      )}
-    </Paper>
+    <List>
+      {tagConnection.edges.map(({ node: tagNode }) => (
+        <ListItem
+          key={tagNode.id}
+          button
+          selected={tagNode.tag === selectedTag}
+          component={UnstyledLink}
+          to={{
+            ...history.location,
+            pathname: `/tags/${encodeURIComponent(tagNode.tag)}`,
+          }}
+        >
+          <ListItemText
+            primary={<TagChip tag={tagNode.tag} />}
+            secondary={`${tagNode.items.totalCount} items`}
+          />
+        </ListItem>
+      ))}
+    </List>
   );
 };
 
