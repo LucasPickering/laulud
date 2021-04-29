@@ -53,8 +53,27 @@ const CoreContent: React.FC = () => {
               <LoginPage />
             </Route>
 
-            {/* TODO include ?next param here */}
-            <Redirect from="/" to="/login" />
+            <Route
+              path="*"
+              render={({ location }) => {
+                // Include a param on the login page to tell the server where
+                // to send us back to after login
+                const currentLocation = `${location.pathname}${location.search}${location.hash}`;
+                const search =
+                  currentLocation === "/"
+                    ? ""
+                    : `?next=${encodeURIComponent(currentLocation)}`;
+
+                return (
+                  <Redirect
+                    to={{
+                      pathname: "/login",
+                      search,
+                    }}
+                  />
+                );
+              }}
+            />
           </Switch>
         )}
       </PageContainer>

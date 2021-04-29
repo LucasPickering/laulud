@@ -57,7 +57,6 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
   // Stuff to allow adding more items to this tag
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [addingQuery, setAddingQuery] = useState<string>("");
-  // TODO figure out if we can merge this into the parent query
   const searchData = useLazyLoadQuery<TagDetailsSearchQuery>(
     graphql`
       query TagDetailsSearchQuery(
