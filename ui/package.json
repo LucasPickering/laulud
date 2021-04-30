@@ -61,14 +61,11 @@
     "lint:fix": "npm run lint -- --fix",
     "lint:gql": "graphql-schema-linter",
     "clean": "rm -rf node_modules **/__generated__",
+    "pretype-check": "npm run relay",
+    "type-check": "tsc",
     "prerelay": "./scripts/build_schema.sh",
     "relay": "relay-compiler",
     "relay:watch": "nodemon -x \"npm run relay\" -w src -e \"ts tsx\" -i \"**/__generated/*\""
-  },
-  "graphql-schema-linter": {
-    "schemaPaths": [
-      "../api/schema.graphql"
-    ]
   },
   "browserslist": {
     "production": [

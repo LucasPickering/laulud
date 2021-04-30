@@ -6,16 +6,6 @@ The root query.
 """
 type Query {
   """
-  Fetch a single node, of any type, via a UUID.
-  """
-  node(
-    """
-    The UUID of the node to fetch.
-    """
-    id: ID!
-  ): Node @juniper(async: true, ownership: "owned")
-
-  """
   The currently logged-in user. All API access requires authentication, so this
   will always return a result.
   """
@@ -25,7 +15,12 @@ type Query {
   Get a single item by its unique URI. Return `null` if the URI does not exist
   in Spotify
   """
-  item(uri: String!): TaggedItemNode @juniper(async: true, ownership: "owned")
+  item(
+    """
+    Spotify URI that uniquely identifies the item to fetch
+    """
+    uri: String!
+  ): TaggedItemNode @juniper(async: true, ownership: "owned")
 
   """
   Run a search query against all taggable Spotify items. The return value will
@@ -39,6 +34,11 @@ type Query {
   https://developer.spotify.com/documentation/web-api/reference/#category-search
   """
   itemSearch(
+    """
+    The search query to run. The simplest queries are just alphanumeric
+    searches, but Spotify supports a mini query language here. See the link to
+    the Spotify docs on the parent field for more info.
+    """
     query: String!
 
     """
@@ -55,18 +55,35 @@ type Query {
     after: Cursor
   ): ItemSearch! @juniper(async: true, ownership: "owned")
 
-  # TODO support pagination on this
   """
-  Get a list of all tags that the user has created
+  Fetch a single node, of any type, via a UUID.
   """
-  tags: TagConnection! @juniper(infallible: true, ownership: "owned")
+  node(
+    """
+    The UUID of the node to fetch.
+    """
+    id: ID!
+  ): Node @juniper(async: true, ownership: "owned")
 
   """
   Get a single tag that the user has created. This will always return a node,
   even if the tag doesn't actually exist in the system. In that case, it will
   be returned but show no tagged items
   """
-  tag(tag: String!): TagNode! @juniper(async: true, ownership: "owned")
+  tag(
+    """
+    The tag to fetch data for
+    """
+    tag: String!
+  ): TagNode! @juniper(async: true, ownership: "owned")
+
+  # TODO support pagination on this
+  # lint-disable relay-connection-arguments-spec
+  """
+  Get a list of all tags that the user has created
+  """
+  tags: TagConnection! @juniper(infallible: true, ownership: "owned")
+  # lint-enable relay-connection-arguments-spec
 }
 
 """
@@ -79,16 +96,18 @@ type TagNode implements Node {
   """
   id: ID! @juniper(infallible: true, ownership: "owned")
 
-  """
-  The tag that (along with the requesting user) uniquely identifies this node
-  """
-  tag: String! @juniper(infallible: true)
-
   # TODO support pagination on this field
+  # lint-disable relay-connection-arguments-spec
   """
   The items that have this tag applied
   """
   items: TaggedItemConnection! @juniper(infallible: true, ownership: "owned")
+  # lint-enable relay-connection-arguments-spec
+
+  """
+  The tag that (along with the requesting user) uniquely identifies this node
+  """
+  tag: String! @juniper(infallible: true)
 }
 
 """
@@ -96,14 +115,14 @@ Edge for TagNode
 """
 type TagEdge implements Edge {
   """
-  The related node
-  """
-  node: TagNode! @juniper(infallible: true)
-
-  """
   Identifier for this edge
   """
   cursor: Cursor! @juniper(infallible: true)
+
+  """
+  The related node
+  """
+  node: TagNode! @juniper(infallible: true)
 }
 
 """
@@ -111,9 +130,9 @@ Connection for paginating through a list of TagNode
 """
 type TagConnection implements ConnectionInterface {
   """
-  See Connection definition.
+  The queried user programs.
   """
-  totalCount: Int! @juniper(async: true, ownership: "owned")
+  edges: [TagEdge!]! @juniper(async: true, ownership: "owned")
 
   """
   See Connection definition.
@@ -121,20 +140,24 @@ type TagConnection implements ConnectionInterface {
   pageInfo: PageInfo! @juniper(async: true, ownership: "owned")
 
   """
-  The queried user programs.
+  See Connection definition.
   """
-  edges: [TagEdge!]! @juniper(async: true, ownership: "owned")
+  totalCount: Int! @juniper(async: true, ownership: "owned")
 }
 
 """
 Any Spotify item that can be tagged. This does **not** include all Spotify
-types, e.g. user is not included in this.
+types, e.g. user is not included in this. These fields are common across all
+taggable Spotify items, so see the docs for any taggable type (`Track`,
+`Artist`, etc.) for more info.
 """
 interface Item {
+  # lint-disable fields-have-descriptions
   externalUrls: ExternalUrls! @juniper(infallible: true)
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   uri: String! @juniper(infallible: true, ownership: "owned")
+  # lint-enable fields-have-descriptions
 }
 
 """
@@ -154,10 +177,12 @@ type TaggedItemNode implements Node {
   item: Item! @juniper(infallible: true)
 
   # TODO support pagination on this field
+  # lint-disable relay-connection-arguments-spec
   """
   All tags that have been applied to this item. _Can_ be empty
   """
   tags: TagConnection! @juniper(infallible: true, ownership: "owned")
+  # lint-enable relay-connection-arguments-spec
 }
 
 """
@@ -165,14 +190,14 @@ Edge for TaggedItemNode
 """
 type TaggedItemEdge implements Edge {
   """
-  The related node
-  """
-  node: TaggedItemNode! @juniper(infallible: true)
-
-  """
   Identifier for this edge
   """
   cursor: Cursor! @juniper(infallible: true)
+
+  """
+  The related node
+  """
+  node: TaggedItemNode! @juniper(infallible: true)
 }
 
 """
@@ -180,17 +205,19 @@ Connection for paginating through a list of TaggedItemNode
 """
 type TaggedItemConnection implements ConnectionInterface {
   """
-  See Connection definition.
+  The queried user programs.
   """
-  totalCount: Int! @juniper(async: true, ownership: "owned")
+  edges: [TaggedItemEdge!]! @juniper(async: true, ownership: "owned")
+
   """
   See Connection definition.
   """
   pageInfo: PageInfo! @juniper(async: true, ownership: "owned")
+
   """
-  The queried user programs.
+  See Connection definition.
   """
-  edges: [TaggedItemEdge!]! @juniper(async: true, ownership: "owned")
+  totalCount: Int! @juniper(async: true, ownership: "owned")
 }
 
 """
@@ -199,11 +226,9 @@ subfield for every category of taggable items. See the itemSearch query field
 that returns this type for more info
 """
 type ItemSearch {
-  """
-  Tracks that matched the search query
-  """
-  tracks: TaggedItemConnection! @juniper(infallible: true)
-
+  # These fields are paginated one level up, because Spotify paginates all
+  # all them in lockstep. So no need for pagination params here
+  # lint-disable relay-connection-arguments-spec
   """
   Albums that matched the search query
   """
@@ -213,4 +238,10 @@ type ItemSearch {
   Artists that matched the search query
   """
   artists: TaggedItemConnection! @juniper(infallible: true)
+
+  """
+  Tracks that matched the search query
+  """
+  tracks: TaggedItemConnection! @juniper(infallible: true)
+  # lint-enable relay-connection-arguments-spec
 }

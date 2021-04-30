@@ -2,6 +2,9 @@
 # NOTHING ELSE! Anything we define on top of the Spotify API should live in
 # another file.
 
+# These fields are all documented by Spotify so no need to document them here
+# lint-disable fields-have-descriptions
+
 """
 Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-artistobject
@@ -87,9 +90,9 @@ Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-imageobject
 """
 type Image {
+  height: Int @juniper(infallible: true)
   url: String! @juniper(infallible: true)
   width: Int @juniper(infallible: true)
-  height: Int @juniper(infallible: true)
 }
 
 """
@@ -97,9 +100,9 @@ Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-privateuserobject
 """
 type PrivateUser {
-  id: String! @juniper(infallible: true)
-  href: String! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true, ownership: "owned")
   displayName: String @juniper(infallible: true)
+  href: String! @juniper(infallible: true)
+  id: String! @juniper(infallible: true)
   images: [Image!]! @juniper(infallible: true)
+  uri: String! @juniper(infallible: true, ownership: "owned")
 }

@@ -66,17 +66,17 @@ jobs:
         working-directory: ui/
         run: npm install
 
+      - name: Lint GraphQL schema
+        working-directory: ui/
+        run: npm run lint:gql
+
       - name: Type-check
         working-directory: ui/
-        run: npx tsc
+        run: npm run type-check
 
       - name: Lint
         working-directory: ui/
         run: npm run lint
-
-      - name: Lint GraphQL schema
-        working-directory: ui/
-        run: npm run lint:gql
 
   build-api:
     name: "Build & Push API Image"
