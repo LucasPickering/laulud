@@ -2,5 +2,6 @@ module.exports = {
   src: "./src",
   schema: "./schema.graphql",
   language: "typescript",
-  exclude: ["node_modules/**", "**/__generated__/**"],
+  watchman: false, // Don't use watchman while not watching files
+  exclude: ["**/node_modules/**", "**/__generated__/**"],
 };
