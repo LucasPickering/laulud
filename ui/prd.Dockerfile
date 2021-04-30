@@ -1,7 +1,7 @@
 # If you update this, make sure you update the .nvmrc too
 FROM node:14.15.0-alpine AS builder
 
-COPY schema.ts /app/
+COPY ./api/schema /app/api/schema/
 COPY ./ui/ /app/ui/
 WORKDIR /app/ui
 RUN npm install
