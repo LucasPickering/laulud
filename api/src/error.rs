@@ -212,14 +212,12 @@ impl IntoFieldError for ApiError {
         // after https://github.com/graphql-rust/juniper/issues/423
         self.log();
 
-        // TODO generate an error code for each variant that the UI can check
         match self {
             // Input validation errors are designed to be user-friendly, so we
             // can map those back to juniper errors easily
             Self::InvalidInput { source, .. } => FieldError::new(
                 source.to_string(),
                 graphql_value!({
-                    // TODO map field names to camelCase
                     "field": (source.field),
                     "message": (source.message),
                     "value": (source.value),

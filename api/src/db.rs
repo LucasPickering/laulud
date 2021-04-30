@@ -143,7 +143,6 @@ impl TaggedItemsCollection {
             .collection
             .aggregate(
                 vec![
-                    // TODO test this with edge cases
                     doc! {"$match": match_filter},
                     doc! {"$unwind": "$tags"},
                     doc! {"$count": "count"},

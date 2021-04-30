@@ -1,8 +1,6 @@
 # All logic specific to mutation. Types that are used in both queries and
 # mutations live in query.graphql
 
-# TODO make these return edges so we can append/prepend after mutations
-
 """
 Root mutation
 """
