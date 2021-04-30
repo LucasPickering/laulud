@@ -4,7 +4,6 @@ import {
   ListItem,
   ListItemText,
   makeStyles,
-  Paper,
   Typography,
 } from "@material-ui/core";
 import UnstyledLink from "components/generic/UnstyledLink";
@@ -33,7 +32,6 @@ interface Props {
  */
 const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
   const classes = useStyles();
-  const history = useHistory();
   const tagConnection = useFragment(
     graphql`
       fragment TagList_tagConnection on TagConnection {

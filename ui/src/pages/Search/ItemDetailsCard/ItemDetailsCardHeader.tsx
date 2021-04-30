@@ -48,7 +48,7 @@ const ItemDetailsCardHeader: React.FC<{
       return (
         <CardHeader
           title={track.name}
-          subheader={track.artists!.map((artist) => artist.name).join(", ")}
+          subheader={track.artists?.map((artist) => artist.name).join(", ")}
           avatar={<ItemArt taggedItemNodeKey={taggedItemNode} />}
           action={<SpotifyLink taggedItemNodeKey={taggedItemNode} />}
         />
@@ -60,7 +60,7 @@ const ItemDetailsCardHeader: React.FC<{
       return (
         <CardHeader
           title={album.name}
-          subheader={album.artists!.map((artist) => artist.name).join(", ")}
+          subheader={album.artists?.map((artist) => artist.name).join(", ")}
           avatar={<ItemArt taggedItemNodeKey={taggedItemNode} />}
           action={<SpotifyLink taggedItemNodeKey={taggedItemNode} />}
         />

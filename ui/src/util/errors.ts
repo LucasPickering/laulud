@@ -3,7 +3,7 @@ export class UnknownItemTypeError extends Error {
     super();
   }
 
-  public toString() {
+  public toString(): string {
     return `Unknown item type: ${this.itemType}`;
   }
 }

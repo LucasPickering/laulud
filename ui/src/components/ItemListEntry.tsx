@@ -59,8 +59,8 @@ function ItemListEntry({
           </ListItemAvatar>
           <ListItemText
             primary={taggedItemNode.item.name}
-            secondary={taggedItemNode.item
-              .artists!.map((artist) => artist.name)
+            secondary={taggedItemNode.item.artists
+              ?.map((artist) => artist.name)
               .join(", ")}
           />
         </>
@@ -74,8 +74,8 @@ function ItemListEntry({
           </ListItemAvatar>
           <ListItemText
             primary={taggedItemNode.item.name}
-            secondary={taggedItemNode.item
-              .artists!.map((artist) => artist.name)
+            secondary={taggedItemNode.item.artists
+              ?.map((artist) => artist.name)
               .join(", ")}
           />
         </>

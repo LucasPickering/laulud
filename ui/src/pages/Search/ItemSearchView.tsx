@@ -24,11 +24,10 @@ const useStyles = makeStyles(({ spacing }) => ({
   },
 }));
 
-interface Props
-  extends Omit<
-    React.ComponentProps<typeof ItemList>,
-    "taggedItemConnectionKey"
-  > {}
+type Props = Omit<
+  React.ComponentProps<typeof ItemList>,
+  "taggedItemConnectionKey"
+>;
 
 /**
  * A searchable list of items. If itemSearchKey isn't provided, we assume no
