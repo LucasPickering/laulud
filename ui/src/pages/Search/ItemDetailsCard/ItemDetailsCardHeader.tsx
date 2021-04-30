@@ -1,22 +1,18 @@
 import React from "react";
-import { Card, CardContent, CardHeader, Snackbar } from "@material-ui/core";
-import ItemArt from "components/generic/ItemArt";
-import TagChips from "components/TagChips";
+import { graphql, useFragment } from "react-relay";
+import { CardHeader } from "@material-ui/core";
 import SpotifyLink from "components/generic/SpotifyLink";
-import { graphql, useFragment, useMutation } from "react-relay";
-import { Alert } from "@material-ui/lab";
-import {
-  ItemDetails_taggedItemNode,
-  ItemDetails_taggedItemNode$key,
-} from "./__generated__/ItemDetails_taggedItemNode.graphql";
+import ItemArt from "components/generic/ItemArt";
 import { UnknownItemTypeError } from "util/errors";
+import { ItemDetailsCardHeader_taggedItemNode$key } from "./__generated__/ItemDetailsCardHeader_taggedItemNode.graphql";
 
-const ItemDetails: React.FC<{
-  taggedItemNodeKey: ItemDetails_taggedItemNode$key;
+const ItemDetailsCardHeader: React.FC<{
+  taggedItemNodeKey: ItemDetailsCardHeader_taggedItemNode$key;
 }> = ({ taggedItemNodeKey }) => {
   const taggedItemNode = useFragment(
     graphql`
-      fragment ItemDetails_taggedItemNode on TaggedItemNode {
+      # TODO convert to fragment on Item after https://github.com/graphql-rust/juniper/issues/922
+      fragment ItemDetailsCardHeader_taggedItemNode on TaggedItemNode {
         item {
           __typename
           uri
@@ -39,7 +35,6 @@ const ItemDetails: React.FC<{
             name
           }
         }
-        ...TagChips_taggedItemNode
         ...ItemArt_taggedItemNode
         ...SpotifyLink_taggedItemNode
       }
@@ -47,30 +42,6 @@ const ItemDetails: React.FC<{
     taggedItemNodeKey
   );
 
-  return (
-    <>
-      <Card>
-        <ItemHeader taggedItemNode={taggedItemNode} />
-        <CardContent>
-          <TagChips taggedItemNodeKey={taggedItemNode} showAdd showDelete />
-        </CardContent>
-      </Card>
-
-      {/* TODO enable snack bar */}
-      {/* <Snackbar
-        open={createTagStatus === QueryStatus.Error}
-        autoHideDuration={5000}
-        onClose={() => resetCreateTagStatus()}
-      >
-        <Alert severity="error">Error creating tag</Alert>
-      </Snackbar> */}
-    </>
-  );
-};
-
-const ItemHeader: React.FC<{ taggedItemNode: ItemDetails_taggedItemNode }> = ({
-  taggedItemNode,
-}) => {
   switch (taggedItemNode.item.__typename) {
     case "Track": {
       const track = taggedItemNode.item;
@@ -112,4 +83,4 @@ const ItemHeader: React.FC<{ taggedItemNode: ItemDetails_taggedItemNode }> = ({
   }
 };
 
-export default ItemDetails;
+export default ItemDetailsCardHeader;

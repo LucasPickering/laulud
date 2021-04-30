@@ -1,10 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { Grid } from "@material-ui/core";
 import ItemSearchView from "./ItemSearchView";
-import ItemDetails from "./ItemDetails";
-import { graphql, useLazyLoadQuery } from "react-relay";
-import { SearchPageQuery } from "./__generated__/SearchPageQuery.graphql";
+import ItemDetailsCard from "./ItemDetailsCard/ItemDetailsCard";
 
 interface RouteParams {
   selectedUri?: string;
@@ -13,19 +11,6 @@ interface RouteParams {
 const SearchPage: React.FC = () => {
   const { selectedUri } = useParams<RouteParams>();
   const history = useHistory();
-  const data = useLazyLoadQuery<SearchPageQuery>(
-    graphql`
-      query SearchPageQuery($selectedUri: String!, $skipItem: Boolean!) {
-        item(uri: $selectedUri) @skip(if: $skipItem) {
-          ...ItemDetails_taggedItemNode
-        }
-      }
-    `,
-    {
-      selectedUri: selectedUri ?? "",
-      skipItem: !selectedUri,
-    }
-  );
 
   return (
     <Grid container spacing={2}>
@@ -39,9 +24,9 @@ const SearchPage: React.FC = () => {
           showTags
         />
       </Grid>
-      {data.item && (
+      {selectedUri && (
         <Grid item xs={12} sm={6} md={8}>
-          <ItemDetails taggedItemNodeKey={data.item} />
+          <ItemDetailsCard uri={selectedUri} />
         </Grid>
       )}
     </Grid>
