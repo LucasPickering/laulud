@@ -70,7 +70,7 @@ impl MutationFields for Mutation {
         };
         let tag_node = TagNode {
             tag: input.tag,
-            item_uris: None, // TODO grab this during the above query
+            item_uris: None,
         };
 
         Ok(AddTagPayload {
@@ -125,7 +125,7 @@ impl MutationFields for Mutation {
         };
         let tag_node = TagNode {
             tag: input.tag,
-            item_uris: None, // TODO grab this during the above query
+            item_uris: None,
         };
 
         Ok(DeleteTagPayload {

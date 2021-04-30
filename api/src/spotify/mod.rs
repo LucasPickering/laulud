@@ -19,6 +19,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use itertools::Itertools;
+use juniper::futures::future::try_join_all;
 use log::{debug, trace};
 use oauth2::basic::BasicClient;
 use reqwest::{
@@ -267,41 +268,55 @@ impl Spotify {
         let ids_by_type: HashMap<SpotifyItemType, Vec<&SpotifyId>> =
             uris.map(|uri| (uri.item_type(), uri.id())).into_group_map();
 
-        // Make one request to the Spotify API for each item type
-        // TODO run these requests concurrently with something like join_all
-        let mut items: Vec<Item> = Vec::new();
-        for (item_type, ids) in ids_by_type {
-            // Each of these get_x methods returns a Vec<Option>, where the
-            // order corresponds to the requested IDs and any element will be
-            // null if nothing was found for that ID. We don't care about
-            // those missing results though, so just filter those out
-            match item_type {
-                SpotifyItemType::Track => {
-                    let response = self.get_tracks(ids.into_iter()).await?;
-                    items.extend(
-                        response.tracks.into_iter().flatten().map(Item::from),
-                    );
+        /// Convert a list of search results of any type into a standardized
+        /// list of items. For each item type, Spotify returns a list of options
+        /// where the order corresponds to the URI request order and any
+        /// element will be None if nothing matched the URI. We don't care
+        /// about the Nones though, so filter those out here. At the same time,
+        /// convert each result element into an [Item] so we can group them
+        /// all together later.
+        fn results_to_items<T>(results: Vec<Option<T>>) -> Vec<Item>
+        where
+            Item: From<T>,
+        {
+            results
+                .into_iter()
+                .flatten()
+                .map(Item::from)
+                .collect::<Vec<_>>()
+        }
+
+        // Make one request to the Spotify API for each item type. These will
+        // run concurrently, hence the try_join_all down below
+        let futures =
+            ids_by_type.into_iter().map(|(item_type, ids)| async move {
+                // Shortcut!
+                if ids.is_empty() {
+                    return Ok(Vec::new());
                 }
-                SpotifyItemType::Album => {
-                    let response = self.get_albums(ids.into_iter()).await?;
-                    items.extend(
-                        response.albums.into_iter().flatten().map(Item::from),
-                    );
-                }
-                SpotifyItemType::Artist => {
-                    let response = self.get_artists(ids.into_iter()).await?;
-                    items.extend(
-                        response.artists.into_iter().flatten().map(Item::from),
-                    );
-                }
-                _ => {
-                    return Err(ApiError::UnsupportedItemType {
+
+                match item_type {
+                    SpotifyItemType::Track => {
+                        let response = self.get_tracks(ids.into_iter()).await?;
+                        Ok(results_to_items(response.tracks))
+                    }
+                    SpotifyItemType::Album => {
+                        let response = self.get_albums(ids.into_iter()).await?;
+                        Ok(results_to_items(response.albums))
+                    }
+                    SpotifyItemType::Artist => {
+                        let response =
+                            self.get_artists(ids.into_iter()).await?;
+                        Ok(results_to_items(response.artists))
+                    }
+                    _ => Err(ApiError::UnsupportedItemType {
                         item_type,
                         backtrace: Backtrace::capture(),
-                    })
+                    }),
                 }
-            }
-        }
+            });
+        let vecs: Vec<Vec<Item>> = try_join_all(futures).await?;
+        let items: Vec<Item> = vecs.into_iter().flatten().collect();
 
         Ok(items)
     }
