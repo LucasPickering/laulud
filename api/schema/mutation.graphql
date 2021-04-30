@@ -33,12 +33,12 @@ input AddTagInput {
   """
   Item to apply the tag to
   """
-  itemUri: String!
+  itemUri: SpotifyUri!
 
   """
   Tag to apply
   """
-  tag: String!
+  tag: Tag!
 }
 
 """
@@ -65,12 +65,12 @@ input DeleteTagInput {
   """
   Item to delete the tag from
   """
-  itemUri: String!
+  itemUri: SpotifyUri!
 
   """
   Tag to be deleted
   """
-  tag: String!
+  tag: Tag!
 }
 
 """

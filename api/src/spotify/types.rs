@@ -4,7 +4,7 @@
 
 use crate::{
     error::{InputValidationError, ParseError},
-    graphql::{SpotifyId, SpotifyUri},
+    graphql::SpotifyUri,
     util::Validate,
 };
 use derive_more::Display;
@@ -17,7 +17,7 @@ use std::{backtrace::Backtrace, convert::TryFrom, str::FromStr};
 pub struct ArtistSimplified {
     pub external_urls: ExternalUrls,
     pub href: String,
-    pub id: SpotifyId,
+    pub id: String,
     pub name: String,
     pub uri: ValidSpotifyUri,
 }
@@ -28,7 +28,7 @@ pub struct Artist {
     pub external_urls: ExternalUrls,
     pub genres: Vec<String>,
     pub href: String,
-    pub id: SpotifyId,
+    pub id: String,
     pub images: Vec<Image>,
     pub name: String,
     pub popularity: i32,
@@ -44,7 +44,7 @@ pub struct AlbumSimplified {
     pub available_markets: Vec<String>,
     pub external_urls: ExternalUrls,
     pub href: String,
-    pub id: SpotifyId,
+    pub id: String,
     pub images: Vec<Image>,
     pub name: String,
     pub release_date: String,
@@ -63,7 +63,7 @@ pub struct Track {
     pub explicit: bool,
     pub external_urls: ExternalUrls,
     pub href: String,
-    pub id: SpotifyId,
+    pub id: String,
     pub is_playable: Option<bool>,
     pub name: String,
     pub popularity: i32,
@@ -89,7 +89,7 @@ pub struct Image {
 /// https://developer.spotify.com/documentation/web-api/reference/#object-privateuserobject
 #[derive(Clone, Debug, Deserialize)]
 pub struct PrivateUser {
-    pub id: SpotifyId,
+    pub id: String,
     pub href: String,
     pub uri: ValidSpotifyUri,
     pub display_name: Option<String>,
@@ -206,10 +206,10 @@ impl FromStr for SpotifyItemType {
 /// This can only be constructed via its [Validate] implementation.
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 #[display(fmt = "spotify:{}:{}", item_type, id)]
-#[serde(try_from = "SpotifyUri", into = "SpotifyUri")]
+#[serde(try_from = "String", into = "String")]
 pub struct ValidSpotifyUri {
     item_type: SpotifyItemType,
-    id: SpotifyId,
+    id: String,
 }
 
 impl ValidSpotifyUri {
@@ -217,7 +217,7 @@ impl ValidSpotifyUri {
         self.item_type
     }
 
-    pub fn id(&self) -> &SpotifyId {
+    pub fn id(&self) -> &str {
         &self.id
     }
 }
@@ -236,7 +236,7 @@ impl Validate for SpotifyUri {
         // We have to generate errors as strings first, then map to a proper
         // error type, cause borrowck
         let parsed: Result<ValidSpotifyUri, String> =
-            match self.split(':').collect::<Vec<&str>>().as_slice() {
+            match self.0.split(':').collect::<Vec<&str>>().as_slice() {
                 ["spotify", item_type, id] => {
                     // Parse item type. It's possible we get a valid item type
                     // that we just don't support, just going to treat those
@@ -258,13 +258,19 @@ impl Validate for SpotifyUri {
         parsed.map_err(|message| InputValidationError {
             field: field.into(),
             message,
-            value: self.into(),
+            value: self.0.into(),
             backtrace: Backtrace::capture(),
         })
     }
 }
 
-impl From<ValidSpotifyUri> for SpotifyUri {
+impl From<&ValidSpotifyUri> for SpotifyUri {
+    fn from(uri: &ValidSpotifyUri) -> Self {
+        SpotifyUri(uri.to_string())
+    }
+}
+
+impl From<ValidSpotifyUri> for String {
     fn from(uri: ValidSpotifyUri) -> Self {
         uri.to_string()
     }
@@ -276,13 +282,13 @@ impl From<&ValidSpotifyUri> for Bson {
     }
 }
 
-impl TryFrom<SpotifyUri> for ValidSpotifyUri {
+impl TryFrom<String> for ValidSpotifyUri {
     type Error = InputValidationError;
 
-    fn try_from(value: SpotifyUri) -> Result<Self, Self::Error> {
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         // This is kinda bullshit but just assume the field name. Most of the
         // time, we're going to be using this when deserializing from the
         // Spotify API or DB so the field name matches
-        value.validate("uri")
+        SpotifyUri(value).validate("uri")
     }
 }

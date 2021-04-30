@@ -5,7 +5,7 @@ use crate::{
     graphql::{
         AlbumSimplifiedFields, ArtistFields, ArtistSimplifiedFields,
         ExternalUrlsFields, ImageFields, PrivateUserFields, RequestContext,
-        SpotifyId, SpotifyUri, TrackFields,
+        SpotifyUri, TrackFields,
     },
     spotify::{
         AlbumSimplified, Artist, ArtistSimplified, ExternalUrls, Image,
@@ -34,7 +34,7 @@ impl ArtistSimplifiedFields for ArtistSimplified {
     fn field_id(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyId {
+    ) -> &String {
         &self.id
     }
 
@@ -49,7 +49,7 @@ impl ArtistSimplifiedFields for ArtistSimplified {
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> SpotifyUri {
-        self.uri.to_string()
+        (&self.uri).into()
     }
 }
 
@@ -79,7 +79,7 @@ impl ArtistFields for Artist {
     fn field_id(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyId {
+    ) -> &String {
         &self.id
     }
 
@@ -109,7 +109,7 @@ impl ArtistFields for Artist {
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> SpotifyUri {
-        self.uri.to_string()
+        (&self.uri).into()
     }
 }
 
@@ -161,7 +161,7 @@ impl AlbumSimplifiedFields for AlbumSimplified {
     fn field_id(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyId {
+    ) -> &String {
         &self.id
     }
 
@@ -198,7 +198,7 @@ impl AlbumSimplifiedFields for AlbumSimplified {
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> SpotifyUri {
-        self.uri.to_string()
+        (&self.uri).into()
     }
 }
 
@@ -265,7 +265,7 @@ impl TrackFields for Track {
     fn field_id(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyId {
+    ) -> &String {
         &self.id
     }
 
@@ -308,7 +308,7 @@ impl TrackFields for Track {
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> SpotifyUri {
-        self.uri.to_string()
+        (&self.uri).into()
     }
 }
 
@@ -348,7 +348,7 @@ impl PrivateUserFields for PrivateUser {
     fn field_id(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &SpotifyId {
+    ) -> &String {
         &self.id
     }
 
@@ -363,7 +363,7 @@ impl PrivateUserFields for PrivateUser {
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> SpotifyUri {
-        self.uri.to_string()
+        (&self.uri).into()
     }
 
     fn field_display_name(

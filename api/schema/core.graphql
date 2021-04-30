@@ -19,6 +19,18 @@ https://relay.dev/graphql/connections.htm#sec-Cursor
 """
 scalar Cursor
 
+"""
+Spotify uses URIs to unique identify objects. They use the format
+"spotify:<type>:<id>".
+"""
+scalar SpotifyUri
+
+"""
+A tag that has been/can be applied to an item. This is just a string, but
+it's wrapped for type safety.
+"""
+scalar Tag
+
 schema {
   query: Query
   mutation: Mutation

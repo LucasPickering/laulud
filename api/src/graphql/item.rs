@@ -5,7 +5,7 @@ use crate::{
     graphql::{
         internal::GenericEdge, Cursor, Item, ItemSearchFields, Node, PageInfo,
         RequestContext, TagConnection, TaggedItemConnectionFields,
-        TaggedItemEdgeFields, TaggedItemNodeFields,
+        TaggedItemEdgeFields, TaggedItemNodeFields, ValidTag,
     },
     spotify::{PaginatedResponse, ValidSpotifyUri},
 };
@@ -24,7 +24,7 @@ pub struct TaggedItemNode {
     /// [TagConnection], which will only load data as needed. `Some` means the
     /// tags are all preloaded and [TagConnection] won't have to make any
     /// queries for its field resolutions.
-    pub tags: Option<Vec<String>>,
+    pub tags: Option<Vec<ValidTag>>,
 }
 
 impl TaggedItemNodeFields for TaggedItemNode {
@@ -115,7 +115,7 @@ pub enum TaggedItemConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByTag { tag: String },
+    ByTag { tag: ValidTag },
 }
 
 #[async_trait]

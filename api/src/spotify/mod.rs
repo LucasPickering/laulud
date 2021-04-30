@@ -13,7 +13,7 @@ pub use types::*;
 
 use crate::{
     error::{ApiError, ApiResult},
-    graphql::{Item, SpotifyId},
+    graphql::Item,
     spotify::internal::ItemDeserialize,
     util::{IdentityState, OAuthHandler},
 };
@@ -126,11 +126,11 @@ impl Spotify {
     /// https://developer.spotify.com/documentation/web-api/reference/tracks/get-several-tracks/
     pub async fn get_tracks(
         &self,
-        track_ids: impl Iterator<Item = &SpotifyId>,
+        mut track_ids: impl Iterator<Item = &str>,
     ) -> ApiResult<TracksResponse> {
         self.get_endpoint(
             "/v1/tracks",
-            &[("ids", track_ids.map(|id| id.as_str()).join(",").as_str())],
+            &[("ids", track_ids.join(",").as_str())],
         )
         .await
     }
@@ -138,11 +138,11 @@ impl Spotify {
     /// https://developer.spotify.com/documentation/web-api/reference/albums/get-several-albums/
     pub async fn get_albums(
         &self,
-        album_ids: impl Iterator<Item = &SpotifyId>,
+        mut album_ids: impl Iterator<Item = &str>,
     ) -> ApiResult<AlbumsResponse> {
         self.get_endpoint(
             "/v1/albums",
-            &[("ids", album_ids.map(|id| id.as_str()).join(",").as_str())],
+            &[("ids", album_ids.join(",").as_str())],
         )
         .await
     }
@@ -150,11 +150,11 @@ impl Spotify {
     /// https://developer.spotify.com/documentation/web-api/reference/artists/get-several-artists/
     pub async fn get_artists(
         &self,
-        artists_ids: impl Iterator<Item = &SpotifyId>,
+        mut artists_ids: impl Iterator<Item = &str>,
     ) -> ApiResult<ArtistsResponse> {
         self.get_endpoint(
             "/v1/artists",
-            &[("ids", artists_ids.map(|id| id.as_str()).join(",").as_str())],
+            &[("ids", artists_ids.join(",").as_str())],
         )
         .await
     }
@@ -265,7 +265,7 @@ impl Spotify {
         uris: impl Iterator<Item = &ValidSpotifyUri>,
     ) -> ApiResult<Vec<Item>> {
         // Group URIs by type so we can make one request per type
-        let ids_by_type: HashMap<SpotifyItemType, Vec<&SpotifyId>> =
+        let ids_by_type: HashMap<SpotifyItemType, Vec<&str>> =
             uris.map(|uri| (uri.item_type(), uri.id())).into_group_map();
 
         /// Convert a list of search results of any type into a standardized

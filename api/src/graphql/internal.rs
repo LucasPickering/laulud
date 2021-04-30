@@ -1,18 +1,23 @@
-//! Types that are internal to the `graphql` module. These types are used for
-//! the API implementation but shouldn't be shared outside the module or exposed
-//! in the GraphQL API.
+//! Types that are internal to the API (but not necessarily to this module).
+//! These types are used for the API implementation but shouldn't be exposed in
+//! the external GraphQL API.
 //!
-//! This also holds implementations (both plain and trait implementations) on
-//! GraphQL types, because the implementations are only used within this module.
+//! This also holds implementations (both plain and trait implementations).
 
 use crate::{
     error::{InputValidationError, ParseError},
-    graphql::{Cursor, Item, Node},
+    graphql::{Cursor, Item, Node, Tag},
     spotify::ValidSpotifyUri,
     util::{UserId, Validate},
 };
 use derive_more::Display;
-use std::{backtrace::Backtrace, convert::TryInto, str::FromStr};
+use mongodb::bson::Bson;
+use serde::{Deserialize, Serialize};
+use std::{
+    backtrace::Backtrace,
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
 
 // region: Pagination
 
@@ -165,7 +170,7 @@ impl Node {
         let node_type = self.node_type();
         let value_id = match self {
             Self::TaggedItemNode(node) => node.item.uri().to_string(),
-            Self::TagNode(node) => node.tag.clone(),
+            Self::TagNode(node) => node.tag.tag().to_string(),
         };
 
         juniper::ID::new(format!("{}_{}_{}", node_type, value_id, user_id))
@@ -304,3 +309,68 @@ impl<N> From<N> for GenericEdge<N> {
     }
 }
 // endregion
+
+/// A validated version of [Tag]. This can only be constructed via the
+/// [Validate] trait, so any instance of this struct is guaranteed to be valid
+#[derive(Clone, Debug, Display, Serialize, Deserialize)]
+#[display(fmt = "{}", tag)]
+#[serde(try_from = "String", into = "String")]
+pub struct ValidTag {
+    tag: String,
+}
+
+impl ValidTag {
+    pub fn tag(&self) -> &str {
+        &self.tag
+    }
+}
+
+impl Validate for Tag {
+    type Output = ValidTag;
+
+    /// Make sure the tag is non-empty
+    fn validate(
+        self,
+        field: &str,
+    ) -> Result<Self::Output, InputValidationError> {
+        if self.0.is_empty() {
+            Err(InputValidationError {
+                field: field.into(),
+                message: "Tag cannot be empty".into(),
+                value: self.0.into(),
+                backtrace: Backtrace::capture(),
+            })
+        } else {
+            Ok(ValidTag { tag: self.0 })
+        }
+    }
+}
+
+impl From<&ValidTag> for Tag {
+    fn from(tag: &ValidTag) -> Self {
+        Tag(tag.to_string())
+    }
+}
+
+impl From<ValidTag> for String {
+    fn from(tag: ValidTag) -> Self {
+        tag.to_string()
+    }
+}
+
+impl From<&ValidTag> for Bson {
+    fn from(uri: &ValidTag) -> Self {
+        uri.to_string().into()
+    }
+}
+
+impl TryFrom<String> for ValidTag {
+    type Error = InputValidationError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        // This is kinda bullshit but just assume the field name. Most of the
+        // time, we're going to be using this when deserializing from the
+        // Spotify API or DB so the field name matches
+        Tag(value).validate("tag")
+    }
+}

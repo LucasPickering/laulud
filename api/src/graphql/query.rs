@@ -6,8 +6,8 @@ use crate::{
     graphql::{
         internal::{LimitOffset, NodeType},
         Cursor, Item, ItemSearch, Node, QueryFields, RequestContext,
-        SpotifyUri, TagConnection, TagNode, TaggedItemConnection,
-        TaggedItemNode,
+        SpotifyUri, Tag, TagConnection, TagNode, TaggedItemConnection,
+        TaggedItemNode, ValidTag,
     },
     spotify::{PaginatedResponse, PrivateUser, ValidSpotifyUri},
     util::Validate,
@@ -45,12 +45,13 @@ impl QueryFields for Query {
             NodeType::TaggedItemNode => {
                 // For items, the value ID is the URI. Look up the item in the
                 // Spotify API
-                let item_uri: ValidSpotifyUri = value_id.validate("")?;
+                let item_uri: ValidSpotifyUri =
+                    SpotifyUri(value_id).validate("id")?;
                 let item_opt = context.spotify.get_item(&item_uri).await?;
                 item_opt.map(|item| TaggedItemNode { item, tags: None }.into())
             }
             NodeType::TagNode => {
-                let tag = value_id;
+                let tag: ValidTag = Tag(value_id).validate("id")?;
                 Some(
                     TagNode {
                         tag,
@@ -177,9 +178,10 @@ impl QueryFields for Query {
         &'s self,
         executor: &Executor<'r, 'a, RequestContext>,
         _trail: &QueryTrail<'r, TagNode, Walked>,
-        tag: String,
+        tag: Tag,
     ) -> ApiResult<TagNode> {
         let context = executor.context();
+        let tag = tag.validate("tag")?;
 
         // Look up the relevant items in the DB
         let mut cursor = context

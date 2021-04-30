@@ -30,7 +30,7 @@ impl MutationFields for Mutation {
         input: AddTagInput,
     ) -> ApiResult<AddTagPayload> {
         let context = executor.context();
-        // TODO validate tag (must be non-empty)
+        let tag = input.tag.validate("tag")?;
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
         let uri = input.item_uri.validate("input.item_uri")?;
@@ -43,7 +43,7 @@ impl MutationFields for Mutation {
                     .find_one_and_update(
                         doc! {"uri": &uri, "user_id": &context.user_id},
                         // Add each tag to the doc if it isn't present already
-                        doc! {"$addToSet": {"tags": &input.tag}},
+                        doc! {"$addToSet": {"tags": &tag}},
                         Some(
                             FindOneAndUpdateOptions::builder()
                                 .upsert(true)
@@ -69,7 +69,7 @@ impl MutationFields for Mutation {
             None => None,
         };
         let tag_node = TagNode {
-            tag: input.tag,
+            tag,
             item_uris: None,
         };
 
@@ -86,7 +86,7 @@ impl MutationFields for Mutation {
         input: DeleteTagInput,
     ) -> ApiResult<DeleteTagPayload> {
         let context = executor.context();
-        // TODO validate tag (must be non-empty)
+        let tag = input.tag.validate("tag")?;
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
         let uri = input.item_uri.validate("input.item_uri")?;
@@ -100,7 +100,7 @@ impl MutationFields for Mutation {
                     .find_one_and_update(
                         doc! {"uri": &uri, "user_id": &context.user_id},
                         // Remove the tag from the doc
-                        doc! {"$pull": {"tags": &input.tag}},
+                        doc! {"$pull": {"tags": &tag}},
                         Some(
                             FindOneAndUpdateOptions::builder()
                                 .return_document(ReturnDocument::After)
@@ -124,7 +124,7 @@ impl MutationFields for Mutation {
             None => None,
         };
         let tag_node = TagNode {
-            tag: input.tag,
+            tag,
             item_uris: None,
         };
 

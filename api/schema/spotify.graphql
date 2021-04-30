@@ -18,7 +18,7 @@ type Artist implements Item {
   images: [Image!]! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
   popularity: Int! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true, ownership: "owned")
+  uri: SpotifyUri! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -30,7 +30,7 @@ type ArtistSimplified {
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   name: String! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true, ownership: "owned")
+  uri: SpotifyUri! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -50,7 +50,7 @@ type AlbumSimplified implements Item {
   releaseDate: String! @juniper(infallible: true)
   releaseDatePrecision: String! @juniper(infallible: true)
   # Skipping `restrictions`
-  uri: String! @juniper(infallible: true, ownership: "owned")
+  uri: SpotifyUri! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -74,7 +74,7 @@ type Track implements Item {
   popularity: Int! @juniper(infallible: true)
   previewUrl: String @juniper(infallible: true)
   trackNumber: Int! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true, ownership: "owned")
+  uri: SpotifyUri! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -104,5 +104,5 @@ type PrivateUser {
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   images: [Image!]! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true, ownership: "owned")
+  uri: SpotifyUri! @juniper(infallible: true, ownership: "owned")
 }

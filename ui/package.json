@@ -34,6 +34,7 @@
     "html-webpack-plugin": "^5.3.1",
     "http-proxy-middleware": "^1.2.1",
     "lodash-es": "^4.17.21",
+    "nodemon": "^2.0.7",
     "prettier": "^2.2.1",
     "query-string": "^7.0.0",
     "react": "^17.0.2",
@@ -64,7 +65,7 @@
     "type-check": "tsc",
     "prerelay": "./scripts/build_schema.sh",
     "relay": "relay-compiler",
-    "relay:watch": "relay-compiler --watch --watchman"
+    "relay:watch": "nodemon -x \"npm run relay\" -w src -e \"ts tsx\" -i \"**/__generated/*\""
   },
   "browserslist": {
     "production": [

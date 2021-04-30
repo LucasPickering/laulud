@@ -18,7 +18,7 @@ import Loading from "components/Loading";
 const CoreContent: React.FC = () => {
   const authState = useAuthState();
 
-  // TODO figure out how to use React.Suspense here instead
+  // TODO use suspense here once it hits React stable
   if (authState === "loading") {
     return <Loading size="8rem" />;
   }

@@ -30,7 +30,7 @@ const ItemDetailsCard: React.FC<Props> = ({ uri }) => (
 const ItemDetailsCardLoader: React.FC<Props> = ({ uri }) => {
   const data = useLazyLoadQuery<ItemDetailsCardQuery>(
     graphql`
-      query ItemDetailsCardQuery($uri: String!) {
+      query ItemDetailsCardQuery($uri: SpotifyUri!) {
         item(uri: $uri) {
           ...ItemDetails_taggedItemNode
         }

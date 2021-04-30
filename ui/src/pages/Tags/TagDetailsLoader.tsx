@@ -17,7 +17,7 @@ const TagDetailsLoader: React.FC<Props> = ({ tag }) => {
   // usePreloadedQuery and trigger the query when the new tag is selected
   const data = useLazyLoadQuery<TagDetailsLoaderQuery>(
     graphql`
-      query TagDetailsLoaderQuery($tag: String!) {
+      query TagDetailsLoaderQuery($tag: Tag!) {
         tag(tag: $tag) {
           ...TagDetails_tagNode
         }

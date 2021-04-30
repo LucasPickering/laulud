@@ -6,12 +6,6 @@ use crate::graphql::{
 };
 use juniper::Executor;
 
-// TODO make these dedicated graphql scalar types, so we can get the type
-// safety in the API and UI
-pub type SpotifyId = String;
-pub type SpotifyUri = String;
-// TODO add a scalar type for Tag as well
-
 /// GQL type to display information about a page of data. See the Relay
 /// Connections spec: https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo
 #[derive(Clone, Debug, PartialEq)]

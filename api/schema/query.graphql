@@ -19,7 +19,7 @@ type Query {
     """
     Spotify URI that uniquely identifies the item to fetch
     """
-    uri: String!
+    uri: SpotifyUri!
   ): TaggedItemNode @juniper(async: true, ownership: "owned")
 
   """
@@ -74,7 +74,7 @@ type Query {
     """
     The tag to fetch data for
     """
-    tag: String!
+    tag: Tag!
   ): TagNode! @juniper(async: true, ownership: "owned")
 
   # TODO support pagination on this
@@ -107,7 +107,7 @@ type TagNode implements Node {
   """
   The tag that (along with the requesting user) uniquely identifies this node
   """
-  tag: String! @juniper(infallible: true)
+  tag: Tag! @juniper(infallible: true, ownership: "owned")
 }
 
 """
@@ -156,7 +156,7 @@ interface Item {
   externalUrls: ExternalUrls! @juniper(infallible: true)
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
-  uri: String! @juniper(infallible: true, ownership: "owned")
+  uri: SpotifyUri! @juniper(infallible: true, ownership: "owned")
   # lint-enable fields-have-descriptions
 }
 
