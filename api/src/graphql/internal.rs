@@ -287,4 +287,16 @@ impl<N> GenericEdge<N> {
             .collect()
     }
 }
+
+// A conversion for mapping single nodes into edges. This is useful in mutations
+// which usually return edges
+impl<N> From<N> for GenericEdge<N> {
+    fn from(node: N) -> Self {
+        Self {
+            node,
+            // Use a bullshit cursor, this seems to work so ¯\_(ツ)_/¯
+            cursor: ValidCursor::from_offset_index(0, 0).into(),
+        }
+    }
+}
 // endregion

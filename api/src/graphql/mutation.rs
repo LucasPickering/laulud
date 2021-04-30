@@ -4,8 +4,8 @@ use crate::{
     error::{ApiError, ApiResult},
     graphql::{
         AddTagInput, AddTagPayloadFields, DeleteTagInput,
-        DeleteTagPayloadFields, MutationFields, RequestContext, TagNode,
-        TaggedItemNode,
+        DeleteTagPayloadFields, MutationFields, RequestContext, TagEdge,
+        TagNode, TaggedItemEdge, TaggedItemNode,
     },
     util::Validate,
 };
@@ -74,8 +74,8 @@ impl MutationFields for Mutation {
         };
 
         Ok(AddTagPayload {
-            item_node,
-            tag_node,
+            item_edge: item_node.map(TaggedItemEdge::from),
+            tag_edge: tag_node.into(),
         })
     }
 
@@ -129,54 +129,54 @@ impl MutationFields for Mutation {
         };
 
         Ok(DeleteTagPayload {
-            item_node,
-            tag_node,
+            item_edge: item_node.map(TaggedItemEdge::from),
+            tag_edge: tag_node.into(),
         })
     }
 }
 
 pub struct AddTagPayload {
-    pub item_node: Option<TaggedItemNode>,
-    pub tag_node: TagNode,
+    pub item_edge: Option<TaggedItemEdge>,
+    pub tag_edge: TagEdge,
 }
 
 impl AddTagPayloadFields for AddTagPayload {
-    fn field_item_node(
+    fn field_item_edge(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemNode, Walked>,
-    ) -> &Option<TaggedItemNode> {
-        &self.item_node
+        _trail: &QueryTrail<'_, TaggedItemEdge, Walked>,
+    ) -> &Option<TaggedItemEdge> {
+        &self.item_edge
     }
 
-    fn field_tag_node(
+    fn field_tag_edge(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TagNode, Walked>,
-    ) -> &TagNode {
-        &self.tag_node
+        _trail: &QueryTrail<'_, TagEdge, Walked>,
+    ) -> &TagEdge {
+        &self.tag_edge
     }
 }
 
 pub struct DeleteTagPayload {
-    pub item_node: Option<TaggedItemNode>,
-    pub tag_node: TagNode,
+    pub item_edge: Option<TaggedItemEdge>,
+    pub tag_edge: TagEdge,
 }
 
 impl DeleteTagPayloadFields for DeleteTagPayload {
-    fn field_item_node(
+    fn field_item_edge(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemNode, Walked>,
-    ) -> &Option<TaggedItemNode> {
-        &self.item_node
+        _trail: &QueryTrail<'_, TaggedItemEdge, Walked>,
+    ) -> &Option<TaggedItemEdge> {
+        &self.item_edge
     }
 
-    fn field_tag_node(
+    fn field_tag_edge(
         &self,
         _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TagNode, Walked>,
-    ) -> &TagNode {
-        &self.tag_node
+        _trail: &QueryTrail<'_, TagEdge, Walked>,
+    ) -> &TagEdge {
+        &self.tag_edge
     }
 }

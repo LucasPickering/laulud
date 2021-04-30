@@ -56,8 +56,18 @@ const TagChips: React.FC<Props> = ({
     mutation TagChipsDeleteTagMutation($input: DeleteTagInput!) {
       deleteTag(input: $input) {
         # Grab this data so relay can update it in the store
-        itemNode {
-          ...TagChips_taggedItemNode
+        itemEdge {
+          node {
+            ...TagChips_taggedItemNode
+          }
+        }
+        # TODO if this is the last tagged item, the tag doesn't get removed
+        # from the list in the other tab
+        tagEdge {
+          node {
+            ...TagDetails_tagNode
+            ...TagList_tagNode
+          }
         }
       }
     }
@@ -66,8 +76,17 @@ const TagChips: React.FC<Props> = ({
     mutation TagChipsAddTagMutation($input: AddTagInput!) {
       addTag(input: $input) {
         # Grab this data so relay can update it in the store
-        itemNode {
-          ...TagChips_taggedItemNode
+        itemEdge {
+          node {
+            ...TagChips_taggedItemNode
+          }
+        }
+        # TODO new tags don't get added to the tag list in the other tab
+        tagEdge {
+          node {
+            ...TagDetails_tagNode
+            ...TagList_tagNode
+          }
         }
       }
     }

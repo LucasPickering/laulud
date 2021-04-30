@@ -34,12 +34,16 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
     mutation TagDetailsAddTagMutation($input: AddTagInput!) {
       addTag(input: $input) {
         # Grab this data so relay can update it in the store
-        itemNode {
-          ...TagChips_taggedItemNode
+        itemEdge {
+          node {
+            ...TagChips_taggedItemNode
+          }
         }
-        tagNode {
-          ...TagDetails_tagNode
-          ...TagList_tagNode
+        tagEdge {
+          node {
+            ...TagDetails_tagNode
+            ...TagList_tagNode
+          }
         }
       }
     }

@@ -50,14 +50,14 @@ type AddTagPayload {
   """
   The tagged item. `null` if the item does not exist in Spotify
   """
-  itemNode: TaggedItemNode @juniper(infallible: true)
+  itemEdge: TaggedItemEdge @juniper(infallible: true)
 
   """
   The modified tag, so the list of items for this tag can easily be grabbed.
   If the item didn't exist, this is still returned, but its member items will
   be the same as before the mutation
   """
-  tagNode: TagNode! @juniper(infallible: true)
+  tagEdge: TagEdge! @juniper(infallible: true)
 }
 
 """
@@ -84,12 +84,12 @@ type DeleteTagPayload {
   exists but did not have the tag applied, then it will still be returned as if
   the tag had been deleted
   """
-  itemNode: TaggedItemNode @juniper(infallible: true)
+  itemEdge: TaggedItemEdge @juniper(infallible: true)
 
   """
   The modified tag, so the list of items for this tag can easily be grabbed.
   If the item didn't exist or didn't have this tag applied, this is still
   returned, but its member items will be the same as before the mutation
   """
-  tagNode: TagNode! @juniper(infallible: true)
+  tagEdge: TagEdge! @juniper(infallible: true)
 }
