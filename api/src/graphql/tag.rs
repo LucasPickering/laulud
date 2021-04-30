@@ -4,7 +4,7 @@ use crate::{
     error::ApiResult,
     graphql::{
         core::PageInfo, internal::GenericEdge, item::TaggedItemConnection,
-        Cursor, RequestContext, TagConnectionFields, TagEdgeFields,
+        Cursor, Node, RequestContext, TagConnectionFields, TagEdgeFields,
         TagNodeFields,
     },
     spotify::ValidSpotifyUri,
@@ -38,7 +38,7 @@ impl TagNodeFields for TagNode {
     ) -> juniper::ID {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
-        let node: crate::graphql::Node = self.clone().into();
+        let node: Node = self.clone().into();
         node.id(&executor.context().user_id)
     }
 

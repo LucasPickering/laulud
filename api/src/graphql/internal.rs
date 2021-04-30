@@ -6,8 +6,8 @@
 //! GraphQL types, because the implementations are only used within this module.
 
 use crate::{
-    error::{ApiError, ApiResult, InputValidationError},
-    graphql::{Cursor, Item},
+    error::{InputValidationError, ParseError},
+    graphql::{Cursor, Item, Node},
     spotify::ValidSpotifyUri,
     util::{UserId, Validate},
 };
@@ -62,6 +62,7 @@ impl Validate for Cursor {
                 field: field.into(),
                 message: "Invalid pagination cursor".into(),
                 value: self.0.into(),
+                backtrace: Backtrace::capture(),
             })?;
         Ok(ValidCursor { offset })
     }
@@ -109,6 +110,7 @@ impl LimitOffset {
                             "Invalid quantity, must be non-negative integer"
                                 .into(),
                         value: first.into(),
+                        backtrace: Backtrace::capture(),
                     })?;
                 Some(limit)
             }
@@ -148,9 +150,7 @@ impl LimitOffset {
 
 // region: Node
 
-// For some reason, rust-analyzer throws an error when you try to import `Node`,
-// so we use the qualified path here for dev QoL
-impl crate::graphql::Node {
+impl Node {
     /// Get a unique ID for this node. Because Relay requires a top-level
     /// query field `node` that can take in a node ID of _any_ type and
     /// return the corresponding node, each ID has to transparently indicate
@@ -193,17 +193,20 @@ pub enum NodeType {
 }
 
 impl NodeType {
-    /// Parse a GraphQL node ID into its components. See
-    /// [Node::id](crate::graphql::Node::id) for a description of the ID format.
-    pub fn parse_id(id: &juniper::ID) -> ApiResult<(Self, String, UserId)> {
+    /// Parse a GraphQL node ID into its components. See [Node::id] for a
+    /// description of the ID format.
+    pub fn parse_id(
+        id: &juniper::ID,
+    ) -> Result<(Self, String, UserId), ParseError> {
         match id.split('_').collect::<Vec<&str>>().as_slice() {
             [node_type, value_id, user_id] => Ok((
                 node_type.parse()?,
                 (*value_id).to_owned(),
                 UserId((*user_id).to_owned()),
             )),
-            _ => Err(ApiError::ParseError {
-                message: format!("Invalid GraphQL node ID: {}", id),
+            _ => Err(ParseError {
+                message: "Invalid GraphQL node ID".into(),
+                value: id.to_string(),
                 backtrace: Backtrace::capture(),
             }),
         }
@@ -211,14 +214,15 @@ impl NodeType {
 }
 
 impl FromStr for NodeType {
-    type Err = ApiError;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "TaggedItemNode" => Ok(NodeType::TaggedItemNode),
             "TagNode" => Ok(NodeType::TagNode),
-            _ => Err(ApiError::ParseError {
-                message: format!("Unknown GraphQL node type: {}", s),
+            _ => Err(ParseError {
+                message: "Unknown GraphQL node type".into(),
+                value: s.into(),
                 backtrace: Backtrace::capture(),
             }),
         }

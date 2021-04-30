@@ -3,7 +3,7 @@
 //! exported to the entire crate!
 
 use crate::{
-    error::{ApiError, InputValidationError},
+    error::{InputValidationError, ParseError},
     graphql::{SpotifyId, SpotifyUri},
     util::Validate,
 };
@@ -180,7 +180,7 @@ pub enum SpotifyItemType {
 }
 
 impl FromStr for SpotifyItemType {
-    type Err = ApiError;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -188,8 +188,9 @@ impl FromStr for SpotifyItemType {
             "album" => Ok(SpotifyItemType::Album),
             "artist" => Ok(SpotifyItemType::Artist),
             "user" => Ok(SpotifyItemType::User),
-            _ => Err(ApiError::ParseError {
-                message: format!("Unknown Spotify object type: {}", s),
+            _ => Err(ParseError {
+                message: "Unknown Spotify object type".into(),
+                value: s.into(),
                 backtrace: Backtrace::capture(),
             }),
         }
@@ -258,6 +259,7 @@ impl Validate for SpotifyUri {
             field: field.into(),
             message,
             value: self.into(),
+            backtrace: Backtrace::capture(),
         })
     }
 }

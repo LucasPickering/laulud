@@ -5,8 +5,9 @@ use crate::{
     error::{ApiError, ApiResult, InputValidationError},
     graphql::{
         internal::{LimitOffset, NodeType},
-        Cursor, Item, ItemSearch, QueryFields, RequestContext, SpotifyUri,
-        TagConnection, TagNode, TaggedItemConnection, TaggedItemNode,
+        Cursor, Item, ItemSearch, Node, QueryFields, RequestContext,
+        SpotifyUri, TagConnection, TagNode, TaggedItemConnection,
+        TaggedItemNode,
     },
     spotify::{PaginatedResponse, PrivateUser, ValidSpotifyUri},
     util::Validate,
@@ -24,18 +25,15 @@ pub struct Query;
 #[async_trait]
 impl QueryFields for Query {
     /// Get a node of any type by UUID.
-    ///
-    /// For some reason, rust-analyzer shows an error if you import Node, so
-    /// use the qualified path here just to get around that. Not really
-    /// necessary, but makes working a tiny bit nicer.
     async fn field_node<'s, 'r, 'a>(
         &'s self,
         executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, crate::graphql::Node, Walked>,
+        _trail: &QueryTrail<'r, Node, Walked>,
         id: juniper::ID,
-    ) -> ApiResult<Option<crate::graphql::Node>> {
+    ) -> ApiResult<Option<Node>> {
         let context = executor.context();
-        let (node_type, value_id, user_id) = NodeType::parse_id(&id)?;
+        let (node_type, value_id, user_id) = NodeType::parse_id(&id)
+            .map_err(|err| err.into_input_validation_error("id".into()))?;
 
         // Nice try, Satan
         if user_id != context.user_id {
@@ -110,6 +108,7 @@ impl QueryFields for Query {
                 field: "query".into(),
                 message: "Search query must not be empty".into(),
                 value: query.into(),
+                backtrace: Backtrace::capture(),
             }
             .into());
         }

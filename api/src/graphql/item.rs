@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use crate::{
     error::ApiResult,
     graphql::{
-        internal::GenericEdge, Cursor, Item, ItemSearchFields, PageInfo,
+        internal::GenericEdge, Cursor, Item, ItemSearchFields, Node, PageInfo,
         RequestContext, TagConnection, TaggedItemConnectionFields,
         TaggedItemEdgeFields, TaggedItemNodeFields,
     },
@@ -34,7 +34,7 @@ impl TaggedItemNodeFields for TaggedItemNode {
     ) -> juniper::ID {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
-        let node: crate::graphql::Node = self.clone().into();
+        let node: Node = self.clone().into();
         node.id(&executor.context().user_id)
     }
 
