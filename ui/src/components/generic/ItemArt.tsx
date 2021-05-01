@@ -13,14 +13,11 @@ const useStyles = makeStyles(() => ({
     width: 96,
     height: 96,
   },
-  large: {
-    // TODO
-  },
 }));
 
 interface Props {
   taggedItemNodeKey: ItemArt_taggedItemNode$key;
-  size?: "small" | "medium" | "large";
+  size?: "small" | "medium";
 }
 
 /**

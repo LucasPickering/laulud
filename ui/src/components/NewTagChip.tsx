@@ -7,7 +7,7 @@ import {
   makeStyles,
 } from "@material-ui/core";
 import { Add as AddIcon } from "@material-ui/icons";
-import { MutationStatus } from "util/types";
+import { MutationStatus } from "hooks/useMutation";
 
 const useStyles = makeStyles(({ spacing }) => ({
   tag: {

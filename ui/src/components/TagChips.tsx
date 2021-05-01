@@ -2,11 +2,13 @@ import React from "react";
 import { makeStyles } from "@material-ui/core";
 import clsx from "clsx";
 import TagChip from "./TagChip";
-import { graphql, useFragment, useMutation } from "react-relay";
+import { graphql, useFragment } from "react-relay";
 import NewTagChip from "./NewTagChip";
 import { TagChips_taggedItemNode$key } from "./__generated__/TagChips_taggedItemNode.graphql";
 import { TagChipsDeleteTagMutation } from "./__generated__/TagChipsDeleteTagMutation.graphql";
 import { TagChipsAddTagMutation } from "./__generated__/TagChipsAddTagMutation.graphql";
+import ErrorSnackbar from "./generic/ErrorSnackbar";
+import useMutation from "hooks/useMutation";
 
 const useStyles = makeStyles(({ spacing }) => ({
   tags: {
@@ -52,7 +54,11 @@ const TagChips: React.FC<Props> = ({
     `,
     taggedItemNodeKey
   );
-  const [deleteTag] = useMutation<TagChipsDeleteTagMutation>(graphql`
+  const {
+    commit: deleteTag,
+    status: deleteTagStatus,
+    resetStatus: resetDeleteTagStatus,
+  } = useMutation<TagChipsDeleteTagMutation>(graphql`
     mutation TagChipsDeleteTagMutation($input: DeleteTagInput!) {
       deleteTag(input: $input) {
         # Grab this data so relay can update it in the store
@@ -72,7 +78,11 @@ const TagChips: React.FC<Props> = ({
       }
     }
   `);
-  const [addTag, isAddInFlight] = useMutation<TagChipsAddTagMutation>(graphql`
+  const {
+    commit: addTag,
+    status: addTagStatus,
+    resetStatus: resetAddTagStatus,
+  } = useMutation<TagChipsAddTagMutation>(graphql`
     mutation TagChipsAddTagMutation($input: AddTagInput!) {
       addTag(input: $input) {
         # Grab this data so relay can update it in the store
@@ -116,8 +126,7 @@ const TagChips: React.FC<Props> = ({
       {showAdd && (
         <NewTagChip
           color="primary"
-          // TODO track idle/error here
-          status={isAddInFlight ? "loading" : "success"}
+          status={addTagStatus}
           addTag={(tag) =>
             addTag({
               variables: {
@@ -127,6 +136,18 @@ const TagChips: React.FC<Props> = ({
           }
         />
       )}
+
+      {/* Errors! */}
+      <ErrorSnackbar
+        message="Error deleting tag"
+        status={deleteTagStatus}
+        resetStatus={resetDeleteTagStatus}
+      />
+      <ErrorSnackbar
+        message="Error adding tag"
+        status={addTagStatus}
+        resetStatus={resetAddTagStatus}
+      />
     </div>
   );
 };

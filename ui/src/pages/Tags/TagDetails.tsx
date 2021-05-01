@@ -3,9 +3,11 @@ import { IconButton } from "@material-ui/core";
 import { Add as IconAdd } from "@material-ui/icons";
 import ItemList from "components/ItemList";
 import ItemSearchView from "pages/Search/ItemSearchView";
-import { graphql, useFragment, useMutation } from "react-relay";
+import { graphql, useFragment } from "react-relay";
 import { TagDetails_tagNode$key } from "./__generated__/TagDetails_tagNode.graphql";
 import { TagDetailsAddTagMutation } from "./__generated__/TagDetailsAddTagMutation.graphql";
+import ErrorSnackbar from "components/generic/ErrorSnackbar";
+import useMutation from "hooks/useMutation";
 
 interface Props {
   tagNodeKey: TagDetails_tagNode$key;
@@ -29,7 +31,11 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
 
   // Stuff to allow adding more items to this tag
   const [isAdding, setIsAdding] = useState<boolean>(false);
-  const [addTag] = useMutation<TagDetailsAddTagMutation>(graphql`
+  const {
+    commit: addTag,
+    status: addTagStatus,
+    resetStatus: resetAddTagStatus,
+  } = useMutation<TagDetailsAddTagMutation>(graphql`
     mutation TagDetailsAddTagMutation($input: AddTagInput!) {
       addTag(input: $input) {
         # Grab this data so relay can update it in the store
@@ -74,14 +80,11 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
         </IconButton>
       )}
 
-      {/* TODO enable snack bar */}
-      {/* <Snackbar
-        open={createTagStatus === QueryStatus.Error}
-        autoHideDuration={5000}
-        onClose={() => resetCreateTagStatus()}
-      >
-        <Alert severity="error">Error creating tag</Alert>
-      </Snackbar> */}
+      <ErrorSnackbar
+        message="Error adding tag"
+        status={addTagStatus}
+        resetStatus={resetAddTagStatus}
+      />
     </>
   );
 };

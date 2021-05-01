@@ -24,15 +24,6 @@ const ItemDetails: React.FC<{
       <CardContent>
         <TagChips taggedItemNodeKey={taggedItemNode} showAdd showDelete />
       </CardContent>
-
-      {/* TODO enable snack bar */}
-      {/* <Snackbar
-        open={createTagStatus === QueryStatus.Error}
-        autoHideDuration={5000}
-        onClose={() => resetCreateTagStatus()}
-      >
-        <Alert severity="error">Error creating tag</Alert>
-      </Snackbar> */}
     </>
   );
 };
