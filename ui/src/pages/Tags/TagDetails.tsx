@@ -56,7 +56,6 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
 
   return (
     <>
-      <ItemList taggedItemConnectionKey={tagNode.items} showIcons />
       {isAdding ? (
         <ItemSearchView
           // Attach the selected take to this item
@@ -79,6 +78,8 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
           <IconAdd />
         </IconButton>
       )}
+
+      <ItemList taggedItemConnectionKey={tagNode.items} showIcons />
 
       <ErrorSnackbar
         message="Error adding tag"
