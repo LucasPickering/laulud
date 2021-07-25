@@ -320,6 +320,21 @@ impl Spotify {
 
         Ok(items)
     }
+
+    /// Get detailed analysis information for a single track. If the given IDd
+    /// doesn't refer to a valid track, then this will error.
+    ///
+    /// https://developer.spotify.com/documentation/web-api/reference/#endpoint-get-audio-features
+    pub async fn get_track_features(
+        &self,
+        id: &str,
+    ) -> ApiResult<AudioFeatures> {
+        self.get_endpoint::<&[&str], _>(
+            &format!("/v1/audio-features/{}", id),
+            &[],
+        )
+        .await
+    }
 }
 
 // Make it easy to grab a spotify instance for any request handler

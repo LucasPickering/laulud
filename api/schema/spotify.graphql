@@ -55,6 +55,31 @@ type AlbumSimplified implements Item {
 
 """
 Spotify API type
+https://developer.spotify.com/documentation/web-api/reference/#object-audiofeaturesobject
+"""
+type AudioFeatures {
+  acousticness: Float! @juniper(infallible: true, ownership: "owned")
+  analysisUrl: String! @juniper(infallible: true)
+  danceability: Float! @juniper(infallible: true, ownership: "owned")
+  durationMs: Int! @juniper(infallible: true, ownership: "owned")
+  energy: Float! @juniper(infallible: true, ownership: "owned")
+  id: String! @juniper(infallible: true)
+  instrumentalness: Float! @juniper(infallible: true, ownership: "owned")
+  key: Int! @juniper(infallible: true, ownership: "owned")
+  liveness: Float! @juniper(infallible: true, ownership: "owned")
+  loudness: Float! @juniper(infallible: true, ownership: "owned")
+  mode: Int! @juniper(infallible: true, ownership: "owned")
+  speechiness: Float! @juniper(infallible: true, ownership: "owned")
+  tempo: Float! @juniper(infallible: true, ownership: "owned")
+  timeSignature: Int! @juniper(infallible: true, ownership: "owned")
+  trackHref: String! @juniper(infallible: true)
+  # Skipping `type`
+  uri: SpotifyUri! @juniper(infallible: true, ownership: "owned")
+  valence: Float! @juniper(infallible: true, ownership: "owned")
+}
+
+"""
+Spotify API type
 https://developer.spotify.com/documentation/web-api/reference/#object-trackobject
 """
 type Track implements Item {
@@ -66,6 +91,12 @@ type Track implements Item {
   explicit: Boolean! @juniper(infallible: true)
   # Skipping `externalIds`
   externalUrls: ExternalUrls! @juniper(infallible: true)
+  """
+  Fetch additional data analytical data. Querying this field will trigger
+  another requested to the Spotify API *per track*, so do not request this for a
+  list of tracks!
+  """
+  features: AudioFeatures! @juniper(async: true, ownership: "owned")
   href: String! @juniper(infallible: true)
   id: String! @juniper(infallible: true)
   isPlayable: Boolean @juniper(infallible: true)

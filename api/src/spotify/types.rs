@@ -52,6 +52,28 @@ pub struct AlbumSimplified {
     pub uri: ValidSpotifyUri,
 }
 
+/// https://developer.spotify.com/documentation/web-api/reference/#object-audiofeaturesobject
+#[derive(Clone, Debug, Deserialize)]
+pub struct AudioFeatures {
+    pub acousticness: f64,
+    pub analysis_url: String,
+    pub danceability: f64,
+    pub duration_ms: i32,
+    pub energy: f64,
+    pub id: String,
+    pub instrumentalness: f64,
+    pub key: i32,
+    pub liveness: f64,
+    pub loudness: f64,
+    pub mode: i32,
+    pub speechiness: f64,
+    pub tempo: f64,
+    pub time_signature: i32,
+    pub track_href: String,
+    pub uri: ValidSpotifyUri,
+    pub valence: f64,
+}
+
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
 #[derive(Clone, Debug, Deserialize)]
 pub struct Track {

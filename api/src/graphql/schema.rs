@@ -3,8 +3,8 @@
 
 use super::*;
 use crate::spotify::{
-    AlbumSimplified, Artist, ArtistSimplified, ExternalUrls, Image,
-    PrivateUser, Track,
+    AlbumSimplified, Artist, ArtistSimplified, AudioFeatures, ExternalUrls,
+    Image, PrivateUser, Track,
 };
 use juniper_from_schema::graphql_schema_from_file;
 

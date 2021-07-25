@@ -2,16 +2,18 @@
 //! themselves are provided by the [crate::spotify] module.
 
 use crate::{
+    error::ApiResult,
     graphql::{
         AlbumSimplifiedFields, ArtistFields, ArtistSimplifiedFields,
-        ExternalUrlsFields, ImageFields, PrivateUserFields, RequestContext,
-        SpotifyUri, TrackFields,
+        AudioFeaturesFields, ExternalUrlsFields, ImageFields,
+        PrivateUserFields, RequestContext, SpotifyUri, TrackFields,
     },
     spotify::{
-        AlbumSimplified, Artist, ArtistSimplified, ExternalUrls, Image,
-        PrivateUser, Track,
+        AlbumSimplified, Artist, ArtistSimplified, AudioFeatures, ExternalUrls,
+        Image, PrivateUser, Track,
     },
 };
+use async_trait::async_trait;
 use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
 
@@ -202,6 +204,119 @@ impl AlbumSimplifiedFields for AlbumSimplified {
     }
 }
 
+impl AudioFeaturesFields for AudioFeatures {
+    fn field_acousticness(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.acousticness
+    }
+
+    fn field_analysis_url(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> &String {
+        &self.analysis_url
+    }
+
+    fn field_danceability(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.danceability
+    }
+
+    fn field_duration_ms(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> i32 {
+        self.duration_ms
+    }
+
+    fn field_energy(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.energy
+    }
+
+    fn field_id(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> &String {
+        &self.id
+    }
+
+    fn field_instrumentalness(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.instrumentalness
+    }
+
+    fn field_key(&self, _executor: &Executor<'_, '_, RequestContext>) -> i32 {
+        self.key
+    }
+
+    fn field_liveness(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.liveness
+    }
+
+    fn field_loudness(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.loudness
+    }
+
+    fn field_mode(&self, _executor: &Executor<'_, '_, RequestContext>) -> i32 {
+        self.mode
+    }
+
+    fn field_speechiness(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.speechiness
+    }
+
+    fn field_tempo(&self, _executor: &Executor<'_, '_, RequestContext>) -> f64 {
+        self.tempo
+    }
+
+    fn field_time_signature(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> i32 {
+        self.time_signature
+    }
+
+    fn field_track_href(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> &String {
+        &self.track_href
+    }
+
+    fn field_uri(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> SpotifyUri {
+        (&self.uri).into()
+    }
+
+    fn field_valence(
+        &self,
+        _executor: &Executor<'_, '_, RequestContext>,
+    ) -> f64 {
+        self.valence
+    }
+}
+
+#[async_trait]
 impl TrackFields for Track {
     fn field_album(
         &self,
@@ -309,6 +424,18 @@ impl TrackFields for Track {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> SpotifyUri {
         (&self.uri).into()
+    }
+
+    async fn field_features<'s, 'r, 'a>(
+        &'s self,
+        executor: &Executor<'r, 'a, RequestContext>,
+        _trail: &QueryTrail<'r, AudioFeatures, Walked>,
+    ) -> ApiResult<AudioFeatures> {
+        executor
+            .context()
+            .spotify
+            .get_track_features(&self.id)
+            .await
     }
 }
 
