@@ -16,7 +16,7 @@ const LogOutButton: React.FC = () => (
         .catch(console.error)
     }
   >
-    Out
+    Log Out
   </Button>
 );
 
