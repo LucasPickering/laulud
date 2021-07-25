@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IconButton } from "@material-ui/core";
+import { Button, IconButton, makeStyles } from "@material-ui/core";
 import { Add as IconAdd } from "@material-ui/icons";
 import ItemList from "components/ItemList";
 import ItemSearchView from "pages/Search/ItemSearchView";
@@ -9,6 +9,12 @@ import { TagDetailsAddTagMutation } from "./__generated__/TagDetailsAddTagMutati
 import ErrorSnackbar from "components/generic/ErrorSnackbar";
 import useMutation from "hooks/useMutation";
 
+const useStyles = makeStyles({
+  addButton: {
+    width: "100%",
+  },
+});
+
 interface Props {
   tagNodeKey: TagDetails_tagNode$key;
 }
@@ -17,6 +23,7 @@ interface Props {
  * Render pre-loaded data about a particular tag, including a list of its items
  */
 const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
+  const classes = useStyles();
   const tagNode = useFragment(
     graphql`
       fragment TagDetails_tagNode on TagNode {
@@ -58,7 +65,7 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
     <>
       {isAdding ? (
         <ItemSearchView
-          // Attach the selected take to this item
+          // Attach the selected tag to this item
           mapAction={(uri) => (
             <IconButton
               onClick={() =>
@@ -74,9 +81,9 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
           )}
         />
       ) : (
-        <IconButton onClick={() => setIsAdding(true)}>
+        <Button className={classes.addButton} onClick={() => setIsAdding(true)}>
           <IconAdd />
-        </IconButton>
+        </Button>
       )}
 
       <ItemList taggedItemConnectionKey={tagNode.items} showIcons />
