@@ -67,9 +67,11 @@ module.exports = {
     host: process.env.WEBPACK_HOST,
     port: 3000,
     https: true, // Needed for oauth
-    contentBase: path.join(__dirname, "public"),
+    static: {
+      directory: path.join(__dirname, "public"),
+      watch: true,
+    },
     historyApiFallback: true,
-    watchContentBase: true,
     hot: true,
     proxy: {
       "/api": process.env.LAULUD_API_HOST,
