@@ -1,5 +1,5 @@
 # If you update this, make sure you update the .nvmrc too
-FROM node:14.15.0-alpine AS builder
+FROM node:16.13.1-alpine AS builder
 
 COPY ./api/schema /app/api/schema/
 COPY ./ui/ /app/ui/
