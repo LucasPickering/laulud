@@ -1,5 +1,5 @@
 import React from "react";
-import { Redirect, Route, Switch } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import HomePage from "pages/Home/HomePage";
 import NotFoundPage from "pages/NotFound/NotFoundPage";
@@ -10,6 +10,7 @@ import SearchPage from "pages/Search/SearchPage";
 import useAuthState from "hooks/useAuthState";
 import { UserContext } from "util/UserContext";
 import Loading from "components/Loading";
+import NotLoggedInRedirect from "./NotLoggedInRedirect";
 
 /**
  * Main component that handles global state fetching and rendering the page
@@ -28,53 +29,27 @@ const CoreContent: React.FC = () => {
     <UserContext.Provider value={{ isLoggedIn }}>
       <PageContainer showHeader={isLoggedIn}>
         {isLoggedIn ? (
-          <Switch>
-            <Redirect from="/login" to="/" exact />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
 
-            <Route path="/" exact>
-              <HomePage />
+            {/* <Route path="/search/:selectedUri?" element={<SearchPage />} /> */}
+            <Route path="search" element={<SearchPage />}>
+              <Route path=":selectedUri" element={<SearchPage />} />
             </Route>
-            <Route path="/search/:selectedUri?" exact>
-              <SearchPage />
-            </Route>
-            <Route path="/tags/:selectedTag?" exact>
-              <TagsPage />
+            <Route path={"tags"} element={<TagsPage />}>
+              <Route path=":selectedTag" element={<TagsPage />} />
             </Route>
 
             {/* Fallback route */}
-            <Route>
-              <NotFoundPage />
-            </Route>
-          </Switch>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
         ) : (
           // User is not logged in - redirect everything to the login page
-          <Switch>
-            <Route path="/login" exact>
-              <LoginPage />
-            </Route>
+          <Routes>
+            <Route path="/" element={<LoginPage />} />
 
-            <Route
-              path="*"
-              render={({ location }) => {
-                // Include a param on the login page to tell the server where
-                // to send us back to after login
-                const currentLocation = `${location.pathname}${location.search}${location.hash}`;
-                const search =
-                  currentLocation === "/"
-                    ? ""
-                    : `?next=${encodeURIComponent(currentLocation)}`;
-
-                return (
-                  <Redirect
-                    to={{
-                      pathname: "/login",
-                      search,
-                    }}
-                  />
-                );
-              }}
-            />
-          </Switch>
+            <Route path="*" element={<NotLoggedInRedirect />} />
+          </Routes>
         )}
       </PageContainer>
     </UserContext.Provider>

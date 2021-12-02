@@ -3,7 +3,7 @@ import { makeStyles, Paper } from "@material-ui/core";
 import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
 import useRouteQuery from "hooks/useRouteQuery";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ItemList from "components/ItemList";
 import ItemSearchLoader from "./ItemSearchLoader";
 
@@ -36,7 +36,7 @@ type Props = Omit<
  */
 const ItemSearchView: React.FC<Props> = ({ ...rest }) => {
   const classes = useStyles();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   // Initialize the search based on the URL param
   const { q } = useRouteQuery();
@@ -44,11 +44,13 @@ const ItemSearchView: React.FC<Props> = ({ ...rest }) => {
 
   // Whenever the search changes, update the URL
   useEffect(() => {
-    history.replace({
-      ...history.location,
-      search: queryString.stringify({ q: searchQuery }),
-    });
-  }, [history, searchQuery]);
+    navigate(
+      {
+        search: queryString.stringify({ q: searchQuery }),
+      },
+      { replace: true }
+    );
+  }, [navigate, searchQuery]);
 
   return (
     <Paper className={classes.container}>

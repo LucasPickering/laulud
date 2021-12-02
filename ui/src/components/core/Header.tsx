@@ -9,12 +9,12 @@ const LINKS = [
   {
     to: "/tags",
     label: "My Tags",
-    exact: false,
+    end: false,
   },
   {
     to: "/search",
     label: "Search",
-    exact: false,
+    end: false,
   },
 ];
 
@@ -41,8 +41,8 @@ const Header: React.FC = () => {
   return (
     <AppBar position="static" color="default">
       <Toolbar component="nav" variant="dense">
-        {LINKS.map(({ to, label, exact }) => (
-          <HeaderLink key={to} to={to} exact={exact}>
+        {LINKS.map(({ to, label, end }) => (
+          <HeaderLink key={to} to={to} end={end}>
             {label}
           </HeaderLink>
         ))}

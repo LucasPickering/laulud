@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { Grid } from "@material-ui/core";
 import ItemSearchView from "./ItemSearchView";
 import ItemDetailsCard from "./ItemDetailsCard/ItemDetailsCard";
@@ -9,8 +9,8 @@ interface RouteParams {
 }
 
 const SearchPage: React.FC = () => {
-  const { selectedUri } = useParams<RouteParams>();
-  const history = useHistory();
+  const { selectedUri } = useParams() as RouteParams;
+  const location = useLocation();
 
   return (
     <Grid container spacing={2}>
@@ -18,7 +18,7 @@ const SearchPage: React.FC = () => {
         <ItemSearchView
           selectedUri={selectedUri}
           mapRoute={(uri) => ({
-            ...history.location,
+            ...location, // Retain query params
             pathname: `/search/${uri}`,
           })}
           showTags
