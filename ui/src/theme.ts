@@ -1,9 +1,9 @@
-import { Theme, createMuiTheme, responsiveFontSizes } from "@material-ui/core";
+import { Theme, createTheme, responsiveFontSizes } from "@material-ui/core";
 import { green, red } from "@material-ui/core/colors";
 
 function theme(): Theme {
   return responsiveFontSizes(
-    createMuiTheme({
+    createTheme({
       palette: {
         type: "dark",
         primary: green,

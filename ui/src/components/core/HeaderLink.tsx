@@ -42,6 +42,9 @@ const HeaderLink: React.FC<React.ComponentProps<typeof NavLink>> = ({
     <span className={classes.linkContainer}>
       <NavLink
         className={clsx(classes.link, className)}
+        // routerClassName={({ isActive }) =>
+        //   clsx(classes.link, isActive && classes.active, className)
+        // }
         activeClassName={classes.active}
         {...rest}
       />

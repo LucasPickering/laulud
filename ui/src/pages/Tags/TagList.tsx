@@ -7,7 +7,7 @@ import {
   Typography,
 } from "@material-ui/core";
 import UnstyledLink from "components/generic/UnstyledLink";
-import { useHistory } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import TagChip from "components/TagChip";
 import Link from "components/generic/Link";
 import { graphql, useFragment } from "react-relay";
@@ -75,7 +75,7 @@ const TagListItem: React.FC<{
   tagNodeKey: TagList_tagNode$key;
   selectedTag?: string;
 }> = ({ tagNodeKey, selectedTag }) => {
-  const history = useHistory();
+  const location = useLocation();
   const tagNode = useFragment(
     graphql`
       fragment TagList_tagNode on TagNode {
@@ -96,7 +96,7 @@ const TagListItem: React.FC<{
       selected={tagNode.tag === selectedTag}
       component={UnstyledLink}
       to={{
-        ...history.location,
+        ...location,
         pathname: `/tags/${encodeURIComponent(tagNode.tag)}`,
       }}
     >
