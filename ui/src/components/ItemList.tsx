@@ -1,13 +1,13 @@
 import React from "react";
 import { List, ListItem, ListItemIcon, makeStyles } from "@material-ui/core";
 import UnstyledLink from "components/generic/UnstyledLink";
-import { LocationDescriptorObject } from "history";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";
 import SpotifyLink from "./generic/SpotifyLink";
 import { graphql, useFragment } from "react-relay";
 import { ItemList_taggedItemConnection$key } from "./__generated__/ItemList_taggedItemConnection.graphql";
 import ItemListEntry from "./ItemListEntry";
+import { To } from "react-router-dom";
 
 const useStyles = makeStyles(({ spacing }) => ({
   listItem: {
@@ -28,7 +28,7 @@ interface Props {
   showIcons?: boolean;
   showTags?: boolean;
   mapAction?: (uri: string) => React.ReactNode;
-  mapRoute?: (uri: string) => string | LocationDescriptorObject;
+  mapRoute?: (uri: string) => To;
   onSelect?: (uri: string) => void;
 }
 

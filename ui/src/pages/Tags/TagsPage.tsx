@@ -10,13 +10,9 @@ const useStyles = makeStyles(({ spacing }) => ({
   },
 }));
 
-interface RouteParams {
-  selectedTag?: string;
-}
-
 const TagsPage: React.FC = () => {
   const classes = useStyles();
-  const params = useParams<RouteParams>();
+  const params = useParams<"selectedTag">();
   const selectedTag =
     params.selectedTag && decodeURIComponent(params.selectedTag);
 

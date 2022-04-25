@@ -1,6 +1,6 @@
 import React from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { History, Location, LocationDescriptorObject } from "history";
+import { Location, To } from "history";
 
 type Props = React.ComponentProps<typeof RouterLink>;
 
@@ -11,12 +11,7 @@ type Props = React.ComponentProps<typeof RouterLink>;
  * @param to The link target
  * @return The hash target, or empty string if there is none
  */
-function getHashFragment(
-  to:
-    | string
-    | LocationDescriptorObject<unknown>
-    | ((location: Location<unknown>) => History.LocationDescriptor<unknown>)
-): string {
+function getHashFragment(to: To | ((location: Location) => To)): string {
   let s: string;
   if (typeof to === "string") {
     s = to;
