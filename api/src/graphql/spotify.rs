@@ -13,7 +13,6 @@ use crate::{
         Image, PrivateUser, Track,
     },
 };
-use async_trait::async_trait;
 use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
 
@@ -316,7 +315,7 @@ impl AudioFeaturesFields for AudioFeatures {
     }
 }
 
-#[async_trait]
+#[rocket::async_trait]
 impl TrackFields for Track {
     fn field_album(
         &self,

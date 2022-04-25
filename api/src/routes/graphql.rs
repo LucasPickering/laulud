@@ -1,12 +1,3 @@
-use juniper::http::GraphQLRequest;
-use rocket::{
-    http::{ContentType, Status},
-    response::content::Html,
-    Response, State,
-};
-use rocket_contrib::json::Json;
-use std::{backtrace::Backtrace, sync::Arc};
-
 use crate::{
     db::DbHandler,
     error::{ApiError, ApiResult},
@@ -14,6 +5,13 @@ use crate::{
     spotify::Spotify,
     util::UserId,
 };
+use juniper::http::GraphQLRequest;
+use rocket::{
+    response::content::{self, Html},
+    serde::json::Json,
+    State,
+};
+use std::{backtrace::Backtrace, sync::Arc};
 
 /// Route for all GraphQL requests. **All GraphQL requests require the user
 /// to be logged in.** Pretty much ever API request will require accessing the
@@ -26,12 +24,12 @@ use crate::{
     data = "<graphql_request>"
 )]
 pub async fn route_graphql(
-    db_handler: State<'_, Arc<DbHandler>>,
+    db_handler: &State<Arc<DbHandler>>,
     spotify: Spotify,
     user_id: UserId,
-    graphql_schema: State<'_, Arc<GraphQLSchema>>,
+    graphql_schema: &State<Arc<GraphQLSchema>>,
     graphql_request: Json<GraphQLRequest>,
-) -> ApiResult<Response<'static>> {
+) -> ApiResult<content::Json<String>> {
     let context = RequestContext {
         db_handler: Arc::clone(db_handler.inner()),
         spotify,
@@ -39,7 +37,7 @@ pub async fn route_graphql(
     };
 
     let graphql_response =
-        graphql_request.execute(&graphql_schema, &context).await;
+        graphql_request.execute(graphql_schema, &context).await;
     // Serialization should never fail
     let body = serde_json::to_string(&graphql_response).map_err(|err| {
         ApiError::Unknown {
@@ -47,11 +45,7 @@ pub async fn route_graphql(
             backtrace: Backtrace::capture(),
         }
     })?;
-    Ok(Response::build()
-        .status(Status::Ok)
-        .header(ContentType::JSON)
-        .sized_body(None, std::io::Cursor::new(body))
-        .finalize())
+    Ok(content::Json(body))
 }
 
 #[rocket::get("/graphiql")]

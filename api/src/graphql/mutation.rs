@@ -9,7 +9,6 @@ use crate::{
     },
     util::Validate,
 };
-use async_trait::async_trait;
 use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
 use mongodb::{
@@ -21,7 +20,7 @@ use std::backtrace::Backtrace;
 /// Root GraphQL mutation
 pub struct Mutation;
 
-#[async_trait]
+#[rocket::async_trait]
 impl MutationFields for Mutation {
     async fn field_add_tag<'s, 'r, 'a>(
         &'s self,

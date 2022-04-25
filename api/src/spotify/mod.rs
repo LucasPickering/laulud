@@ -17,7 +17,6 @@ use crate::{
     spotify::internal::ItemDeserialize,
     util::{IdentityState, OAuthHandler},
 };
-use async_trait::async_trait;
 use itertools::Itertools;
 use juniper::futures::future::try_join_all;
 use log::{debug, trace};
@@ -338,7 +337,7 @@ impl Spotify {
 }
 
 // Make it easy to grab a spotify instance for any request handler
-#[async_trait]
+#[rocket::async_trait]
 impl<'r> FromRequest<'r> for Spotify {
     type Error = ApiError;
 
@@ -368,7 +367,7 @@ impl<'r> FromRequest<'r> for Spotify {
             Outcome::Forward(()) => return Outcome::Forward(()),
         };
         let oauth_client =
-            match request.guard::<State<'_, Arc<BasicClient>>>().await {
+            match request.guard::<&State<Arc<BasicClient>>>().await {
                 rocket::request::Outcome::Success(oauth_client) => {
                     oauth_client.inner()
                 }

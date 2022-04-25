@@ -25,7 +25,6 @@ pub use crate::graphql::{
     core::*, internal::*, item::*, mutation::*, query::*, schema::*,
     spotify::*, tag::*,
 };
-
 use crate::{db::DbHandler, error::ApiError, spotify::Spotify, util::UserId};
 use juniper::EmptySubscription;
 use mongodb::bson::doc;

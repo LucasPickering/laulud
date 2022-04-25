@@ -1,5 +1,4 @@
 use crate::error::{ApiError, ApiResult};
-use async_trait::async_trait;
 use derive_more::{Display, From};
 use mongodb::bson::Bson;
 use oauth2::{
@@ -93,7 +92,7 @@ impl IdentityState {
 }
 
 /// Load ID state from the request cookies
-#[async_trait]
+#[rocket::async_trait]
 impl<'r> FromRequest<'r> for IdentityState {
     type Error = ApiError;
 
@@ -150,7 +149,7 @@ impl From<UserId> for Bson {
     }
 }
 
-#[async_trait]
+#[rocket::async_trait]
 impl<'r> FromRequest<'r> for UserId {
     type Error = ApiError;
 

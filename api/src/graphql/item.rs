@@ -9,7 +9,6 @@ use crate::{
     },
     spotify::{PaginatedResponse, ValidSpotifyUri},
 };
-use async_trait::async_trait;
 use juniper::{futures::TryStreamExt, Executor};
 use juniper_from_schema::{QueryTrail, Walked};
 use mongodb::bson::doc;
@@ -118,7 +117,7 @@ pub enum TaggedItemConnection {
     ByTag { tag: ValidTag },
 }
 
-#[async_trait]
+#[rocket::async_trait]
 impl TaggedItemConnectionFields for TaggedItemConnection {
     /// Get the total number of items in this connection, across all pages. If
     /// item data is preloaded, this will be fast. If we're in lazy mode, this

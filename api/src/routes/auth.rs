@@ -12,7 +12,7 @@ use tokio::sync::RwLock;
 /// actual openid provider
 #[get("/oauth/redirect?<next>")]
 pub async fn route_auth_redirect(
-    oauth_client: State<'_, Arc<BasicClient>>,
+    oauth_client: &State<Arc<BasicClient>>,
     cookies: &CookieJar<'_>,
     next: Option<String>,
 ) -> ApiResult<Redirect> {
@@ -32,7 +32,7 @@ pub async fn route_auth_redirect(
 /// Provider redirects back to this route after the login
 #[get("/oauth/callback?<code>&<state>")]
 pub async fn route_auth_callback(
-    oauth_client: State<'_, Arc<BasicClient>>,
+    oauth_client: &State<Arc<BasicClient>>,
     cookies: &CookieJar<'_>,
     identity_state: IdentityState,
     code: Option<String>,

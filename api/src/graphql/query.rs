@@ -12,7 +12,6 @@ use crate::{
     spotify::{PaginatedResponse, PrivateUser, ValidSpotifyUri},
     util::Validate,
 };
-use async_trait::async_trait;
 use juniper::{futures::StreamExt, Executor};
 use juniper_from_schema::{QueryTrail, Walked};
 use mongodb::bson::doc;
@@ -21,7 +20,7 @@ use std::backtrace::Backtrace;
 /// Root GraphQL query
 pub struct Query;
 
-#[async_trait]
+#[rocket::async_trait]
 impl QueryFields for Query {
     /// Get a node of any type by UUID.
     async fn field_node<'s, 'r, 'a>(

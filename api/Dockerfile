@@ -8,6 +8,6 @@ RUN apt-get update && \
     pkg-config \
     && \
     rm -rf /var/lib/apt/lists/*
-COPY rust-toolchain .
+COPY rust-toolchain.toml .
 RUN cargo install cargo-watch
 # If you add stuff here, you may need to update the prd.Dockerfile too

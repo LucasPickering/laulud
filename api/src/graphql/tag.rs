@@ -9,7 +9,6 @@ use crate::{
     },
     spotify::ValidSpotifyUri,
 };
-use async_trait::async_trait;
 use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
 
@@ -116,7 +115,7 @@ pub enum TagConnection {
     ByItem { item_uri: ValidSpotifyUri },
 }
 
-#[async_trait]
+#[rocket::async_trait]
 impl TagConnectionFields for TagConnection {
     async fn field_total_count<'s, 'r, 'a>(
         &'s self,
