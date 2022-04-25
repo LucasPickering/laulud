@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app: db
+spec:
+  serviceName: db
+  selector:
+    matchLabels:
+      app: db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: db
+          image: mongo:5.0
+          resources:
+            requests:
+              cpu: 50m
+              memory: 50Mi
+          volumeMounts:
+            - name: db-data
+              mountPath: /data/db
+              subPath: data
+          ports:
+            - containerPort: 27017
+  # Request persistent disk
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app: db
+spec:
+  type: ClusterIP
+  ports:
+    - port: 27017
+  selector:
+    app: db

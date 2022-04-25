@@ -4,5 +4,6 @@ node_modules/
 target/
 build/
 **/__generated__/
+*.tfvars
 
 ui/schema.graphql

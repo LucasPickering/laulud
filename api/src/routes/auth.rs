@@ -5,7 +5,6 @@ use crate::{
 };
 use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken};
 use rocket::{get, http::CookieJar, post, response::Redirect, State};
-use serde::Deserialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -30,13 +29,6 @@ pub async fn route_auth_redirect(
     Ok(Redirect::found(auth_url.to_string()))
 }
 
-#[derive(Deserialize, Debug)]
-pub struct LoginQuery {
-    code: String,
-    state: Option<String>,
-    nonce: Option<String>,
-}
-
 /// Provider redirects back to this route after the login
 #[get("/oauth/callback?<code>&<state>")]
 pub async fn route_auth_callback(
@@ -54,7 +46,7 @@ pub async fn route_auth_callback(
 
     // Exchange the temp code for a token
     let token_response = oauth_client
-        .exchange_code(AuthorizationCode::new(code.unwrap_or_else(String::new)))
+        .exchange_code(AuthorizationCode::new(code.unwrap_or_default()))
         .request_async(oauth2::reqwest::async_http_client)
         .await?;
 

@@ -28,9 +28,6 @@ jobs:
           path: api/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('api/Cargo.lock') }}
 
-      - name: Install dependencies
-        run: rustup component add rustfmt clippy
-
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
@@ -81,7 +78,6 @@ jobs:
   build-api:
     name: "Build & Push API Image"
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
     needs:
       - check-api
     steps:
@@ -103,14 +99,16 @@ jobs:
         with:
           context: ./api/
           file: ./api/prd.Dockerfile
-          tags: ghcr.io/lucaspickering/laulud-api:latest
-          pull: true
-          push: true
+          tags: |
+            ghcr.io/lucaspickering/laulud-api:latest
+            ghcr.io/lucaspickering/laulud-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: ${{ github.ref == 'refs/heads/master' }}
 
   build-ui:
     name: "Build & Push UI Image"
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
     needs:
       - check-ui
     steps:
@@ -132,6 +130,9 @@ jobs:
         with:
           context: .
           file: ./ui/prd.Dockerfile
-          tags: ghcr.io/lucaspickering/laulud-static:latest
-          pull: true
-          push: true
+          tags: |
+            ghcr.io/lucaspickering/laulud-static:latest
+            ghcr.io/lucaspickering/laulud-static:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: ${{ github.ref == 'refs/heads/master' }}

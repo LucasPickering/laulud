@@ -7,5 +7,6 @@ WORKDIR /app/ui
 RUN npm install
 RUN npm run build
 
-FROM alpine:latest
-COPY --from=builder /app/ui/build /app/static
+FROM nginx:alpine
+COPY --from=builder /app/ui/build /app/laulud
+COPY ./ui/nginx.conf /etc/nginx/nginx.conf

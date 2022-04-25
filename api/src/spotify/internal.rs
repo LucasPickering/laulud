@@ -16,6 +16,7 @@ use serde::Deserialize;
 /// https://github.com/davidpdrsn/juniper-from-schema/issues/139 happens.
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)] // don't change external API for micro-opt
 pub enum ItemDeserialize {
     Track(Track),
     Album(AlbumSimplified),

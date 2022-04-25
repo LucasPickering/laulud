@@ -1,5 +1,4 @@
 #![feature(backtrace)]
-#![feature(with_options)]
 
 mod db;
 mod error;

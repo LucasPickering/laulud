@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+        - name: ui
+          image: "ghcr.io/lucaspickering/laulud-ui:{{ .Values.versionSha }}"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 10Mi
+              ephemeral-storage: 0Mi
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app: ui
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+  selector:
+    app: ui
