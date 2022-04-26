@@ -3,7 +3,7 @@ authors = ["Lucas Pickering <lucas@lucaspickering.me>"]
 edition = "2018"
 license = "MIT"
 name = "laulud-api"
-version = "0.1.0"
+version = "1.0.0"
 
 [profile.dev]
 # https://jakedeichert.com/blog/reducing-rust-incremental-compilation-times-on-macos-by-70-percent/

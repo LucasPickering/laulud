@@ -24,7 +24,7 @@ spec:
               memory: 100Mi
           env:
             - name: ROCKET_HOSTNAME
-              value: "{{ .Values.hostname }}"
+              value: "https://{{ .Values.hostname }}"
             - name: ROCKET_DATABASE_URL
               value: mongodb://db:27017/?appname=laulud
             - name: ROCKET_SECRET_KEY
