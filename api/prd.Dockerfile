@@ -15,6 +15,7 @@ RUN cargo build --release --target x86_64-unknown-linux-musl
 
 # Copy binary into a minimal runtime image
 FROM alpine:latest
+ENV RUST_BACKTRACE=1 RUST_LOG=info
 WORKDIR /app
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/laulud-api .

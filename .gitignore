@@ -4,6 +4,7 @@ node_modules/
 target/
 build/
 **/__generated__/
+.terraform/
 *.tfvars
 
 ui/schema.graphql

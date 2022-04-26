@@ -35,12 +35,12 @@ spec:
             - name: ROCKET_SPOTIFY_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: potify-client-creds
+                  name: spotify-client-creds
                   key: id
             - name: ROCKET_SPOTIFY_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: potify-client-creds
+                  name: spotify-client-creds
                   key: secret
           ports:
             - containerPort: 8000

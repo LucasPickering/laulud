@@ -1,8 +1,6 @@
-
-
-resource "helm_release" "beta_spray" {
-  name             = "beta-spray"
-  chart            = "../../helm"
+resource "helm_release" "laulud" {
+  name             = "laulud"
+  chart            = "../helm"
   namespace        = var.kube_namespace
   create_namespace = true
 
@@ -18,7 +16,7 @@ resource "helm_release" "beta_spray" {
   # Secrets
   set {
     name  = "apiSecretKey"
-    value = random_password.api_secret_key.result
+    value = base64encode(random_password.api_secret_key.result)
   }
   set {
     name  = "spotifyClientId"
@@ -43,5 +41,7 @@ data "terraform_remote_state" "ci" {
 # TODO encrypt tfstate https://www.terraform.io/language/settings/backends/gcs#encryption_key
 
 resource "random_password" "api_secret_key" {
-  length = 32
+  # Rocket wants a 44-char base64 key, which happens to come from a 33-char
+  # string. We'll base64 encode this before passing to helm
+  length = 33
 }
