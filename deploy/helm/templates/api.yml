@@ -21,7 +21,7 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 100Mi
+              memory: 20Mi
           env:
             - name: ROCKET_HOSTNAME
               value: "https://{{ .Values.hostname }}"
