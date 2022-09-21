@@ -58,7 +58,7 @@
     "prebuild": "npm run relay",
     "build": "NODE_ENV=production webpack",
     "analyze": "NODE_ENV=production WEBPACK_BUNDLE_ANALYZER_MODE=server webpack",
-    "lint": "eslint src/**/*.{ts,tsx}",
+    "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "lint:gql": "graphql-schema-linter",
     "clean": "rm -rf node_modules **/__generated__",

@@ -1,6 +1,6 @@
 import React from "react";
-import { Link as RouterLink } from "react-router-dom";
-import { Location, To } from "history";
+import { Link as RouterLink, To } from "react-router-dom";
+import { Location } from "history";
 
 type Props = React.ComponentProps<typeof RouterLink>;
 
@@ -91,5 +91,7 @@ const UnstyledLink = React.forwardRef(
     );
   }
 );
+
+UnstyledLink.displayName = "UnstyledLink";
 
 export default UnstyledLink;
