@@ -1,15 +1,8 @@
 {
   "presets": [
     "@babel/react",
-    "@babel/typescript",
-    [
-      "@babel/env",
-      {
-        "modules": false
-      }
-    ]
+    ["@babel/env", { "modules": false }],
+    "@babel/typescript"
   ],
-  "plugins": [
-    "relay"
-  ]
+  "plugins": ["relay"]
 }
