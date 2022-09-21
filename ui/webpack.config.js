@@ -1,6 +1,9 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
+const {
+  RelayCompilerPlugin,
+} = require("@ch1ffa/relay-compiler-webpack-plugin");
 
 module.exports = {
   mode: process.env.NODE_ENV || "development",
@@ -36,6 +39,7 @@ module.exports = {
       template: "public/index.html",
       favicon: "public/favicon.ico",
     }),
+    new RelayCompilerPlugin(),
     new BundleAnalyzerPlugin({
       analyzerMode: process.env.WEBPACK_BUNDLE_ANALYZER_MODE || "disabled",
     }),
