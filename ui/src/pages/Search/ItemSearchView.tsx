@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { makeStyles, Paper } from "@material-ui/core";
+import { Paper } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
 import useRouteQuery from "hooks/useRouteQuery";

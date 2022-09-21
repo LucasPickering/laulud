@@ -1,5 +1,6 @@
 import React from "react";
-import { List, ListItem, ListItemIcon, makeStyles } from "@material-ui/core";
+import { List, ListItem, ListItemIcon } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import UnstyledLink from "components/generic/UnstyledLink";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";

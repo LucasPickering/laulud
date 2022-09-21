@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Grid } from "@material-ui/core";
+import { Grid } from "@mui/material";
 import ItemSearchView from "./ItemSearchView";
 import ItemDetailsCard from "./ItemDetailsCard/ItemDetailsCard";
 

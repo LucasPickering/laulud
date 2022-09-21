@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  List,
-  ListItem,
-  ListItemText,
-  makeStyles,
-  Typography,
-} from "@material-ui/core";
+import { List, ListItem, ListItemText, Typography } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import UnstyledLink from "components/generic/UnstyledLink";
 import { useLocation } from "react-router-dom";
 import TagChip from "components/TagChip";

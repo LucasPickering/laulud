@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Search as SearchIcon } from "@material-ui/icons";
-import { InputBase, makeStyles } from "@material-ui/core";
+import { Search as SearchIcon } from "@mui/icons-material";
+import { InputBase } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import clsx from "clsx";
 
 import useDebouncedValue from "hooks/useDebouncedValue";

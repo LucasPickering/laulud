@@ -1,8 +1,8 @@
 import React from "react";
-
 import UnstyledLink from "components/generic/UnstyledLink";
 import useRouteQuery from "hooks/useRouteQuery";
-import { Button, makeStyles } from "@material-ui/core";
+import { Button } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 
 const useStyles = makeStyles(() => ({
   container: {

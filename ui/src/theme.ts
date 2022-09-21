@@ -1,11 +1,16 @@
-import { Theme, createTheme, responsiveFontSizes } from "@material-ui/core";
-import { green, red } from "@material-ui/core/colors";
+import { Theme, createTheme, responsiveFontSizes } from "@mui/material";
+import { green, red } from "@mui/material/colors";
+
+declare module "@mui/styles/defaultTheme" {
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  interface DefaultTheme extends Theme {}
+}
 
 function theme(): Theme {
   return responsiveFontSizes(
     createTheme({
       palette: {
-        type: "dark",
+        mode: "dark",
         primary: green,
         secondary: red,
         divider: "#ffffff",

@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink as RouterNavLink } from "react-router-dom";
-import { Link as MuiLink } from "@material-ui/core";
+import { Link as MuiLink } from "@mui/material";
 import clsx from "clsx";
 
 type Props = Omit<React.ComponentProps<typeof RouterNavLinkWrapper>, "style"> &

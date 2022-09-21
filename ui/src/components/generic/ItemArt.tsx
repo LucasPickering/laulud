@@ -1,5 +1,5 @@
 import React from "react";
-import { makeStyles } from "@material-ui/core";
+import { makeStyles } from "@mui/styles";
 import { graphql, useFragment } from "react-relay";
 import { UnknownItemTypeError } from "util/errors";
 import { ItemArt_taggedItemNode$key } from "./__generated__/ItemArt_taggedItemNode.graphql";

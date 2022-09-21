@@ -1,10 +1,10 @@
 import React from "react";
-import { Tooltip } from "@material-ui/core";
+import { Tooltip } from "@mui/material";
 import {
   AlbumOutlined as AlbumIcon,
   AudiotrackOutlined as AudiotrackIcon,
   PersonOutlined as PersonIcon,
-} from "@material-ui/icons";
+} from "@mui/icons-material";
 import { graphql, useFragment } from "react-relay";
 import { ItemIcon_taggedItemNode$key } from "./__generated__/ItemIcon_taggedItemNode.graphql";
 import { UnknownItemTypeError } from "util/errors";

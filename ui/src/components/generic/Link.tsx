@@ -1,5 +1,5 @@
 import React from "react";
-import { Link as MuiLink } from "@material-ui/core";
+import { Link as MuiLink } from "@mui/material";
 
 import UnstyledLink from "./UnstyledLink";
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { Grid, makeStyles, Paper } from "@material-ui/core";
+import { Grid, Paper } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import TagDetailsLoader from "./TagDetailsLoader";
 import TagListLoader from "./TagListLoader";
 

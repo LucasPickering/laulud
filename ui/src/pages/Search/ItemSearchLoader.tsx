@@ -3,7 +3,8 @@ import ItemList from "components/ItemList";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import { ItemSearchLoaderQuery } from "./__generated__/ItemSearchLoaderQuery.graphql";
 import withSuspense from "util/withSuspense";
-import { makeStyles, Tab, Tabs } from "@material-ui/core";
+import { Tab, Tabs } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 
 const useStyles = makeStyles(() => ({
   tabs: {

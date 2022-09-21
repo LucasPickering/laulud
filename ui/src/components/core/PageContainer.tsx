@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
-import { makeStyles, Typography } from "@material-ui/core";
+import { Typography } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import Loading from "components/Loading";
 import Link from "../generic/Link";
 import Header from "./Header";

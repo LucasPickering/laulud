@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { Card, CardContent, Typography } from "@material-ui/core";
+import { Card, CardContent, Typography } from "@mui/material";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import ItemDetails from "./ItemDetails";
 import { ItemDetailsCardQuery } from "./__generated__/ItemDetailsCardQuery.graphql";

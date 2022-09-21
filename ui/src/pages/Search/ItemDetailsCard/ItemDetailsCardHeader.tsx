@@ -1,6 +1,6 @@
 import React from "react";
 import { graphql, useFragment } from "react-relay";
-import { CardHeader } from "@material-ui/core";
+import { CardHeader } from "@mui/material";
 import SpotifyLink from "components/generic/SpotifyLink";
 import ItemArt from "components/generic/ItemArt";
 import { UnknownItemTypeError } from "util/errors";

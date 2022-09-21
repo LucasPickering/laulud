@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Button, IconButton, makeStyles } from "@material-ui/core";
-import { Add as IconAdd } from "@material-ui/icons";
+import { Button, IconButton } from "@mui/material";
+import { makeStyles } from "@mui/styles";
+import { Add as IconAdd } from "@mui/icons-material";
 import ItemList from "components/ItemList";
 import ItemSearchView from "pages/Search/ItemSearchView";
 import { graphql, useFragment } from "react-relay";

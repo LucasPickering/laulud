@@ -1,5 +1,5 @@
 import React from "react";
-import { CardContent } from "@material-ui/core";
+import { CardContent } from "@mui/material";
 import TagChips from "components/TagChips";
 import { graphql, useFragment } from "react-relay";
 import { ItemDetails_taggedItemNode$key } from "./__generated__/ItemDetails_taggedItemNode.graphql";

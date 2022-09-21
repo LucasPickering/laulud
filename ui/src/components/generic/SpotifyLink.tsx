@@ -1,6 +1,6 @@
 import React from "react";
-import { OpenInNew as IconOpenInNew } from "@material-ui/icons";
-import { IconButton, Tooltip } from "@material-ui/core";
+import { OpenInNew as IconOpenInNew } from "@mui/icons-material";
+import { IconButton, Tooltip } from "@mui/material";
 import UnstyledLink from "./UnstyledLink";
 import { graphql, useFragment } from "react-relay";
 import { SpotifyLink_taggedItemNode$key } from "./__generated__/SpotifyLink_taggedItemNode.graphql";

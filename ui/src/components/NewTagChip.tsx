@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-  Chip,
-  CircularProgress,
-  InputBase,
-  Tooltip,
-  makeStyles,
-} from "@material-ui/core";
-import { Add as AddIcon } from "@material-ui/icons";
+import { Chip, CircularProgress, InputBase, Tooltip } from "@mui/material";
+import { makeStyles } from "@mui/styles";
+import { Add as AddIcon } from "@mui/icons-material";
 import { MutationStatus } from "hooks/useMutation";
 
 const useStyles = makeStyles(({ spacing }) => ({

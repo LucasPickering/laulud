@@ -1,4 +1,5 @@
-import { ListItemAvatar, ListItemText, makeStyles } from "@material-ui/core";
+import { ListItemAvatar, ListItemText } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import React from "react";
 import { graphql, useFragment } from "react-relay";
 import { UnknownItemTypeError } from "util/errors";
