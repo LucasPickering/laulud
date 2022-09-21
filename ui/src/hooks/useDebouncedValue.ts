@@ -1,5 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
-import { debounce } from "lodash-es";
+import { useEffect, useState } from "react";
 
 /**
  * Debounces an input value, so that any changes to it aren't reflected in the
@@ -11,21 +10,15 @@ import { debounce } from "lodash-es";
  * @param wait The amount of milliseconds to wait after a value change before updating the output
  * @return The debounced value
  */
-const useDebouncedValue = <T>(value: T, wait: number): T => {
+function useDebouncedValue<T>(value: T, wait: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSetter = useCallback(
-    debounce((newValue: T) => {
-      setDebouncedValue(newValue);
-    }, wait),
-    [wait]
-  );
 
   useEffect(() => {
-    debouncedSetter(value);
-  }, [value, debouncedSetter]);
+    const timeoutId = setTimeout(() => setDebouncedValue(value), wait);
+    return () => clearTimeout(timeoutId);
+  }, [wait, value]);
 
   return debouncedValue;
-};
+}
 
 export default useDebouncedValue;

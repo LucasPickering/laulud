@@ -1,5 +1,4 @@
 import { AppBar, Toolbar, makeStyles } from "@material-ui/core";
-import { isEmpty } from "lodash-es";
 import React, { useContext } from "react";
 import { UserContext } from "util/UserContext";
 import HeaderLink from "./HeaderLink";
@@ -36,7 +35,7 @@ const useStyles = makeStyles(({ spacing }) => ({
 const Header: React.FC = () => {
   const classes = useStyles();
   const currentUser = useContext(UserContext);
-  const showLogOut = !isEmpty(currentUser);
+  const showLogOut = currentUser.isLoggedIn;
 
   return (
     <AppBar position="static" color="default">

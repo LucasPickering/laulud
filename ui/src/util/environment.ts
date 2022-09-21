@@ -21,9 +21,7 @@ const fetchQuery: FetchFunction = (
       query: operation.text,
       variables,
     }),
-  }).then((response) => {
-    return response.json();
-  });
+  }).then((response) => response.json());
 };
 
 const environment = new Environment({
