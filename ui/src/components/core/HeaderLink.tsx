@@ -5,7 +5,7 @@ import NavLink from "../generic/NavLink";
 
 const useStyles = makeStyles(({ palette, transitions, typography }) => {
   const activeStyles = {
-    textDecoration: "none",
+    textDecoration: "none !important",
     borderBottomColor: palette.primary.main,
   };
   return {
@@ -14,7 +14,7 @@ const useStyles = makeStyles(({ palette, transitions, typography }) => {
       textAlign: "center",
     },
     link: {
-      color: palette.text.primary,
+      color: `${palette.text.primary} !important`,
       borderBottom: "1px solid #00000000",
       transitionProperty: "border-bottom, color",
       transitionDuration: `${transitions.duration.short}ms`,
@@ -42,9 +42,6 @@ const HeaderLink: React.FC<React.ComponentProps<typeof NavLink>> = ({
     <span className={classes.linkContainer}>
       <NavLink
         className={clsx(classes.link, className)}
-        // routerClassName={({ isActive }) =>
-        //   clsx(classes.link, isActive && classes.active, className)
-        // }
         activeClassName={classes.active}
         {...rest}
       />

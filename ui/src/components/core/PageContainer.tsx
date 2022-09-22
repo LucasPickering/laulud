@@ -1,11 +1,11 @@
 import React, { Suspense } from "react";
-import { Typography } from "@mui/material";
+import { Divider, Stack, Typography } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import Loading from "components/Loading";
 import Link from "../generic/Link";
 import Header from "./Header";
 
-const useStyles = makeStyles(({ palette, spacing }) => ({
+const useStyles = makeStyles(({ spacing }) => ({
   pageContainer: {
     display: "flex",
     flexDirection: "column",
@@ -17,20 +17,6 @@ const useStyles = makeStyles(({ palette, spacing }) => ({
     maxWidth: 1280,
     padding: spacing(2),
     paddingBottom: 0,
-  },
-  pageFooter: {
-    marginTop: "auto",
-    padding: spacing(2),
-    display: "flex",
-    justifyContent: "center",
-    "& > *": {
-      padding: `0px ${spacing(1)}px`,
-    },
-    "& > * + *": {
-      borderLeftWidth: 1,
-      borderLeftStyle: "solid",
-      borderLeftColor: palette.divider,
-    },
   },
 }));
 
@@ -53,12 +39,21 @@ const PageContainer: React.FC<Props> = ({ showHeader = true, children }) => {
         <Suspense fallback={<Loading />}>{children}</Suspense>
       </div>
 
-      <footer className={classes.pageFooter}>
+      <Stack
+        component="footer"
+        marginTop="auto"
+        direction="row"
+        divider={<Divider orientation="vertical" />}
+        padding={2}
+        spacing={1}
+      >
         <Typography variant="body2">
           Created by <Link to="https://lucaspickering.me">Lucas Pickering</Link>
         </Typography>
-        <Link to="https://github.com/LucasPickering/laulud">GitHub</Link>
-      </footer>
+        <Link variant="body2" to="https://github.com/LucasPickering/laulud">
+          GitHub
+        </Link>
+      </Stack>
     </div>
   );
 };

@@ -16,7 +16,7 @@ function theme(): Theme {
         divider: "#ffffff",
         background: {
           default: "#000000",
-          paper: "#202020",
+          paper: "#212121",
         },
       },
       typography: {
@@ -24,23 +24,24 @@ function theme(): Theme {
         // https://www.sitepoint.com/understanding-and-using-rem-units-in-css/
         htmlFontSize: 10,
 
-        h1: {
-          fontSize: "3.2rem",
+        h1: { fontSize: "3.2rem" },
+        h2: { fontSize: "2.8rem" },
+        h3: { fontSize: "2.4rem" },
+        h4: { fontSize: "2.0rem" },
+        h5: { fontSize: "1.6rem" },
+        h6: { fontSize: "1.2rem" },
+      },
+
+      components: {
+        MuiButton: {
+          defaultProps: {
+            color: "inherit",
+          },
         },
-        h2: {
-          fontSize: "2.8rem",
-        },
-        h3: {
-          fontSize: "2.4rem",
-        },
-        h4: {
-          fontSize: "2.0rem",
-        },
-        h5: {
-          fontSize: "1.6rem",
-        },
-        h6: {
-          fontSize: "1.2rem",
+        MuiLink: {
+          defaultProps: {
+            underline: "hover",
+          },
         },
       },
     })
