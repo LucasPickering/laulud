@@ -6,6 +6,7 @@ import Header from "./Header";
 
 interface Props {
   showHeader?: boolean;
+  children?: React.ReactNode;
 }
 
 /**

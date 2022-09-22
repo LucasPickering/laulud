@@ -10,7 +10,7 @@ import CoreContent from "./components/core/CoreContent";
 const App: React.FC = () => {
   return (
     <RelayEnvironmentProvider environment={environment}>
-      <ThemeProvider theme={theme()}>
+      <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
           <CoreContent />
