@@ -1,6 +1,5 @@
 import React from "react";
-import { List, ListItem, ListItemIcon } from "@mui/material";
-import { makeStyles } from "@mui/styles";
+import { Box, List, ListItem, ListItemIcon } from "@mui/material";
 import UnstyledLink from "components/generic/UnstyledLink";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";
@@ -10,20 +9,7 @@ import { ItemList_taggedItemConnection$key } from "./__generated__/ItemList_tagg
 import ItemListEntry from "./ItemListEntry";
 import { To } from "react-router-dom";
 
-const useStyles = makeStyles(({ spacing }) => ({
-  listItem: {
-    flexWrap: "wrap",
-  },
-  listItemAvatar: {
-    marginRight: spacing(2),
-  },
-  listItemTags: {
-    flexBasis: "100%",
-  },
-}));
-
 interface Props {
-  className?: string;
   taggedItemConnectionKey: ItemList_taggedItemConnection$key;
   selectedUri?: string;
   showIcons?: boolean;
@@ -37,7 +23,6 @@ interface Props {
  * A list of items (track/album/artist), where each item can be selected.
  */
 function ItemList({
-  className,
   taggedItemConnectionKey,
   selectedUri,
   showIcons = false,
@@ -46,7 +31,6 @@ function ItemList({
   mapRoute,
   onSelect,
 }: Props): React.ReactElement {
-  const classes = useStyles();
   const taggedItemConnection = useFragment(
     graphql`
       fragment ItemList_taggedItemConnection on TaggedItemConnection {
@@ -67,7 +51,7 @@ function ItemList({
   );
 
   return (
-    <List className={className}>
+    <List>
       {taggedItemConnection.edges.map(({ node }) => {
         const uri = node.item.uri;
         const action = mapAction && mapAction(uri);
@@ -91,7 +75,7 @@ function ItemList({
         return (
           <ListItem
             key={uri.toString()}
-            className={classes.listItem}
+            sx={{ flexWrap: "wrap" }}
             {...buttonProps}
           >
             <ItemListEntry taggedItemNodeKey={node} />
@@ -108,10 +92,9 @@ function ItemList({
             {action}
 
             {showTags && (
-              <TagChips
-                className={classes.listItemTags}
-                taggedItemNodeKey={node}
-              />
+              <Box flexBasis="100%">
+                <TagChips taggedItemNodeKey={node} />
+              </Box>
             )}
           </ListItem>
         );

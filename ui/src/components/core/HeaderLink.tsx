@@ -1,51 +1,31 @@
 import React from "react";
-import { makeStyles } from "@mui/styles";
-import clsx from "clsx";
 import NavLink from "../generic/NavLink";
-
-const useStyles = makeStyles(({ palette, transitions, typography }) => {
-  const activeStyles = {
-    textDecoration: "none !important",
-    borderBottomColor: palette.primary.main,
-  };
-  return {
-    linkContainer: {
-      minWidth: 80,
-      textAlign: "center",
-    },
-    link: {
-      color: `${palette.text.primary} !important`,
-      borderBottom: "1px solid #00000000",
-      transitionProperty: "border-bottom, color",
-      transitionDuration: `${transitions.duration.short}ms`,
-      transitionTimingFunction: "linear",
-      ...typography.body1,
-
-      "&:hover, &:active": {
-        ...activeStyles,
-        color: palette.text.secondary,
-      },
-    },
-    active: activeStyles,
-  };
-});
+import { Box, useTheme } from "@mui/material";
+import { ClassNames } from "@emotion/react";
 
 /**
  * A link in the top header bar.
  */
-const HeaderLink: React.FC<React.ComponentProps<typeof NavLink>> = ({
-  className,
-  ...rest
-}) => {
-  const classes = useStyles();
+const HeaderLink: React.FC<React.ComponentProps<typeof NavLink>> = (props) => {
+  // TODO grab theme from emotion in css prop
+  const { palette } = useTheme();
+  const activeStyles = {
+    textDecoration: "none",
+    borderBottom: `1px solid ${palette.primary.main}`,
+  };
+
   return (
-    <span className={classes.linkContainer}>
-      <NavLink
-        className={clsx(classes.link, className)}
-        activeClassName={classes.active}
-        {...rest}
-      />
-    </span>
+    <ClassNames>
+      {({ css }) => (
+        <Box component="span" minWidth={80} textAlign="center">
+          <NavLink
+            activeClassName={css(activeStyles)}
+            sx={{ color: palette.text.primary, "&:hover": activeStyles }}
+            {...props}
+          />
+        </Box>
+      )}
+    </ClassNames>
   );
 };
 

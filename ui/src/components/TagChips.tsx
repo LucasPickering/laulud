@@ -1,6 +1,4 @@
 import React from "react";
-import { makeStyles } from "@mui/styles";
-import clsx from "clsx";
 import TagChip from "./TagChip";
 import { graphql, useFragment } from "react-relay";
 import NewTagChip from "./NewTagChip";
@@ -9,19 +7,9 @@ import { TagChipsDeleteTagMutation } from "./__generated__/TagChipsDeleteTagMuta
 import { TagChipsAddTagMutation } from "./__generated__/TagChipsAddTagMutation.graphql";
 import ErrorSnackbar from "./generic/ErrorSnackbar";
 import useMutation from "hooks/useMutation";
-
-const useStyles = makeStyles(({ spacing }) => ({
-  tags: {
-    display: "flex",
-    flexWrap: "wrap",
-  },
-  tag: {
-    margin: spacing(0.5),
-  },
-}));
+import { Stack } from "@mui/material";
 
 interface Props {
-  className?: string;
   taggedItemNodeKey: TagChips_taggedItemNode$key;
   showAdd?: boolean;
   showDelete?: boolean;
@@ -31,12 +19,10 @@ interface Props {
  * Show a list of tags for an item, with optional add+delete buttons
  */
 const TagChips: React.FC<Props> = ({
-  className,
   taggedItemNodeKey,
   showAdd = false,
   showDelete = false,
 }) => {
-  const classes = useStyles();
   const taggedItemNode = useFragment(
     graphql`
       fragment TagChips_taggedItemNode on TaggedItemNode {
@@ -104,11 +90,17 @@ const TagChips: React.FC<Props> = ({
   const itemUri = taggedItemNode.item.uri;
 
   return (
-    <div className={clsx(classes.tags, className)}>
+    <Stack
+      direction="row"
+      margin={1}
+      flexWrap="wrap"
+      // Default stack spacing doesn't work with wrapping, but gap property
+      // does. Switch back to spacing after https://github.com/mui/material-ui/issues/28035
+      sx={({ spacing }) => ({ gap: spacing(1) })}
+    >
       {taggedItemNode.tags.edges.map(({ node: { tag } }) => (
         <TagChip
           key={tag}
-          className={classes.tag}
           tag={tag}
           onDelete={
             showDelete
@@ -148,7 +140,7 @@ const TagChips: React.FC<Props> = ({
         status={addTagStatus}
         resetStatus={resetAddTagStatus}
       />
-    </div>
+    </Stack>
   );
 };
 

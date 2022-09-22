@@ -4,18 +4,6 @@ import { graphql, useLazyLoadQuery } from "react-relay";
 import { ItemSearchLoaderQuery } from "./__generated__/ItemSearchLoaderQuery.graphql";
 import withSuspense from "util/withSuspense";
 import { Tab, Tabs } from "@mui/material";
-import { makeStyles } from "@mui/styles";
-
-const useStyles = makeStyles(() => ({
-  tabs: {
-    minHeight: "unset",
-  },
-  tab: {
-    minWidth: 80,
-    minHeight: 36,
-    textTransform: "none",
-  },
-}));
 
 interface Props
   extends Omit<
@@ -30,7 +18,6 @@ interface Props
  * search and render the results.
  */
 const ItemSearchLoader: React.FC<Props> = ({ searchQuery, ...rest }) => {
-  const classes = useStyles();
   const data = useLazyLoadQuery<ItemSearchLoaderQuery>(
     graphql`
       query ItemSearchLoaderQuery(
@@ -66,14 +53,13 @@ const ItemSearchLoader: React.FC<Props> = ({ searchQuery, ...rest }) => {
   return (
     <>
       <Tabs
-        classes={{ root: classes.tabs }}
         value={selectedTab}
         variant="fullWidth"
         onChange={(e, newSelectedTab) => setSelectedTab(newSelectedTab)}
       >
-        <Tab classes={{ root: classes.tab }} value="tracks" label="Tracks" />
-        <Tab classes={{ root: classes.tab }} value="albums" label="Albums" />
-        <Tab classes={{ root: classes.tab }} value="artists" label="Artists" />
+        <Tab value="tracks" label="Tracks" />
+        <Tab value="albums" label="Albums" />
+        <Tab value="artists" label="Artists" />
       </Tabs>
       <ItemList
         taggedItemConnectionKey={data.itemSearch[selectedTab]}

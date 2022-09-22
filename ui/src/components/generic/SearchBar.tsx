@@ -5,14 +5,12 @@ import { InputAdornment, TextField } from "@mui/material";
 import useDebouncedValue from "hooks/useDebouncedValue";
 
 interface Props {
-  className?: string;
   initialQuery?: string;
   placeholder?: string;
   onSearch: (query: string) => void;
 }
 
 const SearchBar: React.FC<Props> = ({
-  className,
   initialQuery,
   placeholder = "Search…",
   onSearch,
@@ -26,7 +24,6 @@ const SearchBar: React.FC<Props> = ({
 
   return (
     <form
-      className={className}
       onSubmit={(e) => {
         e.preventDefault(); // No page refresh
         onSearch(query);

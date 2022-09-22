@@ -1,11 +1,6 @@
 import { Theme, createTheme, responsiveFontSizes } from "@mui/material";
 import { green, red } from "@mui/material/colors";
 
-declare module "@mui/styles/defaultTheme" {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  interface DefaultTheme extends Theme {}
-}
-
 function theme(): Theme {
   return responsiveFontSizes(
     createTheme({
@@ -33,6 +28,14 @@ function theme(): Theme {
       },
 
       components: {
+        MuiAppBar: {
+          styleOverrides: {
+            root: {
+              // Override the paper padding that's applied below
+              padding: 0,
+            },
+          },
+        },
         MuiButton: {
           defaultProps: {
             color: "inherit",
@@ -41,6 +44,13 @@ function theme(): Theme {
         MuiLink: {
           defaultProps: {
             underline: "hover",
+          },
+        },
+        MuiPaper: {
+          styleOverrides: {
+            root: ({ theme: { spacing } }) => ({
+              padding: spacing(1),
+            }),
           },
         },
       },

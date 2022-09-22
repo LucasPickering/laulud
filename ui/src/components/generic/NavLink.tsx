@@ -1,7 +1,6 @@
 import React from "react";
 import { NavLink as RouterNavLink } from "react-router-dom";
 import { Link as MuiLink } from "@mui/material";
-import clsx from "clsx";
 
 type Props = Omit<React.ComponentProps<typeof RouterNavLinkWrapper>, "style"> &
   React.ComponentProps<typeof MuiLink>;
@@ -27,10 +26,12 @@ const RouterNavLinkWrapper = React.forwardRef<
     activeClassName?: string;
     style: RouterNavLinkProps["style"];
   }
->(({ activeClassName, className, ...rest }, ref) => (
+>(({ className, activeClassName, ...rest }, ref) => (
   <RouterNavLink
     ref={ref}
-    className={({ isActive }) => clsx(className, isActive && activeClassName)}
+    className={({ isActive }) =>
+      `${className} ${isActive ? activeClassName : ""}`
+    }
     {...rest}
   />
 ));

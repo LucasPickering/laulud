@@ -1,5 +1,4 @@
-import { AppBar, Toolbar } from "@mui/material";
-import { makeStyles } from "@mui/styles";
+import { AppBar, Box, Toolbar } from "@mui/material";
 import React, { useContext } from "react";
 import { UserContext } from "util/UserContext";
 import HeaderLink from "./HeaderLink";
@@ -18,23 +17,10 @@ const LINKS = [
   },
 ];
 
-const useStyles = makeStyles(({ spacing }) => ({
-  drawer: {
-    width: 150,
-  },
-  drawerButton: {
-    marginRight: spacing(1),
-  },
-  grow: {
-    flexGrow: 1,
-  },
-}));
-
 /**
  * Site-wide header bar
  */
 const Header: React.FC = () => {
-  const classes = useStyles();
   const currentUser = useContext(UserContext);
   const showLogOut = currentUser.isLoggedIn;
 
@@ -46,7 +32,7 @@ const Header: React.FC = () => {
             {label}
           </HeaderLink>
         ))}
-        <div className={classes.grow} />
+        <Box flexGrow={1} />
         {showLogOut && <LogOutButton />}
       </Toolbar>
     </AppBar>

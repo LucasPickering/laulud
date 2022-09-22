@@ -1,29 +1,15 @@
 import { ListItemAvatar, ListItemText } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import React from "react";
 import { graphql, useFragment } from "react-relay";
 import { UnknownItemTypeError } from "util/errors";
 import ItemArt from "./generic/ItemArt";
 import { ItemListEntry_taggedItemNode$key } from "./__generated__/ItemListEntry_taggedItemNode.graphql";
 
-const useStyles = makeStyles(({ spacing }) => ({
-  listItem: {
-    flexWrap: "wrap",
-  },
-  listItemAvatar: {
-    marginRight: spacing(2),
-  },
-  listItemTags: {
-    flexBasis: "100%",
-  },
-}));
-
 function ItemListEntry({
   taggedItemNodeKey,
 }: {
   taggedItemNodeKey: ItemListEntry_taggedItemNode$key;
 }): React.ReactElement {
-  const classes = useStyles();
   const taggedItemNode = useFragment(
     graphql`
       fragment ItemListEntry_taggedItemNode on TaggedItemNode {
@@ -55,7 +41,7 @@ function ItemListEntry({
     case "Track":
       return (
         <>
-          <ListItemAvatar className={classes.listItemAvatar}>
+          <ListItemAvatar>
             <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
           </ListItemAvatar>
           <ListItemText
@@ -70,7 +56,7 @@ function ItemListEntry({
     case "AlbumSimplified":
       return (
         <>
-          <ListItemAvatar className={classes.listItemAvatar}>
+          <ListItemAvatar>
             <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
           </ListItemAvatar>
           <ListItemText
@@ -85,7 +71,7 @@ function ItemListEntry({
     case "Artist":
       return (
         <>
-          <ListItemAvatar className={classes.listItemAvatar}>
+          <ListItemAvatar>
             <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
           </ListItemAvatar>
           <ListItemText primary={taggedItemNode.item.name} />

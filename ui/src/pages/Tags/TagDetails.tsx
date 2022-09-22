@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Button, IconButton } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import { Add as IconAdd } from "@mui/icons-material";
 import ItemList from "components/ItemList";
 import ItemSearchView from "pages/Search/ItemSearchView";
@@ -10,12 +9,6 @@ import { TagDetailsAddTagMutation } from "./__generated__/TagDetailsAddTagMutati
 import ErrorSnackbar from "components/generic/ErrorSnackbar";
 import useMutation from "hooks/useMutation";
 
-const useStyles = makeStyles({
-  addButton: {
-    width: "100%",
-  },
-});
-
 interface Props {
   tagNodeKey: TagDetails_tagNode$key;
 }
@@ -24,7 +17,6 @@ interface Props {
  * Render pre-loaded data about a particular tag, including a list of its items
  */
 const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
-  const classes = useStyles();
   const tagNode = useFragment(
     graphql`
       fragment TagDetails_tagNode on TagNode {
@@ -82,7 +74,7 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
           )}
         />
       ) : (
-        <Button className={classes.addButton} onClick={() => setIsAdding(true)}>
+        <Button color="primary" fullWidth onClick={() => setIsAdding(true)}>
           <IconAdd />
         </Button>
       )}

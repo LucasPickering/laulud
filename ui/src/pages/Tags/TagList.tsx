@@ -1,6 +1,5 @@
 import React from "react";
 import { List, ListItem, ListItemText, Typography } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import UnstyledLink from "components/generic/UnstyledLink";
 import { useLocation } from "react-router-dom";
 import TagChip from "components/TagChip";
@@ -8,12 +7,6 @@ import Link from "components/generic/Link";
 import { graphql, useFragment } from "react-relay";
 import { TagList_tagConnection$key } from "./__generated__/TagList_tagConnection.graphql";
 import { TagList_tagNode$key } from "./__generated__/TagList_tagNode.graphql";
-
-const useStyles = makeStyles(({ spacing }) => ({
-  emptyState: {
-    padding: spacing(2),
-  },
-}));
 
 interface Props {
   tagConnectionKey: TagList_tagConnection$key;
@@ -26,7 +19,6 @@ interface Props {
  * the parent). The tag list data should be pre-loaded.
  */
 const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
-  const classes = useStyles();
   const tagConnection = useFragment(
     graphql`
       fragment TagList_tagConnection on TagConnection {
@@ -44,12 +36,10 @@ const TagList: React.FC<Props> = ({ tagConnectionKey, selectedTag }) => {
 
   if (tagConnection.totalCount === 0) {
     return (
-      <div className={classes.emptyState}>
-        <Typography>
-          No tags yet. <Link to="/search">Search for something</Link> to create
-          your first tag.
-        </Typography>
-      </div>
+      <Typography padding={2}>
+        No tags yet. <Link to="/search">Search for something</Link> to create
+        your first tag.
+      </Typography>
     );
   }
 

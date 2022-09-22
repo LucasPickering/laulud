@@ -1,19 +1,5 @@
 import React from "react";
-import { Typography } from "@mui/material";
-import { makeStyles } from "@mui/styles";
-
-const useLocalStyles = makeStyles(({ spacing }) => ({
-  simpleTable: {
-    borderCollapse: "collapse",
-  },
-  simpleTableLabel: {
-    textAlign: "left",
-    paddingRight: spacing(4),
-  },
-  simpleTableValue: {
-    textAlign: "right",
-  },
-}));
+import { Typography, useTheme } from "@mui/material";
 
 interface TableRow {
   label: string;
@@ -28,17 +14,17 @@ interface TableRow {
 const SimpleTable: React.FC<{
   data: TableRow[];
 }> = ({ data }) => {
-  const localClasses = useLocalStyles();
-
+  // TODO grab theme from emotion in css prop
+  const { spacing } = useTheme();
   return (
-    <table className={localClasses.simpleTable}>
+    <table css={{ borderCollapse: "collapse" }}>
       <tbody>
         {data.map(({ label, value }) => (
           <tr key={label}>
-            <th className={localClasses.simpleTableLabel}>
+            <th css={{ textAlign: "left", paddingRight: spacing(4) }}>
               <Typography>{label}</Typography>
             </th>
-            <td className={localClasses.simpleTableValue}>
+            <td css={{ textAlign: "right" }}>
               <Typography>{value}</Typography>
             </td>
           </tr>

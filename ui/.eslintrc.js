@@ -1,6 +1,14 @@
 module.exports = {
   extends: ["@lucaspickering/eslint-config/react"],
   rules: {
+    "react/no-unknown-property": [
+      "error",
+      {
+        ignore: [
+          "css", // Added by emotion
+        ],
+      },
+    ],
     "no-restricted-syntax": [
       "error",
       {
