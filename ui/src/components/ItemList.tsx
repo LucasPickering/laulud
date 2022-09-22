@@ -22,7 +22,7 @@ interface Props {
 /**
  * A list of items (track/album/artist), where each item can be selected.
  */
-function ItemList({
+const ItemList: React.FC<Props> = ({
   taggedItemConnectionKey,
   selectedUri,
   showIcons = false,
@@ -30,7 +30,7 @@ function ItemList({
   mapAction,
   mapRoute,
   onSelect,
-}: Props): React.ReactElement {
+}) => {
   const taggedItemConnection = useFragment(
     graphql`
       fragment ItemList_taggedItemConnection on TaggedItemConnection {
@@ -75,6 +75,7 @@ function ItemList({
         return (
           <ListItem
             key={uri.toString()}
+            // Wrapping makes tags render correctly
             sx={{ flexWrap: "wrap" }}
             {...buttonProps}
           >
@@ -101,6 +102,6 @@ function ItemList({
       })}
     </List>
   );
-}
+};
 
 export default ItemList;
