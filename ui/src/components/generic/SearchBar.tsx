@@ -7,16 +7,25 @@ import useDebouncedValue from "hooks/useDebouncedValue";
 interface Props {
   initialQuery?: string;
   placeholder?: string;
+  debounceMs?: number;
   onSearch: (query: string) => void;
 }
 
+/**
+ * Debounced search text input. The initial query will pre-populated the search
+ * bar, then the setter will be called whenever the input value changes and
+ * settles for some number of milliseconds.
+ */
 const SearchBar: React.FC<Props> = ({
   initialQuery,
   placeholder = "Search…",
+  debounceMs = 500,
   onSearch,
 }) => {
+  // Internal state is updated immediately. We won't propagate to the parent
+  // until after the debounce expires
   const [query, setQuery] = useState<string>(initialQuery ?? "");
-  const debouncedQuery = useDebouncedValue(query, 500);
+  const debouncedQuery = useDebouncedValue(query, debounceMs);
 
   useEffect(() => {
     onSearch(debouncedQuery);
@@ -30,6 +39,7 @@ const SearchBar: React.FC<Props> = ({
       }}
     >
       <TextField
+        autoFocus
         placeholder={placeholder}
         value={query}
         variant="standard"

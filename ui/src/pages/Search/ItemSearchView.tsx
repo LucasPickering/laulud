@@ -9,17 +9,24 @@ import ItemSearchLoaderQuery from "./__generated__/ItemSearchLoaderQuery.graphql
 import ItemSearchLoader from "./ItemSearchLoader";
 import { useQueryLoader } from "react-relay";
 
-type Props = Omit<
-  React.ComponentProps<typeof ItemSearchLoader>,
-  "queryRef" | "selectedTab"
->;
+interface Props
+  extends Omit<
+    React.ComponentProps<typeof ItemSearchLoader>,
+    "queryRef" | "selectedTab"
+  > {
+  persistInRoute?: boolean;
+}
 
 /**
  * A searchable list of items. If itemSearchKey isn't provided, we assume no
  * search has been made yet, so the search bar will be rendered but results
  * won't.
+ * @param persistInRoute if true, the search query will be persisted in a route param
  */
-const ItemSearchView: React.FC<Props> = ({ ...rest }) => {
+const ItemSearchView: React.FC<Props> = ({
+  persistInRoute = false,
+  ...rest
+}) => {
   const [queryRef, loadQuery, disposeQuery] =
     useQueryLoader<ItemSearchLoaderQueryType>(ItemSearchLoaderQuery);
   const navigate = useNavigate();
@@ -29,7 +36,8 @@ const ItemSearchView: React.FC<Props> = ({ ...rest }) => {
 
   // Initialize the search based on the URL param
   const { q } = useRouteQuery();
-  const [searchQuery, setSearchQuery] = useState<string>(q?.toString() ?? "");
+  const initialQuery = persistInRoute ? q?.toString() ?? "" : "";
+  const [searchQuery, setSearchQuery] = useState<string>(initialQuery);
 
   useEffect(() => {
     if (searchQuery) {
@@ -42,18 +50,18 @@ const ItemSearchView: React.FC<Props> = ({ ...rest }) => {
 
   // Whenever the search changes, update the URL
   useEffect(() => {
-    navigate(
-      {
-        search: queryString.stringify({ q: searchQuery }),
-      },
-      { replace: true }
-    );
-  }, [navigate, searchQuery]);
+    if (persistInRoute) {
+      navigate(
+        { search: queryString.stringify({ q: searchQuery }) },
+        { replace: true }
+      );
+    }
+  }, [navigate, persistInRoute, searchQuery]);
 
   return (
     <Paper>
       <SearchBar
-        initialQuery={(q ?? "").toString()}
+        initialQuery={initialQuery}
         placeholder="Search tracks, albums, and artists…"
         onSearch={setSearchQuery}
       />

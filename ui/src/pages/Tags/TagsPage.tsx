@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { Grid, Paper } from "@mui/material";
+import { Grid, Paper, Typography } from "@mui/material";
 
 import TagDetailsLoader from "./TagDetailsLoader";
 import TagListLoader from "./TagListLoader";
@@ -17,13 +17,15 @@ const TagsPage: React.FC = () => {
           <TagListLoader selectedTag={selectedTag} />
         </Paper>
       </Grid>
-      {selectedTag && (
-        <Grid item xs={12} sm={6} md={8}>
-          <Paper>
+      <Grid item xs={12} sm={6} md={8}>
+        <Paper>
+          {selectedTag ? (
             <TagDetailsLoader tag={selectedTag} />
-          </Paper>
-        </Grid>
-      )}
+          ) : (
+            <Typography>Select a tag to see its tagged items.</Typography>
+          )}
+        </Paper>
+      </Grid>
     </Grid>
   );
 };

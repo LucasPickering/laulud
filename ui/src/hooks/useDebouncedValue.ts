@@ -7,16 +7,16 @@ import { useEffect, useState } from "react";
  * value hasn't changed for the defined wait time, at which point the most
  * recent input value will become the output.
  * @param value The current value
- * @param wait The amount of milliseconds to wait after a value change before updating the output
+ * @param waitMs The amount of milliseconds to wait after a value change before updating the output
  * @return The debounced value
  */
-function useDebouncedValue<T>(value: T, wait: number): T {
+function useDebouncedValue<T>(value: T, waitMs: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => setDebouncedValue(value), wait);
+    const timeoutId = setTimeout(() => setDebouncedValue(value), waitMs);
     return () => clearTimeout(timeoutId);
-  }, [wait, value]);
+  }, [waitMs, value]);
 
   return debouncedValue;
 }

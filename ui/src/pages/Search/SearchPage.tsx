@@ -16,6 +16,7 @@ const SearchPage: React.FC = () => {
     <Grid container spacing={2}>
       <Grid item xs={12} sm={6} md={4}>
         <ItemSearchView
+          persistInRoute
           selectedUri={selectedUri}
           mapRoute={(uri) => ({
             ...location, // Retain query params

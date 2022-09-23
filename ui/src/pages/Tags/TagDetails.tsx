@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, IconButton } from "@mui/material";
+import { Box, Button, IconButton, Popover } from "@mui/material";
 import { Add as IconAdd } from "@mui/icons-material";
 import ItemList from "components/ItemList";
 import ItemSearchView from "pages/Search/ItemSearchView";
@@ -17,6 +17,7 @@ interface Props {
  * Render pre-loaded data about a particular tag, including a list of its items
  */
 const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
+  const anchorEl = React.useRef<HTMLButtonElement>(null);
   const tagNode = useFragment(
     graphql`
       fragment TagDetails_tagNode on TagNode {
@@ -56,28 +57,45 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
 
   return (
     <>
-      {isAdding ? (
-        <ItemSearchView
-          // Attach the selected tag to this item
-          mapAction={(uri) => (
-            <IconButton
-              onClick={() =>
-                addTag({
-                  variables: {
-                    input: { itemUri: uri, tag: tagNode.tag },
-                  },
-                })
-              }
-            >
-              <IconAdd />
-            </IconButton>
-          )}
-        />
-      ) : (
-        <Button color="primary" fullWidth onClick={() => setIsAdding(true)}>
-          <IconAdd />
-        </Button>
-      )}
+      <Button
+        ref={anchorEl}
+        color="primary"
+        fullWidth
+        onClick={() => setIsAdding(true)}
+      >
+        <IconAdd />
+      </Button>
+
+      <Popover
+        open={isAdding}
+        anchorEl={anchorEl.current}
+        onClose={() => setIsAdding(false)}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+      >
+        <Box width={400}>
+          {/* Note: The search bar won't auto-focus in dev because of the Strict
+              Mode double render, but it Works in Prod™ */}
+          <ItemSearchView
+            // Attach the selected tag to this item
+            mapAction={(uri) => (
+              <IconButton
+                onClick={() =>
+                  addTag({
+                    variables: {
+                      input: { itemUri: uri, tag: tagNode.tag },
+                    },
+                  })
+                }
+              >
+                <IconAdd />
+              </IconButton>
+            )}
+          />
+        </Box>
+      </Popover>
 
       <ItemList taggedItemConnectionKey={tagNode.items} showIcons />
 
