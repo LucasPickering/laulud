@@ -7,7 +7,7 @@ use crate::{
         Cursor, Node, RequestContext, Tag, TagConnectionFields, TagEdgeFields,
         TagNodeFields, ValidTag,
     },
-    spotify::ValidSpotifyUri,
+    spotify::SpotifyUri,
 };
 use juniper::Executor;
 use juniper_from_schema::{QueryTrail, Walked};
@@ -27,7 +27,7 @@ pub struct TagNode {
     /// loading item **URIs**, not the full item data. So either way, the
     /// full item data won't be preloaded from the Spotify API, we're just
     /// saving a DB query in the eager case.
-    pub item_uris: Option<Vec<ValidSpotifyUri>>,
+    pub item_uris: Option<Vec<SpotifyUri>>,
 }
 
 impl TagNodeFields for TagNode {
@@ -112,7 +112,7 @@ pub enum TagConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByItem { item_uri: ValidSpotifyUri },
+    ByItem { item_uri: SpotifyUri },
 }
 
 #[rocket::async_trait]

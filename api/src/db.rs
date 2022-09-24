@@ -1,9 +1,8 @@
 use crate::{
-    error::ApiResult, graphql::ValidTag, spotify::ValidSpotifyUri,
-    util::UserId, LauludConfig,
+    error::ApiResult, graphql::ValidTag, spotify::SpotifyUri, util::UserId,
+    LauludConfig,
 };
 use derive_more::{Deref, From};
-use juniper::futures::StreamExt;
 use mongodb::{
     bson::{self, doc, Document},
     options::ClientOptions,
@@ -97,7 +96,7 @@ impl TaggedItemsCollection {
     pub async fn count_tags_by_item(
         &self,
         user_id: &UserId,
-        item_uri: &ValidSpotifyUri,
+        item_uri: &SpotifyUri,
     ) -> ApiResult<i64> {
         self.count_tags_helper(Self::filter_by_item(user_id, item_uri))
             .await
@@ -116,7 +115,7 @@ impl TaggedItemsCollection {
     pub async fn find_tags_by_item(
         &self,
         user_id: &UserId,
-        item_uri: &ValidSpotifyUri,
+        item_uri: &SpotifyUri,
     ) -> ApiResult<Vec<ValidTag>> {
         self.find_tags_helper(Self::filter_by_item(user_id, item_uri))
             .await
@@ -130,10 +129,7 @@ impl TaggedItemsCollection {
         doc! {"user_id": user_id, "tags":tag}
     }
 
-    fn filter_by_item(
-        user_id: &UserId,
-        item_uri: &ValidSpotifyUri,
-    ) -> Document {
+    fn filter_by_item(user_id: &UserId, item_uri: &SpotifyUri) -> Document {
         doc! {"user_id": user_id, "uri": item_uri}
     }
 
@@ -213,7 +209,7 @@ impl TaggedItemsCollection {
 pub struct TaggedItemDocument {
     pub user_id: UserId,
     pub tags: Vec<ValidTag>,
-    pub uri: ValidSpotifyUri,
+    pub uri: SpotifyUri,
 }
 
 /// A Mongo document that counts a single `count` field. Useful when

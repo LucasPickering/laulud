@@ -10,11 +10,12 @@ version = "1.0.0"
 split-debuginfo = "unpacked"
 
 [dependencies]
+async-graphql = {version = "4.0.13", default-features = false, features = ["log"]}
+async-graphql-rocket = "4.0.13"
 derive_more = "0.99"
 env_logger = "0.8"
+futures = "0.3.24"
 itertools = "0.9"
-juniper = "0.15"
-juniper-from-schema = {git = "https://github.com/LucasPickering/juniper-from-schema", branch = "137-multiple-schema-files"}
 log = "0.4"
 mongodb = {version = "2.0.0-alpha.1", default-features = false, features = ["tokio-runtime"]}
 oauth2 = "4.0.0"

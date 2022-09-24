@@ -7,7 +7,7 @@ use crate::{
         RequestContext, TagConnection, TaggedItemConnectionFields,
         TaggedItemEdgeFields, TaggedItemNodeFields, ValidTag,
     },
-    spotify::{PaginatedResponse, ValidSpotifyUri},
+    spotify::{PaginatedResponse, SpotifyUri},
 };
 use juniper::{futures::TryStreamExt, Executor};
 use juniper_from_schema::{QueryTrail, Walked};
@@ -105,7 +105,7 @@ pub enum TaggedItemConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByUris { uris: Vec<ValidSpotifyUri> },
+    ByUris { uris: Vec<SpotifyUri> },
 
     /// Lazily load item data, where the items in the collection are defined by
     /// a single tag. When item data is needed, the list of items that match
@@ -218,7 +218,7 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
                     .collection_tagged_items()
                     .find_by_tag(&context.user_id, tag)
                     .await?;
-                let uris: Vec<ValidSpotifyUri> =
+                let uris: Vec<SpotifyUri> =
                     cursor.map_ok(|doc| doc.uri).try_collect().await?;
 
                 let items = context.spotify.get_items(uris.iter()).await?;

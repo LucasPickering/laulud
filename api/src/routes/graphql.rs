@@ -1,17 +1,13 @@
 use crate::{
     db::DbHandler,
-    error::{ApiError, ApiResult},
     graphql::{GraphQLSchema, RequestContext},
     spotify::Spotify,
     util::UserId,
 };
-use juniper::http::GraphQLRequest;
-use rocket::{
-    response::content::{self, Html},
-    serde::json::Json,
-    State,
-};
-use std::{backtrace::Backtrace, sync::Arc};
+use async_graphql::http::GraphiQLSource;
+use async_graphql_rocket::{GraphQLRequest, GraphQLResponse};
+use rocket::{response::content::RawHtml, State};
+use std::sync::Arc;
 
 /// Route for all GraphQL requests. **All GraphQL requests require the user
 /// to be logged in.** Pretty much ever API request will require accessing the
@@ -28,28 +24,23 @@ pub async fn route_graphql(
     spotify: Spotify,
     user_id: UserId,
     graphql_schema: &State<Arc<GraphQLSchema>>,
-    graphql_request: Json<GraphQLRequest>,
-) -> ApiResult<content::Json<String>> {
-    let context = RequestContext {
-        db_handler: Arc::clone(db_handler.inner()),
-        spotify,
-        user_id,
-    };
-
-    let graphql_response =
-        graphql_request.execute(graphql_schema, &context).await;
-    // Serialization should never fail
-    let body = serde_json::to_string(&graphql_response).map_err(|err| {
-        ApiError::Unknown {
-            message: err.to_string(),
-            backtrace: Backtrace::capture(),
-        }
-    })?;
-    Ok(content::Json(body))
+    graphql_request: GraphQLRequest,
+) -> GraphQLResponse {
+    graphql_schema
+        .execute(
+            graphql_request
+                // Use the wrapping RequestContext instead of passing a bunch of
+                // little contexts, so we can get the benefits of static typing
+                .data(RequestContext {
+                    db_handler: Arc::clone(db_handler.inner()),
+                    spotify,
+                    user_id,
+                }),
+        )
+        .await
 }
 
 #[rocket::get("/graphiql")]
-pub async fn route_graphiql() -> Html<String> {
-    let html = juniper::http::graphiql::graphiql_source("/api/graphql", None);
-    Html(html)
+pub async fn route_graphiql() -> RawHtml<String> {
+    RawHtml(GraphiQLSource::build().endpoint("/api/graphql").finish())
 }
