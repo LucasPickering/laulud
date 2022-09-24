@@ -17,36 +17,31 @@ mod internal;
 mod item;
 mod mutation;
 mod query;
-mod schema;
-mod spotify;
 mod tag;
 
 pub use crate::graphql::{
-    core::*, internal::*, item::*, mutation::*, query::*, schema::*,
-    spotify::*, tag::*,
+    core::*, internal::*, item::*, mutation::*, query::*, tag::*,
 };
-use crate::{db::DbHandler, error::ApiError, spotify::Spotify, util::UserId};
-use juniper::EmptySubscription;
-use mongodb::bson::doc;
+use crate::{db::DbHandler, spotify::Spotify, util::UserId};
+use async_graphql::{EmptySubscription, Schema};
 use std::sync::Arc;
 
 // This file holds GraphQL setup/implementation details, but no external GraphQL
 // types
 
+/// All the external context that a resolver might need. Async-graphql supports
+/// passing multiple context values so technically this isn't needed, but since
+/// there's no static typing when grabbing context from async-graphql, we use
+/// this wrapping type to ensure that changes to the available context will be
+/// caught by static typing.
 pub struct RequestContext {
     pub db_handler: Arc<DbHandler>,
     pub spotify: Spotify,
     pub user_id: UserId,
 }
-impl juniper::Context for RequestContext {}
 
-pub type GraphQLSchema = juniper::RootNode<
-    'static,
-    Query,
-    Mutation,
-    EmptySubscription<RequestContext>,
->;
+pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
 
 pub fn create_graphql_schema() -> GraphQLSchema {
-    GraphQLSchema::new(Query, Mutation, EmptySubscription::new())
+    GraphQLSchema::build(Query, Mutation, EmptySubscription)
 }

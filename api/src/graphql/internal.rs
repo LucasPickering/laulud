@@ -7,7 +7,7 @@
 use crate::{
     error::{InputValidationError, ParseError},
     graphql::{Cursor, Item, Node, Tag},
-    spotify::ValidSpotifyUri,
+    spotify::SpotifyUri,
     util::{UserId, Validate},
 };
 use derive_more::Display;
@@ -238,7 +238,7 @@ impl FromStr for NodeType {
 // region: Item
 impl Item {
     /// Get the URI for this item
-    pub fn uri(&self) -> &ValidSpotifyUri {
+    pub fn uri(&self) -> &SpotifyUri {
         match self {
             Self::Track(track) => &track.uri,
             Self::AlbumSimplified(album) => &album.uri,

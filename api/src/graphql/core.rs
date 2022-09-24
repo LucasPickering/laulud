@@ -4,7 +4,6 @@
 use crate::graphql::{
     internal::ValidCursor, Cursor, PageInfoFields, RequestContext,
 };
-use juniper::Executor;
 
 /// GQL type to display information about a page of data. See the Relay
 /// Connections spec: https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo

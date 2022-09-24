@@ -2,28 +2,25 @@
 //! relate closely to the Spotify API. Everything in this module will be
 //! exported to the entire crate!
 
-use crate::{
-    error::{InputValidationError, ParseError},
-    graphql::SpotifyUri,
-    util::Validate,
-};
+use crate::error::{InputValidationError, ParseError};
+use async_graphql::{scalar, Interface, ScalarType, SimpleObject};
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
 use std::{backtrace::Backtrace, convert::TryFrom, str::FromStr};
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct ArtistSimplified {
     pub external_urls: ExternalUrls,
     pub href: String,
     pub id: String,
     pub name: String,
-    pub uri: ValidSpotifyUri,
+    pub uri: SpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-full
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct Artist {
     pub external_urls: ExternalUrls,
     pub genres: Vec<String>,
@@ -32,11 +29,11 @@ pub struct Artist {
     pub images: Vec<Image>,
     pub name: String,
     pub popularity: i32,
-    pub uri: ValidSpotifyUri,
+    pub uri: SpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#album-object-simplified
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct AlbumSimplified {
     pub album_group: Option<String>,
     pub album_type: String,
@@ -49,11 +46,11 @@ pub struct AlbumSimplified {
     pub name: String,
     pub release_date: String,
     pub release_date_precision: String,
-    pub uri: ValidSpotifyUri,
+    pub uri: SpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/#object-audiofeaturesobject
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct AudioFeatures {
     pub acousticness: f64,
     pub analysis_url: String,
@@ -70,12 +67,12 @@ pub struct AudioFeatures {
     pub tempo: f64,
     pub time_signature: i32,
     pub track_href: String,
-    pub uri: ValidSpotifyUri,
+    pub uri: SpotifyUri,
     pub valence: f64,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct Track {
     pub album: AlbumSimplified,
     pub artists: Vec<ArtistSimplified>,
@@ -91,17 +88,17 @@ pub struct Track {
     pub popularity: i32,
     pub preview_url: Option<String>,
     pub track_number: i32,
-    pub uri: ValidSpotifyUri,
+    pub uri: SpotifyUri,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/#object-externalurlobject
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct ExternalUrls {
     pub spotify: String,
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct Image {
     pub url: String,
     pub width: Option<i32>,
@@ -109,11 +106,11 @@ pub struct Image {
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/#object-privateuserobject
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct PrivateUser {
     pub id: String,
     pub href: String,
-    pub uri: ValidSpotifyUri,
+    pub uri: SpotifyUri,
     pub display_name: Option<String>,
     pub images: Vec<Image>,
 }
@@ -226,15 +223,17 @@ impl FromStr for SpotifyItemType {
 /// _malformed_. It **doesn't** mean that the URI actually exists in Spotify.
 ///
 /// This can only be constructed via its [Validate] implementation.
+///
+/// TODO update comment
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 #[display(fmt = "spotify:{}:{}", item_type, id)]
 #[serde(try_from = "String", into = "String")]
-pub struct ValidSpotifyUri {
+pub struct SpotifyUri {
     item_type: SpotifyItemType,
     id: String,
 }
 
-impl ValidSpotifyUri {
+impl SpotifyUri {
     pub fn item_type(&self) -> SpotifyItemType {
         self.item_type
     }
@@ -244,27 +243,36 @@ impl ValidSpotifyUri {
     }
 }
 
-impl Validate for SpotifyUri {
-    type Output = ValidSpotifyUri;
+// Declare this as a GraphQL scalar
+scalar!(SpotifyUri);
 
-    /// Parse the raw Spotify ID into an item type+ID. See
-    /// https://developer.spotify.com/documentation/web-api/ for a description
-    /// of URIs.
-    fn validate(
-        self,
-        field: &str,
-    ) -> Result<Self::Output, InputValidationError> {
+impl From<SpotifyUri> for String {
+    fn from(uri: SpotifyUri) -> Self {
+        uri.to_string()
+    }
+}
+
+impl From<&SpotifyUri> for Bson {
+    fn from(uri: &SpotifyUri) -> Self {
+        uri.to_string().into()
+    }
+}
+
+impl TryFrom<String> for SpotifyUri {
+    type Error = InputValidationError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         // Expect URIs of the format "spotify:<type>:<id>"
         // We have to generate errors as strings first, then map to a proper
         // error type, cause borrowck
-        let parsed: Result<ValidSpotifyUri, String> =
-            match self.0.split(':').collect::<Vec<&str>>().as_slice() {
+        let parsed: Result<SpotifyUri, String> =
+            match value.split(':').collect::<Vec<&str>>().as_slice() {
                 ["spotify", item_type, id] => {
                     // Parse item type. It's possible we get a valid item type
                     // that we just don't support, just going to treat those
                     // as invalid for now.
                     match item_type.parse::<SpotifyItemType>() {
-                        Ok(item_type) => Ok(ValidSpotifyUri {
+                        Ok(item_type) => Ok(SpotifyUri {
                             item_type,
                             id: (*id).into(),
                         }),
@@ -278,39 +286,31 @@ impl Validate for SpotifyUri {
                 _ => Err("Invalid Spotify URI: invalid format".into()),
             };
         parsed.map_err(|message| InputValidationError {
-            field: field.into(),
+            // This is kinda bullshit but just assume the field name. Most of
+            // the time, we're going to be using this when
+            // deserializing from the Spotify API or DB so the field
+            // name matches
+            field: "uri".into(),
             message,
-            value: self.0.into(),
+            value: value.into(),
             backtrace: Backtrace::capture(),
         })
     }
 }
 
-impl From<&ValidSpotifyUri> for SpotifyUri {
-    fn from(uri: &ValidSpotifyUri) -> Self {
-        SpotifyUri(uri.to_string())
-    }
-}
-
-impl From<ValidSpotifyUri> for String {
-    fn from(uri: ValidSpotifyUri) -> Self {
-        uri.to_string()
-    }
-}
-
-impl From<&ValidSpotifyUri> for Bson {
-    fn from(uri: &ValidSpotifyUri) -> Self {
-        uri.to_string().into()
-    }
-}
-
-impl TryFrom<String> for ValidSpotifyUri {
-    type Error = InputValidationError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        // This is kinda bullshit but just assume the field name. Most of the
-        // time, we're going to be using this when deserializing from the
-        // Spotify API or DB so the field name matches
-        SpotifyUri(value).validate("uri")
-    }
+/// An item is a polymorphic type that includes anything that can be fetched
+/// from Spotify and tagged in the API.
+#[derive(Clone, Debug, Deserialize, Interface)]
+#[graphql(
+    field(name = "externalUrls", type = "ExternalUrls"),
+    field(name = "href", type = "String"),
+    field(name = "id", type = "String"),
+    field(name = "uri", type = "SpotifyUri")
+)]
+#[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)] // don't change external API for micro-opt
+pub enum Item {
+    Track(Track),
+    Album(AlbumSimplified),
+    Artist(Artist),
 }

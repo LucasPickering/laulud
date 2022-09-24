@@ -6,19 +6,17 @@
 //! The Spotify API has really good docs at
 //! https://developer.spotify.com/documentation/web-api/reference/
 
-mod internal;
 mod types;
 
 pub use types::*;
 
 use crate::{
     error::{ApiError, ApiResult},
-    graphql::Item,
-    spotify::internal::ItemDeserialize,
+    spotify::types::Item,
     util::{IdentityState, OAuthHandler},
 };
+use futures::future::try_join_all;
 use itertools::Itertools;
-use juniper::futures::future::try_join_all;
 use log::{debug, trace};
 use oauth2::basic::BasicClient;
 use reqwest::{
@@ -178,21 +176,8 @@ impl Spotify {
             query_params.push(("offset", offset.to_string()));
         }
 
-        let responses: HashMap<String, PaginatedResponse<ItemDeserialize>> =
+        let responses: HashMap<String, PaginatedResponse<Item>> =
             self.get_endpoint("/v1/search", &query_params).await?;
-        // Map each ItemDeserialize to an Item. Check the ItemDeserialize doc
-        // comment for an explanation of the difference (there isn't much).
-        let responses = responses
-            .into_iter()
-            .map(|(item_type, paginated_response)| {
-                (
-                    item_type,
-                    paginated_response.map_items(|items| {
-                        items.into_iter().map(Item::from).collect()
-                    }),
-                )
-            })
-            .collect();
         Ok(responses)
     }
 
@@ -201,10 +186,7 @@ impl Spotify {
     /// iff the URI does not exist in Spotify (i.e. Spotify returned a 404).
     /// This makes the method more usable in GraphQL, where missing resources
     /// are typically returned as null.
-    pub async fn get_item(
-        &self,
-        uri: &ValidSpotifyUri,
-    ) -> ApiResult<Option<Item>> {
+    pub async fn get_item(&self, uri: &SpotifyUri) -> ApiResult<Option<Item>> {
         let result = match uri.item_type() {
             // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
             SpotifyItemType::Track => self
@@ -261,7 +243,7 @@ impl Spotify {
     /// invalid/non-matching URIs.
     pub async fn get_items(
         &self,
-        uris: impl Iterator<Item = &ValidSpotifyUri>,
+        uris: impl Iterator<Item = &SpotifyUri>,
     ) -> ApiResult<Vec<Item>> {
         // Group URIs by type so we can make one request per type
         let ids_by_type: HashMap<SpotifyItemType, Vec<&str>> =

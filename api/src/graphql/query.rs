@@ -9,7 +9,7 @@ use crate::{
         SpotifyUri, Tag, TagConnection, TagNode, TaggedItemConnection,
         TaggedItemNode, ValidTag,
     },
-    spotify::{PaginatedResponse, PrivateUser, ValidSpotifyUri},
+    spotify::{PaginatedResponse, PrivateUser, SpotifyUri},
     util::Validate,
 };
 use juniper::{futures::StreamExt, Executor};
@@ -43,7 +43,7 @@ impl QueryFields for Query {
             NodeType::TaggedItemNode => {
                 // For items, the value ID is the URI. Look up the item in the
                 // Spotify API
-                let item_uri: ValidSpotifyUri =
+                let item_uri: SpotifyUri =
                     SpotifyUri(value_id).validate("id")?;
                 let item_opt = context.spotify.get_item(&item_uri).await?;
                 item_opt.map(|item| TaggedItemNode { item, tags: None }.into())
