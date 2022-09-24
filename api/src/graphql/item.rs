@@ -4,13 +4,11 @@ use crate::{
     error::ApiResult,
     graphql::{
         internal::GenericEdge, Cursor, Item, ItemSearchFields, Node, PageInfo,
-        RequestContext, TagConnection, TaggedItemConnectionFields,
-        TaggedItemEdgeFields, TaggedItemNodeFields, ValidTag,
+        RequestContext, Tag, TagConnection,
     },
     spotify::{PaginatedResponse, SpotifyUri},
 };
-use juniper::{futures::TryStreamExt, Executor};
-use juniper_from_schema::{QueryTrail, Walked};
+use async_graphql::{Context, Object};
 use mongodb::bson::doc;
 
 /// A Spotify item with its applied tags. The item is always preloaded while the
@@ -23,33 +21,23 @@ pub struct TaggedItemNode {
     /// [TagConnection], which will only load data as needed. `Some` means the
     /// tags are all preloaded and [TagConnection] won't have to make any
     /// queries for its field resolutions.
-    pub tags: Option<Vec<ValidTag>>,
+    pub tags: Option<Vec<Tag>>,
 }
 
-impl TaggedItemNodeFields for TaggedItemNode {
-    fn field_id(
-        &self,
-        executor: &Executor<'_, '_, RequestContext>,
-    ) -> juniper::ID {
+#[Object]
+impl TaggedItemNode {
+    async fn id(&self, ctx: &Context<'_>) -> async_graphql::ID {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
-        node.id(&executor.context().user_id)
+        node.id(&ctx.data::<RequestContext>().user_id)
     }
 
-    fn field_item(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, Item, Walked>,
-    ) -> &Item {
+    async fn item(&self) -> &Item {
         &self.item
     }
 
-    fn field_tags(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TagConnection, Walked>,
-    ) -> TagConnection {
+    async fn tags(&self) -> TagConnection {
         // If we've already loaded the tags for this item, then we can pass them
         // to the TagConnection and skip a DB query. In some scenarios (e.g.
         // mutations), we can preload tags for free, but in others we
@@ -65,19 +53,13 @@ impl TaggedItemNodeFields for TaggedItemNode {
 
 pub type TaggedItemEdge = GenericEdge<TaggedItemNode>;
 
-impl TaggedItemEdgeFields for TaggedItemEdge {
-    fn field_node(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemNode, Walked>,
-    ) -> &TaggedItemNode {
+#[Object]
+impl TaggedItemEdge {
+    async fn node(&self) -> &TaggedItemNode {
         self.node()
     }
 
-    fn field_cursor(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &Cursor {
+    async fn cursor(&self) -> &Cursor {
         self.cursor()
     }
 }
@@ -114,7 +96,7 @@ pub enum TaggedItemConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByTag { tag: ValidTag },
+    ByTag { tag: Tag },
 }
 
 #[rocket::async_trait]

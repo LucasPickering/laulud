@@ -5,7 +5,7 @@ use crate::{
     graphql::{
         core::PageInfo, internal::GenericEdge, item::TaggedItemConnection,
         Cursor, Node, RequestContext, Tag, TagConnectionFields, TagEdgeFields,
-        TagNodeFields, ValidTag,
+        TagNodeFields,
     },
     spotify::SpotifyUri,
 };
@@ -18,7 +18,7 @@ use juniper_from_schema::{QueryTrail, Walked};
 /// when requested).
 #[derive(Clone, Debug)]
 pub struct TagNode {
-    pub tag: ValidTag,
+    pub tag: Tag,
     /// `None` means lazy-load the list of item URIs. This will map to a lazy
     /// version of [TaggedItemConnection], which will only load the list of
     /// items as needed. `Some` means the list of item URIs is preloaded
@@ -34,7 +34,7 @@ impl TagNodeFields for TagNode {
     fn field_id(
         &self,
         executor: &Executor<'_, '_, RequestContext>,
-    ) -> juniper::ID {
+    ) -> async_graphql::ID {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
@@ -98,7 +98,7 @@ pub enum TagConnection {
     /// This variant should be used whenever tag data is already present, but
     /// you shouldn't prefetch data just for the purposes of using this
     /// variant. In those cases, use one of the lazily loaded variants instead.
-    Preloaded { tags: Vec<ValidTag> },
+    Preloaded { tags: Vec<Tag> },
 
     /// Lazily load tag data for **all** tags defined by this user. The list of
     /// tags that this user has created will be fetched lazily, as needed.
@@ -183,7 +183,7 @@ impl TagConnectionFields for TagConnection {
 
         // Get a list of raw tags, whether it's pre-loaded or we have to go
         // to the DB
-        let tags: Vec<ValidTag> = match self {
+        let tags: Vec<Tag> = match self {
             // Tags have been loaded eagerly, so no I/O required here
             Self::Preloaded { tags } => tags.clone(),
 
