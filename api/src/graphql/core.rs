@@ -2,7 +2,7 @@
 //! any particular data type
 
 use crate::graphql::{
-    internal::ValidCursor, Cursor, PageInfoFields, RequestContext,
+    internal::Cursor, Cursor, PageInfoFields, RequestContext,
 };
 
 /// GQL type to display information about a page of data. See the Relay
@@ -25,7 +25,7 @@ impl PageInfoFields for PageInfo {
         _executor: &Executor<'_, '_, RequestContext>,
     ) -> Option<Cursor> {
         if self.page_len > 0 {
-            Some(ValidCursor::from_offset_index(self.offset, 0).into())
+            Some(Cursor::from_offset_index(self.offset, 0).into())
         } else {
             None
         }
@@ -38,7 +38,7 @@ impl PageInfoFields for PageInfo {
     ) -> Option<Cursor> {
         if self.page_len > 0 {
             Some(
-                ValidCursor::from_offset_index(self.offset, self.page_len - 1)
+                Cursor::from_offset_index(self.offset, self.page_len - 1)
                     .into(),
             )
         } else {

@@ -7,7 +7,7 @@ use crate::{
         internal::{LimitOffset, NodeType},
         Cursor, Item, ItemSearch, Node, QueryFields, RequestContext,
         SpotifyUri, Tag, TagConnection, TagNode, TaggedItemConnection,
-        TaggedItemNode, ValidTag,
+        TaggedItemNode,
     },
     spotify::{PaginatedResponse, PrivateUser, SpotifyUri},
     util::Validate,
@@ -27,7 +27,7 @@ impl QueryFields for Query {
         &'s self,
         executor: &Executor<'r, 'a, RequestContext>,
         _trail: &QueryTrail<'r, Node, Walked>,
-        id: juniper::ID,
+        id: async_graphql::ID,
     ) -> ApiResult<Option<Node>> {
         let context = executor.context();
         let (node_type, value_id, user_id) = NodeType::parse_id(&id)
@@ -49,7 +49,7 @@ impl QueryFields for Query {
                 item_opt.map(|item| TaggedItemNode { item, tags: None }.into())
             }
             NodeType::TagNode => {
-                let tag: ValidTag = Tag(value_id).validate("id")?;
+                let tag: Tag = Tag(value_id).validate("id")?;
                 Some(
                     TagNode {
                         tag,

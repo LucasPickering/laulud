@@ -6,18 +6,13 @@
 
 use crate::{
     error::{InputValidationError, ParseError},
-    graphql::{Cursor, Item, Node, Tag},
-    spotify::SpotifyUri,
     util::{UserId, Validate},
 };
+use async_graphql::scalar;
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
-use std::{
-    backtrace::Backtrace,
-    convert::{TryFrom, TryInto},
-    str::FromStr,
-};
+use std::{backtrace::Backtrace, convert::TryInto, str::FromStr};
 
 // region: Pagination
 
@@ -28,12 +23,16 @@ use std::{
 /// practice is to immediately convert any user-provided [Cursor] to a
 /// [ValidCursor], then pass around the [ValidCursor] internally as needed.
 /// To convert back to a [Cursor], use the [From] implementation.
-#[derive(Clone, Debug)]
-pub struct ValidCursor {
+#[derive(Copy, Clone, Debug, Display, Serialize, Deserialize)]
+// TODO use a fancy encoding here like hex or base64 to look cool
+#[display(fmt="{}", self.offset)]
+pub struct Cursor {
     offset: usize,
 }
 
-impl ValidCursor {
+scalar!(Cursor);
+
+impl Cursor {
     /// Get the pre-parsed offset for this cursor. A cursor is just an
     /// obfuscated number that indicates the element's offset into the
     /// collection. These offsets can be used with Spotify or Mongo to find
@@ -53,33 +52,20 @@ impl ValidCursor {
     }
 }
 
-impl Validate for Cursor {
-    type Output = ValidCursor;
+impl FromStr for Cursor {
+    type Err = InputValidationError;
 
-    fn validate(
-        self,
-        field: &str,
-    ) -> Result<Self::Output, InputValidationError> {
+    fn from_str(value: &str) -> Result<Self::Output, InputValidationError> {
         // Parse the string as a plain number
         let offset =
-            self.0.parse::<usize>().map_err(|_| InputValidationError {
-                // That's the big NG
-                field: field.into(),
+            value.parse::<usize>().map_err(|_| InputValidationError {
+                // TODO we shouldn't need this
+                field: "id".into(),
                 message: "Invalid pagination cursor".into(),
-                value: self.0.into(),
+                value: value.into(),
                 backtrace: Backtrace::capture(),
             })?;
-        Ok(ValidCursor { offset })
-    }
-}
-
-// Convert this internal-only cursor into a stringified cursor that can be
-// returned to the user
-impl From<ValidCursor> for Cursor {
-    fn from(valid_cursor: ValidCursor) -> Self {
-        // Right now we just stringify the offset
-        // TODO use a fancy encoding here like hex or base64 to look cool
-        Self(valid_cursor.offset.to_string())
+        Ok(Cursor { offset })
     }
 }
 
@@ -155,6 +141,9 @@ impl LimitOffset {
 
 // region: Node
 
+#[derive(Copy, Clone, Debug)]
+pub struct Node;
+
 impl Node {
     /// Get a unique ID for this node. Because Relay requires a top-level
     /// query field `node` that can take in a node ID of _any_ type and
@@ -166,14 +155,17 @@ impl Node {
     /// IDs use the format `<node_type>_<value_id>_<user_id>`, where `value_id`
     /// is some string that unique indentifies the node **within its type**.
     /// For example, for an item node it could be the URI.
-    pub fn id(&self, user_id: &UserId) -> juniper::ID {
+    pub fn id(&self, user_id: &UserId) -> async_graphql::ID {
         let node_type = self.node_type();
         let value_id = match self {
             Self::TaggedItemNode(node) => node.item.uri().to_string(),
             Self::TagNode(node) => node.tag.tag().to_string(),
         };
 
-        juniper::ID::new(format!("{}_{}_{}", node_type, value_id, user_id))
+        async_graphql::ID::new(format!(
+            "{}_{}_{}",
+            node_type, value_id, user_id
+        ))
     }
 
     /// Map this node to its simplified [NodeType]. [NodeType] has all the same
@@ -201,7 +193,7 @@ impl NodeType {
     /// Parse a GraphQL node ID into its components. See [Node::id] for a
     /// description of the ID format.
     pub fn parse_id(
-        id: &juniper::ID,
+        id: &async_graphql::ID,
     ) -> Result<(Self, String, UserId), ParseError> {
         match id.split('_').collect::<Vec<&str>>().as_slice() {
             [node_type, value_id, user_id] => Ok((
@@ -230,32 +222,6 @@ impl FromStr for NodeType {
                 value: s.into(),
                 backtrace: Backtrace::capture(),
             }),
-        }
-    }
-}
-// endregion
-
-// region: Item
-impl Item {
-    /// Get the URI for this item
-    pub fn uri(&self) -> &SpotifyUri {
-        match self {
-            Self::Track(track) => &track.uri,
-            Self::AlbumSimplified(album) => &album.uri,
-            Self::Artist(artist) => &artist.uri,
-        }
-    }
-}
-
-// TODO replace with derive after https://github.com/davidpdrsn/juniper-from-schema/issues/139
-impl Clone for Item {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Track(track) => Self::Track(track.clone()),
-            Self::AlbumSimplified(album) => {
-                Self::AlbumSimplified(album.clone())
-            }
-            Self::Artist(artist) => Self::Artist(artist.clone()),
         }
     }
 }
@@ -291,7 +257,7 @@ impl<N> GenericEdge<N> {
         rows.enumerate()
             .map(|(index, node)| Self {
                 node,
-                cursor: ValidCursor::from_offset_index(offset, index).into(),
+                cursor: Cursor::from_offset_index(offset, index).into(),
             })
             .collect()
     }
@@ -304,7 +270,7 @@ impl<N> From<N> for GenericEdge<N> {
         Self {
             node,
             // Use a bullshit cursor, this seems to work so ¯\_(ツ)_/¯
-            cursor: ValidCursor::from_offset_index(0, 0).into(),
+            cursor: Cursor::from_offset_index(0, 0).into(),
         }
     }
 }
@@ -315,62 +281,38 @@ impl<N> From<N> for GenericEdge<N> {
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 #[display(fmt = "{}", tag)]
 #[serde(try_from = "String", into = "String")]
-pub struct ValidTag {
+pub struct Tag {
     tag: String,
 }
 
-impl ValidTag {
+scalar!(Tag);
+
+impl Tag {
     pub fn tag(&self) -> &str {
         &self.tag
     }
 }
 
-impl Validate for Tag {
-    type Output = ValidTag;
+impl FromStr for Tag {
+    type Err = InputValidationError;
 
     /// Make sure the tag is non-empty
-    fn validate(
-        self,
-        field: &str,
-    ) -> Result<Self::Output, InputValidationError> {
-        if self.0.is_empty() {
+    fn from_str(value: &str) -> Result<Self::Output, Self::Err> {
+        if value.is_empty() {
             Err(InputValidationError {
-                field: field.into(),
+                field: "tag".into(), // TODO we shouldn't need this
                 message: "Tag cannot be empty".into(),
-                value: self.0.into(),
+                value: value.into(),
                 backtrace: Backtrace::capture(),
             })
         } else {
-            Ok(ValidTag { tag: self.0 })
+            Ok(Tag { tag: value.into() })
         }
     }
 }
 
-impl From<&ValidTag> for Tag {
-    fn from(tag: &ValidTag) -> Self {
-        Tag(tag.to_string())
-    }
-}
-
-impl From<ValidTag> for String {
-    fn from(tag: ValidTag) -> Self {
-        tag.to_string()
-    }
-}
-
-impl From<&ValidTag> for Bson {
-    fn from(uri: &ValidTag) -> Self {
+impl From<&Tag> for Bson {
+    fn from(uri: &Tag) -> Self {
         uri.to_string().into()
-    }
-}
-
-impl TryFrom<String> for ValidTag {
-    type Error = InputValidationError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        // This is kinda bullshit but just assume the field name. Most of the
-        // time, we're going to be using this when deserializing from the
-        // Spotify API or DB so the field name matches
-        Tag(value).validate("tag")
     }
 }

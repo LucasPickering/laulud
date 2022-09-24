@@ -7,7 +7,7 @@ use async_graphql::{scalar, Interface, ScalarType, SimpleObject};
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
-use std::{backtrace::Backtrace, convert::TryFrom, str::FromStr};
+use std::{backtrace::Backtrace, str::FromStr};
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
 #[derive(Clone, Debug, Deserialize, SimpleObject)]
@@ -258,10 +258,10 @@ impl From<&SpotifyUri> for Bson {
     }
 }
 
-impl TryFrom<String> for SpotifyUri {
-    type Error = InputValidationError;
+impl FromStr for SpotifyUri {
+    type Err = InputValidationError;
 
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Expect URIs of the format "spotify:<type>:<id>"
         // We have to generate errors as strings first, then map to a proper
         // error type, cause borrowck
