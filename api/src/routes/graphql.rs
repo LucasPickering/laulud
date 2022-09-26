@@ -1,8 +1,8 @@
 use crate::{
+    auth::UserId,
     db::DbHandler,
     graphql::{GraphQLSchema, RequestContext},
     spotify::Spotify,
-    util::UserId,
 };
 use async_graphql::http::GraphiQLSource;
 use async_graphql_rocket::{GraphQLRequest, GraphQLResponse};

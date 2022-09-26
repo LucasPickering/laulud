@@ -1,7 +1,7 @@
 use crate::{
+    auth::{AuthenticationToken, IdentityState, OAuthHandler, UserId},
     error::ApiResult,
     spotify::Spotify,
-    util::{AuthenticationToken, IdentityState, OAuthHandler, UserId},
 };
 use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken};
 use rocket::{get, http::CookieJar, post, response::Redirect, State};

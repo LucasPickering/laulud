@@ -2,12 +2,12 @@
 //! relate closely to the Spotify API. Everything in this module will be
 //! exported to the entire crate!
 
-use crate::error::{InputValidationError, ParseError};
+use crate::error::ParseError;
 use async_graphql::{scalar, Interface, ScalarType, SimpleObject};
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
-use std::{backtrace::Backtrace, str::FromStr};
+use std::str::FromStr;
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
 #[derive(Clone, Debug, Deserialize, SimpleObject)]
@@ -210,7 +210,6 @@ impl FromStr for SpotifyItemType {
             _ => Err(ParseError {
                 message: "Unknown Spotify object type".into(),
                 value: s.into(),
-                backtrace: Backtrace::capture(),
             }),
         }
     }
@@ -259,7 +258,7 @@ impl From<&SpotifyUri> for Bson {
 }
 
 impl FromStr for SpotifyUri {
-    type Err = InputValidationError;
+    type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Expect URIs of the format "spotify:<type>:<id>"
@@ -285,15 +284,9 @@ impl FromStr for SpotifyUri {
                 }
                 _ => Err("Invalid Spotify URI: invalid format".into()),
             };
-        parsed.map_err(|message| InputValidationError {
-            // This is kinda bullshit but just assume the field name. Most of
-            // the time, we're going to be using this when
-            // deserializing from the Spotify API or DB so the field
-            // name matches
-            field: "uri".into(),
+        parsed.map_err(|message| ParseError {
             message,
             value: value.into(),
-            backtrace: Backtrace::capture(),
         })
     }
 }

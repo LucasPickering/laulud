@@ -22,9 +22,10 @@ mod tag;
 pub use crate::graphql::{
     core::*, internal::*, item::*, mutation::*, query::*, tag::*,
 };
-use crate::{db::DbHandler, spotify::Spotify, util::UserId};
+use crate::{auth::UserId, db::DbHandler, spotify::Spotify};
 use async_graphql::{EmptySubscription, Schema};
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
+use tokio::fs::File;
 
 // This file holds GraphQL setup/implementation details, but no external GraphQL
 // types
@@ -42,6 +43,10 @@ pub struct RequestContext {
 
 pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
 
-pub fn create_graphql_schema() -> GraphQLSchema {
-    GraphQLSchema::build(Query, Mutation, EmptySubscription)
+/// Create GraphQL schema object and export it to an external file
+pub async fn create_graphql_schema(export_path: &Path) -> GraphQLSchema {
+    let schema = GraphQLSchema::build(Query, Mutation, EmptySubscription);
+    let mut file = File::create(export_path)?;
+    file.write_all(schema.sdl())?;
+    schema
 }

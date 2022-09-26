@@ -2,34 +2,30 @@
 //! should be defined elsewhere.
 
 use crate::{
-    error::{ApiError, ApiResult, InputValidationError},
+    error::{ApiError, ApiResult},
     graphql::{
         internal::{LimitOffset, NodeType},
-        Cursor, Item, ItemSearch, Node, QueryFields, RequestContext,
-        SpotifyUri, Tag, TagConnection, TagNode, TaggedItemConnection,
-        TaggedItemNode,
+        Cursor, ItemSearch, Node, RequestContext, Tag, TagConnection, TagNode,
+        TaggedItemConnection, TaggedItemNode,
     },
-    spotify::{PaginatedResponse, PrivateUser, SpotifyUri},
-    util::Validate,
+    spotify::{Item, PaginatedResponse, PrivateUser, SpotifyUri},
 };
-use juniper::{futures::StreamExt, Executor};
-use juniper_from_schema::{QueryTrail, Walked};
+use async_graphql::{Context, Object};
 use mongodb::bson::doc;
 use std::backtrace::Backtrace;
 
 /// Root GraphQL query
 pub struct Query;
 
-#[rocket::async_trait]
-impl QueryFields for Query {
+#[Object]
+impl Query {
     /// Get a node of any type by UUID.
-    async fn field_node<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, Node, Walked>,
+    async fn node(
+        &self,
+        context: &Context<'_>,
         id: async_graphql::ID,
     ) -> ApiResult<Option<Node>> {
-        let context = executor.context();
+        let context = context.data::<RequestContext>();
         let (node_type, value_id, user_id) = NodeType::parse_id(&id)
             .map_err(|err| err.into_input_validation_error("id".into()))?;
 
@@ -43,13 +39,12 @@ impl QueryFields for Query {
             NodeType::TaggedItemNode => {
                 // For items, the value ID is the URI. Look up the item in the
                 // Spotify API
-                let item_uri: SpotifyUri =
-                    SpotifyUri(value_id).validate("id")?;
+                let item_uri: SpotifyUri = value_id.parse()?;
                 let item_opt = context.spotify.get_item(&item_uri).await?;
                 item_opt.map(|item| TaggedItemNode { item, tags: None }.into())
             }
             NodeType::TagNode => {
-                let tag: Tag = Tag(value_id).validate("id")?;
+                let tag: Tag = Tag::new(value_id).validate("id")?;
                 Some(
                     TagNode {
                         tag,
@@ -62,21 +57,23 @@ impl QueryFields for Query {
         Ok(node)
     }
 
-    async fn field_current_user<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, PrivateUser, Walked>,
+    async fn current_user(
+        &self,
+        context: &Context<'_>,
     ) -> ApiResult<PrivateUser> {
-        executor.context().spotify.get_current_user().await
+        context
+            .data::<RequestContext>()
+            .spotify
+            .get_current_user()
+            .await
     }
 
-    async fn field_item<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, TaggedItemNode, Walked>,
+    async fn item(
+        &self,
+        context: &Context<'_>,
         uri: SpotifyUri,
     ) -> ApiResult<Option<TaggedItemNode>> {
-        let context = executor.context();
+        let context = context.data::<RequestContext>();
         let uri = uri.validate("uri")?;
         // Fetch the item from Spotify
         let node = context
@@ -91,26 +88,16 @@ impl QueryFields for Query {
     /// their type, which is how we get the data from Spotify. This only touches
     /// the Spotify API (not the DB), meaning we defer loading tags down the
     /// line.
-    async fn field_item_search<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, ItemSearch, Walked>,
-        query: String,
+    async fn item_search(
+        &self,
+        context: &Context<'_>,
+        #[graphql(validator(min_length = 1))] query: String,
         first: Option<i32>,
         after: Option<Cursor>,
     ) -> ApiResult<ItemSearch> {
-        let context = executor.context();
+        let context = context.data::<RequestContext>();
 
         // Validate params
-        if query.is_empty() {
-            return Err(InputValidationError {
-                field: "query".into(),
-                message: "Search query must not be empty".into(),
-                value: query.into(),
-                backtrace: Backtrace::capture(),
-            }
-            .into());
-        }
         let limit_offset = LimitOffset::try_from_first_after(first, after)?;
 
         // Run the search query through spotify. This returns a mapping of
@@ -161,24 +148,15 @@ impl QueryFields for Query {
     }
 
     /// Get all tags. These are loaded lazily by [TagConnection]
-    fn field_tags<'s, 'r, 'a>(
-        &'s self,
-        _executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, TagConnection, Walked>,
-    ) -> TagConnection {
+    async fn tags(&self) -> TagConnection {
         TagConnection::All
     }
 
     /// Get info for a particular tag. If the tag doesn't exist in the DB, we'll
     /// pretend like it does and just return a node with no tagged items. Item
     /// data will be loaded lazily, when requested from [TaggedItemConnection].
-    async fn field_tag<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, TagNode, Walked>,
-        tag: Tag,
-    ) -> ApiResult<TagNode> {
-        let context = executor.context();
+    async fn tag(&self, context: &Context<'_>, tag: Tag) -> ApiResult<TagNode> {
+        let context = context.data::<RequestContext>();
         let tag = tag.validate("tag")?;
 
         // Look up the relevant items in the DB
@@ -193,7 +171,7 @@ impl QueryFields for Query {
             item_uris.push(doc?.uri);
         }
 
-        // The rest of the item's data will be loaded lazily by
+        // The rest of the item data will be loaded lazily by
         // TaggedItemConnection
         Ok(TagNode {
             tag,
