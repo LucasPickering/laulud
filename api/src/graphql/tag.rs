@@ -4,13 +4,11 @@ use crate::{
     error::ApiResult,
     graphql::{
         core::PageInfo, internal::GenericEdge, item::TaggedItemConnection,
-        Cursor, Node, RequestContext, Tag, TagConnectionFields, TagEdgeFields,
-        TagNodeFields,
+        Cursor, Node, RequestContext, Tag,
     },
     spotify::SpotifyUri,
 };
-use juniper::Executor;
-use juniper_from_schema::{QueryTrail, Walked};
+use async_graphql::{Context, Object};
 
 /// A user-defined tag. Tags have a many-to-many relationship with Spotify
 /// items, and all tag data is stored in the local DB. The items associated
@@ -30,28 +28,23 @@ pub struct TagNode {
     pub item_uris: Option<Vec<SpotifyUri>>,
 }
 
-impl TagNodeFields for TagNode {
-    fn field_id(
-        &self,
-        executor: &Executor<'_, '_, RequestContext>,
-    ) -> async_graphql::ID {
+#[Object]
+impl TagNode {
+    async fn id(&self, context: &Context<'_>) -> async_graphql::ID {
+        let user_id = context.data::<RequestContext>()?.user_id;
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
-        node.id(&executor.context().user_id)
+        node.id(&user_id)
     }
 
-    fn field_tag(&self, _executor: &Executor<'_, '_, RequestContext>) -> Tag {
+    async fn tag(&self) -> Tag {
         (&self.tag).into()
     }
 
     /// Lazily fetch items for this tag node
     /// TODO support pagination on this
-    fn field_items(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemConnection, Walked>,
-    ) -> TaggedItemConnection {
+    async fn items(&self) -> TaggedItemConnection {
         match &self.item_uris {
             // We have URIs already, so we can skip the DB query to fetch them
             Some(item_uris) => TaggedItemConnection::ByUris {
@@ -66,22 +59,17 @@ impl TagNodeFields for TagNode {
     }
 }
 
-pub type TagEdge = GenericEdge<TagNode>;
+#[derive(Clone, Debug)]
+pub struct TagEdge(GenericEdge<TagNode>);
 
-impl TagEdgeFields for TagEdge {
-    fn field_node(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TagNode, Walked>,
-    ) -> &TagNode {
-        self.node()
+#[Object]
+impl TagEdge {
+    async fn node(&self) -> &TagNode {
+        self.0.node()
     }
 
-    fn field_cursor(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-    ) -> &Cursor {
-        self.cursor()
+    async fn cursor(&self) -> &Cursor {
+        self.0.cursor()
     }
 }
 
@@ -92,7 +80,7 @@ impl TagEdgeFields for TagEdge {
 pub enum TagConnection {
     /// The list of tags is preloaded from the DB. The first level of
     /// field resolutions for this variant will be immediate, and not require
-    /// any I/O (nested fields may require additional I/O, but that's beyond
+    /// any I/O (nested fields may require additional I/O, but that beyond
     /// the concern of this struct).
     ///
     /// This variant should be used whenever tag data is already present, but
@@ -115,17 +103,14 @@ pub enum TagConnection {
     ByItem { item_uri: SpotifyUri },
 }
 
-#[rocket::async_trait]
-impl TagConnectionFields for TagConnection {
-    async fn field_total_count<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-    ) -> ApiResult<i32> {
-        let context = executor.context();
+#[Object]
+impl TagConnection {
+    async fn total_count(&self, context: &Context<'_>) -> ApiResult<usize> {
+        let context = context.data::<RequestContext>()?;
         let collection = context.db_handler.collection_tagged_items();
 
         let total_count = match self {
-            Self::Preloaded { tags } => tags.len().try_into()?,
+            Self::Preloaded { tags } => tags.len(),
             // Count all tags in the DB for this user
             Self::All => {
                 collection.count_tags(&context.user_id).await?.try_into()?
@@ -140,11 +125,7 @@ impl TagConnectionFields for TagConnection {
         Ok(total_count)
     }
 
-    async fn field_page_info<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, PageInfo, Walked>,
-    ) -> ApiResult<PageInfo> {
+    async fn page_info(&self, context: &Context<'_>) -> ApiResult<PageInfo> {
         // We don't actually support paginating through tags in any way yet,
         // so the offset is always 0 on these
         let page_info = match self {
@@ -158,7 +139,7 @@ impl TagConnectionFields for TagConnection {
             // This variant doesn't support pagination, so offset is always 0
             Self::All { .. } | Self::ByItem { .. } => {
                 // In either case, this will hit the DB to count matches
-                let total_count = self.field_total_count(executor).await?;
+                let total_count = self.total_count(&context, 3).await?;
                 PageInfo {
                     offset: 0,
                     // This conversion _shouldn't_ ever fail, but better safe
@@ -173,15 +154,11 @@ impl TagConnectionFields for TagConnection {
         Ok(page_info)
     }
 
-    async fn field_edges<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, TagEdge, Walked>,
-    ) -> ApiResult<Vec<TagEdge>> {
-        let context = executor.context();
+    async fn edges(&self, context: &Context<'_>) -> ApiResult<Vec<TagEdge>> {
+        let context = context.data::<RequestContext>()?;
         let collection = context.db_handler.collection_tagged_items();
 
-        // Get a list of raw tags, whether it's pre-loaded or we have to go
+        // Get a list of raw tags, whether it pre-loaded or we have to go
         // to the DB
         let tags: Vec<Tag> = match self {
             // Tags have been loaded eagerly, so no I/O required here

@@ -1,5 +1,5 @@
 use crate::{
-    error::ApiResult, graphql::Tag, spotify::SpotifyUri, util::UserId,
+    auth::UserId, error::ApiResult, graphql::Tag, spotify::SpotifyUri,
     LauludConfig,
 };
 use derive_more::{Deref, From};

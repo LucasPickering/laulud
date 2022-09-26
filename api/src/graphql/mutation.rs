@@ -3,14 +3,11 @@
 use crate::{
     error::{ApiError, ApiResult},
     graphql::{
-        AddTagInput, AddTagPayloadFields, DeleteTagInput,
-        DeleteTagPayloadFields, MutationFields, RequestContext, TagEdge,
-        TagNode, TaggedItemEdge, TaggedItemNode,
+        RequestContext, Tag, TagEdge, TagNode, TaggedItemEdge, TaggedItemNode,
     },
-    util::Validate,
+    spotify::SpotifyUri,
 };
-use juniper::Executor;
-use juniper_from_schema::{QueryTrail, Walked};
+use async_graphql::{InputObject, Object, SimpleObject};
 use mongodb::{
     bson::doc,
     options::{FindOneAndUpdateOptions, ReturnDocument},
@@ -20,19 +17,12 @@ use std::backtrace::Backtrace;
 /// Root GraphQL mutation
 pub struct Mutation;
 
-#[rocket::async_trait]
-impl MutationFields for Mutation {
-    async fn field_add_tag<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, AddTagPayload, Walked>,
-        input: AddTagInput,
-    ) -> ApiResult<AddTagPayload> {
+#[Object]
+impl Mutation {
+    async fn add_tag(&self, input: AddTagInput) -> ApiResult<AddTagPayload> {
         let context = executor.context();
-        let tag = input.tag.validate("tag")?;
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
-        let uri = input.item_uri.validate("input.item_uri")?;
         let item_node = match context.spotify.get_item(&uri).await? {
             Some(spotify_item) => {
                 // Do the update query
@@ -78,10 +68,8 @@ impl MutationFields for Mutation {
         })
     }
 
-    async fn field_delete_tag<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, DeleteTagPayload, Walked>,
+    async fn delete_tag(
+        &self,
         input: DeleteTagInput,
     ) -> ApiResult<DeleteTagPayload> {
         let context = executor.context();
@@ -134,48 +122,30 @@ impl MutationFields for Mutation {
     }
 }
 
+/// Input for the `addTag` mutation
+#[derive(Clone, Debug, InputObject)]
+pub struct AddTagInput {
+    pub item_uri: SpotifyUri,
+    pub tag: Tag,
+}
+
+/// Output for the `addTag` mutation
+#[derive(Clone, Debug, SimpleObject)]
 pub struct AddTagPayload {
     pub item_edge: Option<TaggedItemEdge>,
     pub tag_edge: TagEdge,
 }
 
-impl AddTagPayloadFields for AddTagPayload {
-    fn field_item_edge(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemEdge, Walked>,
-    ) -> &Option<TaggedItemEdge> {
-        &self.item_edge
-    }
-
-    fn field_tag_edge(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TagEdge, Walked>,
-    ) -> &TagEdge {
-        &self.tag_edge
-    }
+/// Input for the `deleteTag` mutation
+#[derive(Clone, Debug, InputObject)]
+pub struct DeleteTagInput {
+    pub item_uri: SpotifyUri,
+    pub tag: Tag,
 }
 
+/// Output for the `deleteTag` mutation
+#[derive(Clone, Debug, SimpleObject)]
 pub struct DeleteTagPayload {
     pub item_edge: Option<TaggedItemEdge>,
     pub tag_edge: TagEdge,
-}
-
-impl DeleteTagPayloadFields for DeleteTagPayload {
-    fn field_item_edge(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemEdge, Walked>,
-    ) -> &Option<TaggedItemEdge> {
-        &self.item_edge
-    }
-
-    fn field_tag_edge(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TagEdge, Walked>,
-    ) -> &TagEdge {
-        &self.tag_edge
-    }
 }

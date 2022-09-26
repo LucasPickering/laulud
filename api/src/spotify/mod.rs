@@ -11,9 +11,8 @@ mod types;
 pub use types::*;
 
 use crate::{
+    auth::{IdentityState, OAuthHandler},
     error::{ApiError, ApiResult},
-    spotify::types::Item,
-    util::{IdentityState, OAuthHandler},
 };
 use futures::future::try_join_all;
 use itertools::Itertools;

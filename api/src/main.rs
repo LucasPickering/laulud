@@ -1,11 +1,9 @@
-#![feature(backtrace)]
-
+mod auth;
 mod db;
 mod error;
 mod graphql;
 mod routes;
 mod spotify;
-mod util;
 
 use crate::db::DbHandler;
 use oauth2::{
@@ -60,7 +58,7 @@ async fn main() {
 
     let db_handler = DbHandler::connect(&config).await.unwrap();
     let spotify_oauth_client = init_spotify_client(&config).await;
-    let graphql_schema = graphql::create_graphql_schema();
+    let graphql_schema = graphql::create_graphql_schema().await?;
 
     rocket
         .mount(

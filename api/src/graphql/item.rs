@@ -3,12 +3,12 @@ use std::convert::TryInto;
 use crate::{
     error::ApiResult,
     graphql::{
-        internal::GenericEdge, Cursor, Item, ItemSearchFields, Node, PageInfo,
-        RequestContext, Tag, TagConnection,
+        internal::GenericEdge, Cursor, Node, PageInfo, RequestContext, Tag,
+        TagConnection,
     },
-    spotify::{PaginatedResponse, SpotifyUri},
+    spotify::{Item, PaginatedResponse, SpotifyUri},
 };
-use async_graphql::{Context, Object};
+use async_graphql::{Context, Object, SimpleObject};
 use mongodb::bson::doc;
 
 /// A Spotify item with its applied tags. The item is always preloaded while the
@@ -26,7 +26,7 @@ pub struct TaggedItemNode {
 
 #[Object]
 impl TaggedItemNode {
-    async fn id(&self, ctx: &Context<'_>) -> async_graphql::ID {
+    async fn id(&self, context: &Context<'_>) -> async_graphql::ID {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
@@ -45,22 +45,23 @@ impl TaggedItemNode {
         match &self.tags {
             Some(tags) => TagConnection::Preloaded { tags: tags.clone() },
             None => TagConnection::ByItem {
-                item_uri: self.item.uri().clone(),
+                item_uri: self.item.uri(3).clone(),
             },
         }
     }
 }
 
-pub type TaggedItemEdge = GenericEdge<TaggedItemNode>;
+#[derive(Clone, Debug)]
+pub struct TaggedItemEdge(GenericEdge<TaggedItemNode>);
 
 #[Object]
 impl TaggedItemEdge {
     async fn node(&self) -> &TaggedItemNode {
-        self.node()
+        self.0.node()
     }
 
     async fn cursor(&self) -> &Cursor {
-        self.cursor()
+        self.0.cursor()
     }
 }
 
@@ -68,6 +69,7 @@ impl TaggedItemEdge {
 /// This struct provides data about a particular collection of tagged items.
 /// The data may be loaded eagerly or lazily. See individual variants for the
 /// possible options.
+#[derive(Clone, Debug)]
 pub enum TaggedItemConnection {
     /// All item data is preloaded from the Spotify API. The first level of
     /// field resolutions for this variant will be immediate, and not require
@@ -99,16 +101,13 @@ pub enum TaggedItemConnection {
     ByTag { tag: Tag },
 }
 
-#[rocket::async_trait]
-impl TaggedItemConnectionFields for TaggedItemConnection {
+#[Object]
+impl TaggedItemConnection {
     /// Get the total number of items in this connection, across all pages. If
     /// item data is preloaded, this will be fast. If we're in lazy mode, this
     /// will require a DB query.
-    async fn field_total_count<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-    ) -> ApiResult<i32> {
-        let context = executor.context();
+    async fn total_count(&self, context: &Context<'_>) -> ApiResult<i32> {
+        let context = context.data::<RequestContext>()?;
         let total_count = match self {
             Self::Preloaded { paginated_response } => {
                 paginated_response.total.try_into()?
@@ -128,11 +127,7 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
 
     /// Get page info for these items. If item data is preloaded, this will
     /// be fast. If we're in lazy mode, this will require a DB query.
-    async fn field_page_info<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, PageInfo, Walked>,
-    ) -> ApiResult<PageInfo> {
+    async fn page_info(&self, context: &Context<'_>) -> ApiResult<PageInfo> {
         let page_info = match self {
             // This variant supports pagination via the Spotify API
             Self::Preloaded { paginated_response } => PageInfo {
@@ -153,7 +148,7 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
             // This variant doesn't support pagination, so offset is always 0
             Self::ByTag { .. } => {
                 // This will hit the DB to count matching records
-                let total_count = self.field_total_count(executor).await?;
+                let total_count = self.total_count(context).await?;
                 PageInfo {
                     offset: 0,
                     // This conversion _shouldn't_ ever fail, but better safe
@@ -168,12 +163,11 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
         Ok(page_info)
     }
 
-    async fn field_edges<'s, 'r, 'a>(
-        &'s self,
-        executor: &Executor<'r, 'a, RequestContext>,
-        _trail: &QueryTrail<'r, TaggedItemEdge, Walked>,
+    async fn edges(
+        &self,
+        context: &Context<'_>,
     ) -> ApiResult<Vec<TaggedItemEdge>> {
-        let context = executor.context();
+        let context = context.data::<RequestContext>();
 
         let (items, offset): (Vec<Item>, usize) = match self {
             // Items have already been loaded from spotify, so just return them
@@ -231,34 +225,9 @@ impl TaggedItemConnectionFields for TaggedItemConnection {
 /// so that's what we'll do. The 3 connections pagination in lockstep, i.e. they
 /// use the same limit/offset.
 /// https://developer.spotify.com/documentation/web-api/reference/#category-search
+#[derive(Clone, Debug, SimpleObject)]
 pub struct ItemSearch {
     pub tracks: TaggedItemConnection,
     pub albums: TaggedItemConnection,
     pub artists: TaggedItemConnection,
-}
-
-impl ItemSearchFields for ItemSearch {
-    fn field_tracks(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemConnection, Walked>,
-    ) -> &TaggedItemConnection {
-        &self.tracks
-    }
-
-    fn field_albums(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemConnection, Walked>,
-    ) -> &TaggedItemConnection {
-        &self.albums
-    }
-
-    fn field_artists(
-        &self,
-        _executor: &Executor<'_, '_, RequestContext>,
-        _trail: &QueryTrail<'_, TaggedItemConnection, Walked>,
-    ) -> &TaggedItemConnection {
-        &self.albums
-    }
 }

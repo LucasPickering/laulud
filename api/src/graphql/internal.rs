@@ -5,14 +5,14 @@
 //! This also holds implementations (both plain and trait implementations).
 
 use crate::{
+    auth::UserId,
     error::{InputValidationError, ParseError},
-    util::{UserId, Validate},
 };
 use async_graphql::scalar;
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
-use std::{backtrace::Backtrace, convert::TryInto, str::FromStr};
+use std::{convert::TryInto, str::FromStr};
 
 // region: Pagination
 
@@ -53,18 +53,14 @@ impl Cursor {
 }
 
 impl FromStr for Cursor {
-    type Err = InputValidationError;
+    type Err = ParseError;
 
-    fn from_str(value: &str) -> Result<Self::Output, InputValidationError> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Parse the string as a plain number
-        let offset =
-            value.parse::<usize>().map_err(|_| InputValidationError {
-                // TODO we shouldn't need this
-                field: "id".into(),
-                message: "Invalid pagination cursor".into(),
-                value: value.into(),
-                backtrace: Backtrace::capture(),
-            })?;
+        let offset = value.parse::<usize>().map_err(|_| ParseError {
+            message: "Invalid pagination cursor".into(),
+            value: value.into(),
+        })?;
         Ok(Cursor { offset })
     }
 }
@@ -87,6 +83,9 @@ impl LimitOffset {
     ///
     /// See the [GraphQL spec](https://relay.dev/graphql/connections.htm) for
     /// more info on first/after.
+    ///
+    /// TODO replace this with a custom validator
+    /// https://async-graphql.github.io/async-graphql/en/input_value_validators.html#custom-validator
     pub fn try_from_first_after(
         first: Option<i32>,
         after: Option<Cursor>,
@@ -101,7 +100,6 @@ impl LimitOffset {
                             "Invalid quantity, must be non-negative integer"
                                 .into(),
                         value: first.into(),
-                        backtrace: Backtrace::capture(),
                     })?;
                 Some(limit)
             }
@@ -204,7 +202,6 @@ impl NodeType {
             _ => Err(ParseError {
                 message: "Invalid GraphQL node ID".into(),
                 value: id.to_string(),
-                backtrace: Backtrace::capture(),
             }),
         }
     }
@@ -220,7 +217,6 @@ impl FromStr for NodeType {
             _ => Err(ParseError {
                 message: "Unknown GraphQL node type".into(),
                 value: s.into(),
-                backtrace: Backtrace::capture(),
             }),
         }
     }
@@ -288,22 +284,24 @@ pub struct Tag {
 scalar!(Tag);
 
 impl Tag {
+    pub fn new(tag: String) -> Self {
+        Self { tag }
+    }
+
     pub fn tag(&self) -> &str {
         &self.tag
     }
 }
 
 impl FromStr for Tag {
-    type Err = InputValidationError;
+    type Err = ParseError;
 
     /// Make sure the tag is non-empty
-    fn from_str(value: &str) -> Result<Self::Output, Self::Err> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.is_empty() {
-            Err(InputValidationError {
-                field: "tag".into(), // TODO we shouldn't need this
+            Err(ParseError {
                 message: "Tag cannot be empty".into(),
                 value: value.into(),
-                backtrace: Backtrace::capture(),
             })
         } else {
             Ok(Tag { tag: value.into() })
