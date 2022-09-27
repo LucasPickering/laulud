@@ -46,7 +46,8 @@ impl IdentityState {
         Cookie::build(OAUTH_COOKIE_NAME, self.serialize())
             .same_site(SameSite::Lax)
             .secure(true)
-            .max_age(Duration::days(1))
+            // Rocket uses a different version of time :(
+            .max_age(rocket::time::Duration::days(1))
             .finish()
     }
 

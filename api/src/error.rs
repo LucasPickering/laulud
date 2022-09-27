@@ -11,6 +11,13 @@ pub type ApiResult<T> = Result<T, ApiError>;
 /// Type to capture all errors that can happen throughout the app.
 #[derive(Debug, Error)]
 pub enum ApiError {
+    #[error("TODO")]
+    Graphql {
+        #[from]
+        source: async_graphql::Error,
+        backtrace: Backtrace,
+    },
+
     /// Error deserializing BSON data, which most likely came from the DB. This
     /// is a server error because it indicates a mismatch between what's store
     /// in the DB and what we expected.
@@ -64,6 +71,13 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
+    #[error("{source}")]
+    InputOutput {
+        #[from]
+        source: tokio::io::Error,
+        backtrace: Backtrace,
+    },
+
     /// Wrapper for an OpenID token error, which can occur while validating a
     /// token submitted by a user.
     #[error("{source}")]
@@ -100,6 +114,7 @@ pub enum ApiError {
     /// (beyond what we ever expect to support, so that will never actually
     /// happen) or a failed assumption somewhere. Either way, safe to treat
     /// this as a server error.
+    /// TODO still needed?
     #[error("Number conversion error")]
     TryFromInt {
         #[from]
@@ -125,6 +140,7 @@ impl ApiError {
     pub fn to_status(&self) -> Status {
         match self {
             // 400
+            Self::Graphql { .. }|
              Self::UnsupportedItemType { .. } => Status::BadRequest,
 
             // 401
@@ -144,6 +160,7 @@ impl ApiError {
             // 500s
             | Self::SpotifyApiHttp { .. }
             | Self::InvalidHeaderValue { .. }
+            |Self::InputOutput { .. }
             | Self::TryFromInt { .. }
             | Self::Unknown { .. } => Status::InternalServerError,
         }

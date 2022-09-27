@@ -3,11 +3,11 @@
 //! exported to the entire crate!
 
 use crate::error::ParseError;
-use async_graphql::{scalar, Interface, ScalarType, SimpleObject};
+use async_graphql::{scalar, Interface, SimpleObject};
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
+use std::{convert::TryFrom, str::FromStr};
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
 #[derive(Clone, Debug, Deserialize, SimpleObject)]
@@ -95,6 +95,13 @@ pub struct Track {
 #[derive(Clone, Debug, Deserialize, SimpleObject)]
 pub struct ExternalUrls {
     pub spotify: String,
+}
+
+// Needed for the Interface derive on Item
+impl From<&Self> for ExternalUrls {
+    fn from(value: &Self) -> Self {
+        value.clone()
+    }
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object
@@ -245,12 +252,28 @@ impl SpotifyUri {
 // Declare this as a GraphQL scalar
 scalar!(SpotifyUri);
 
+// These two impls needed for serde
 impl From<SpotifyUri> for String {
     fn from(uri: SpotifyUri) -> Self {
         uri.to_string()
     }
 }
+impl TryFrom<String> for SpotifyUri {
+    type Error = <SpotifyUri as FromStr>::Err;
 
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse()
+    }
+}
+
+// Needed for the Interface derive on Item
+impl From<&Self> for SpotifyUri {
+    fn from(value: &Self) -> Self {
+        value.clone()
+    }
+}
+
+// For DB interactions
 impl From<&SpotifyUri> for Bson {
     fn from(uri: &SpotifyUri) -> Self {
         uri.to_string().into()
@@ -295,7 +318,7 @@ impl FromStr for SpotifyUri {
 /// from Spotify and tagged in the API.
 #[derive(Clone, Debug, Deserialize, Interface)]
 #[graphql(
-    field(name = "externalUrls", type = "ExternalUrls"),
+    field(name = "external_urls", type = "ExternalUrls"),
     field(name = "href", type = "String"),
     field(name = "id", type = "String"),
     field(name = "uri", type = "SpotifyUri")

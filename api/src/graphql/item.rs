@@ -9,12 +9,13 @@ use crate::{
     spotify::{Item, PaginatedResponse, SpotifyUri},
 };
 use async_graphql::{Context, Object, SimpleObject};
+use futures::TryStreamExt;
 use mongodb::bson::doc;
 
 /// A Spotify item with its applied tags. The item is always preloaded while the
 /// tags can be fetched eagerly (preloaded) or lazily (loaded from the DB
 /// when requested).
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TaggedItemNode {
     pub item: Item,
     /// `None` means lazy-load the tags. This will map to a lazy version of
@@ -26,28 +27,32 @@ pub struct TaggedItemNode {
 
 #[Object]
 impl TaggedItemNode {
-    async fn id(&self, context: &Context<'_>) -> async_graphql::ID {
+    pub async fn id(
+        &self,
+        context: &Context<'_>,
+    ) -> ApiResult<async_graphql::ID> {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
-        node.id(&ctx.data::<RequestContext>().user_id)
+        Ok(node.get_id(context).await?)
     }
 
     async fn item(&self) -> &Item {
         &self.item
     }
 
-    async fn tags(&self) -> TagConnection {
+    async fn tags(&self, context: &Context<'_>) -> ApiResult<TagConnection> {
         // If we've already loaded the tags for this item, then we can pass them
         // to the TagConnection and skip a DB query. In some scenarios (e.g.
         // mutations), we can preload tags for free, but in others we
         // want to defer the DB query until it's actually necessary.
-        match &self.tags {
+        let tag_connection = match &self.tags {
             Some(tags) => TagConnection::Preloaded { tags: tags.clone() },
             None => TagConnection::ByItem {
-                item_uri: self.item.uri(3).clone(),
+                item_uri: self.item.uri(context).await?.clone(),
             },
-        }
+        };
+        Ok(tag_connection)
     }
 }
 
@@ -106,14 +111,12 @@ impl TaggedItemConnection {
     /// Get the total number of items in this connection, across all pages. If
     /// item data is preloaded, this will be fast. If we're in lazy mode, this
     /// will require a DB query.
-    async fn total_count(&self, context: &Context<'_>) -> ApiResult<i32> {
+    async fn total_count(&self, context: &Context<'_>) -> ApiResult<usize> {
         let context = context.data::<RequestContext>()?;
         let total_count = match self {
-            Self::Preloaded { paginated_response } => {
-                paginated_response.total.try_into()?
-            }
+            Self::Preloaded { paginated_response } => paginated_response.total,
             // These URIs aren't paginated, they represent the full data set
-            Self::ByUris { uris } => uris.len().try_into()?,
+            Self::ByUris { uris } => uris.len(),
             // Count the number of matching docs in the DB
             Self::ByTag { tag } => context
                 .db_handler
@@ -148,12 +151,12 @@ impl TaggedItemConnection {
             // This variant doesn't support pagination, so offset is always 0
             Self::ByTag { .. } => {
                 // This will hit the DB to count matching records
-                let total_count = self.total_count(context).await?;
+                let total_count = self.total_count(context).await??;
                 PageInfo {
                     offset: 0,
                     // This conversion _shouldn't_ ever fail, but better safe
                     // than sorry
-                    page_len: total_count.try_into()?,
+                    page_len: total_count,
                     has_previous_page: false,
                     has_next_page: false,
                 }
@@ -167,7 +170,7 @@ impl TaggedItemConnection {
         &self,
         context: &Context<'_>,
     ) -> ApiResult<Vec<TaggedItemEdge>> {
-        let context = context.data::<RequestContext>();
+        let context = context.data::<RequestContext>()?;
 
         let (items, offset): (Vec<Item>, usize) = match self {
             // Items have already been loaded from spotify, so just return them
