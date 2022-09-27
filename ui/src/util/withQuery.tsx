@@ -10,25 +10,11 @@ interface Options<
   query: GraphQLTaggedNode;
   dataToProps: (
     data: Query["response"]
-  ) => DataProps<Props, DataKeys> | null | undefined;
+  ) => Pick<Props, DataKeys> | null | undefined;
   fallbackElement: React.ReactElement | null;
   preloadElement?: React.ReactElement | null;
   noDataElement?: React.ReactElement | null;
 }
-
-/**
- * The type of props that should be transparently passed through the wrappers.
- */
-type PassthroughProps<Props, DataKeys extends keyof Props> = Omit<
-  Props,
-  DataKeys
->;
-
-/**
- * The type of props that need to be populated by Relay and injected into the
- * wrapped component.
- */
-type DataProps<Props, DataKeys extends keyof Props> = Pick<Props, DataKeys>;
 
 /**
  * Get a type for the props of a wrapping component, given:
@@ -110,10 +96,10 @@ function withQuery<
     // the query has been executed, Suspense shows loading status when it hasn't.
     // This is two components because hooks can't be optional, we can only do
     // optional logic at the component boundary (when queryRef is null)
-    const LoaderComponent: React.FC<LoaderProps<Query, Props, DataKeys>> = (
-      props2
-    ) => {
-      const { queryRef, ...rest } = props2;
+    const LoaderComponent: React.FC<LoaderProps<Query, Props, DataKeys>> = ({
+      queryRef,
+      ...rest
+    }) => {
       const data = usePreloadedQuery<Query>(query, queryRef);
       const dataProps = dataToProps(data);
 
@@ -124,11 +110,10 @@ function withQuery<
       // The props that we'll transparently pass through the wrappers
       // Unfortunate type assertion. I'm 99% sure I set up all the types
       // correctly here, TS just isn't complicated enough to do these assertions
-      const passthroughProps = rest as PassthroughProps<Props, DataKeys>;
       const props = {
-        ...passthroughProps,
+        ...rest,
         ...dataProps,
-      };
+      } as Props & {}; // eslint-disable-line @typescript-eslint/ban-types
       return <Component {...props} />;
     };
     LoaderComponent.displayName = `${baseName}Loader`;
@@ -140,11 +125,12 @@ function withQuery<
         return preloadElement;
       }
 
-      const passthroughProps = rest as PassthroughProps<Props, DataKeys>;
-
       return (
         <Suspense fallback={fallbackElement}>
-          <LoaderComponent queryRef={queryRef} {...passthroughProps} />
+          {/* I can't figure out how to fix this error. This whole thing is fucked.
+           eslint-disable-next-line @typescript-eslint/ban-ts-comment
+           @ts-ignore 2122 */}
+          <LoaderComponent queryRef={queryRef} {...rest} />
         </Suspense>
       );
     };
