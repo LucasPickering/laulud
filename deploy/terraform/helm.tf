@@ -14,15 +14,15 @@ resource "helm_release" "laulud" {
   }
 
   # Secrets
-  set {
+  set_sensitive {
     name  = "apiSecretKey"
     value = base64encode(random_password.api_secret_key.result)
   }
-  set {
+  set_sensitive {
     name  = "spotifyClientId"
     value = var.spotify_client_id
   }
-  set {
+  set_sensitive {
     name  = "spotifyClientSecret"
     value = var.spotify_client_secret
   }
