@@ -6,13 +6,17 @@
 
 use crate::{
     auth::UserId,
-    error::{InputValidationError, ParseError},
+    error::{ApiResult, InputValidationError, ParseError},
+    graphql::{RequestContext, TagNode, TaggedItemNode},
 };
-use async_graphql::scalar;
+use async_graphql::{scalar, Context, Interface};
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
-use std::{convert::TryInto, str::FromStr};
+use std::{
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
 
 // region: Pagination
 
@@ -109,7 +113,6 @@ impl LimitOffset {
         // Parse `after` as a cursor then convert to a number
         let offset: Option<usize> = match after {
             Some(cursor) => {
-                let cursor = cursor.validate("after")?;
                 // We want to include the first element _after_ the cursor, so
                 // add 1 to the offset. E.g. if we request `after: "cursor-0"`,
                 // then the first element we want to show is #1, so offset
@@ -139,8 +142,12 @@ impl LimitOffset {
 
 // region: Node
 
-#[derive(Copy, Clone, Debug)]
-pub struct Node;
+#[derive(Clone, Debug, Interface)]
+#[graphql(field(name = "id", type = "async_graphql::ID"))]
+pub enum Node {
+    TaggedItemNode(TaggedItemNode),
+    TagNode(TagNode),
+}
 
 impl Node {
     /// Get a unique ID for this node. Because Relay requires a top-level
@@ -153,21 +160,28 @@ impl Node {
     /// IDs use the format `<node_type>_<value_id>_<user_id>`, where `value_id`
     /// is some string that unique indentifies the node **within its type**.
     /// For example, for an item node it could be the URI.
-    pub fn id(&self, user_id: &UserId) -> async_graphql::ID {
+    pub async fn get_id(
+        &self,
+        context: &Context<'_>,
+    ) -> ApiResult<async_graphql::ID> {
         let node_type = self.node_type();
         let value_id = match self {
-            Self::TaggedItemNode(node) => node.item.uri().to_string(),
+            Self::TaggedItemNode(node) => {
+                node.item.uri(context).await?.to_string()
+            }
             Self::TagNode(node) => node.tag.tag().to_string(),
         };
 
-        async_graphql::ID::new(format!(
+        let user_id = &context.data::<RequestContext>()?.user_id;
+        Ok(async_graphql::ID(format!(
             "{}_{}_{}",
             node_type, value_id, user_id
-        ))
+        )))
     }
 
     /// Map this node to its simplified [NodeType]. [NodeType] has all the same
     /// variants as the `Node` enum, but doesn't hold any values.
+    /// TODO use a generated enum from strum instead
     pub fn node_type(&self) -> NodeType {
         match self {
             Self::TaggedItemNode(_) => NodeType::TaggedItemNode,
@@ -227,6 +241,7 @@ impl FromStr for NodeType {
 
 /// Helper type to handle GQL edge types. Edges consist of a cursor, to locate
 /// the edge within a Connection, and an associated node.
+#[derive(Clone, Debug)]
 pub struct GenericEdge<N> {
     node: N,
     // If we end up needing to use this value as an offset, we can replace this
@@ -275,21 +290,18 @@ impl<N> From<N> for GenericEdge<N> {
 /// A validated version of [Tag]. This can only be constructed via the
 /// [Validate] trait, so any instance of this struct is guaranteed to be valid
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
-#[display(fmt = "{}", tag)]
 #[serde(try_from = "String", into = "String")]
-pub struct Tag {
-    tag: String,
-}
+pub struct Tag(String);
 
 scalar!(Tag);
 
 impl Tag {
     pub fn new(tag: String) -> Self {
-        Self { tag }
+        Self(tag)
     }
 
     pub fn tag(&self) -> &str {
-        &self.tag
+        &self.0
     }
 }
 
@@ -304,13 +316,28 @@ impl FromStr for Tag {
                 value: value.into(),
             })
         } else {
-            Ok(Tag { tag: value.into() })
+            Ok(Tag::new(value.into()))
         }
     }
 }
 
+// For DB interactions
 impl From<&Tag> for Bson {
     fn from(uri: &Tag) -> Self {
         uri.to_string().into()
+    }
+}
+
+// These two impls needed for serde
+impl From<Tag> for String {
+    fn from(tag: Tag) -> Self {
+        tag.to_string()
+    }
+}
+impl TryFrom<String> for Tag {
+    type Error = <Tag as FromStr>::Err;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse()
     }
 }

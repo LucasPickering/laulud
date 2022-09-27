@@ -11,6 +11,7 @@ use crate::{
     spotify::{Item, PaginatedResponse, PrivateUser, SpotifyUri},
 };
 use async_graphql::{Context, Object};
+use futures::StreamExt;
 use mongodb::bson::doc;
 use std::backtrace::Backtrace;
 
@@ -25,9 +26,8 @@ impl Query {
         context: &Context<'_>,
         id: async_graphql::ID,
     ) -> ApiResult<Option<Node>> {
-        let context = context.data::<RequestContext>();
-        let (node_type, value_id, user_id) = NodeType::parse_id(&id)
-            .map_err(|err| err.into_input_validation_error("id".into()))?;
+        let context = context.data::<RequestContext>()?;
+        let (node_type, value_id, user_id) = NodeType::parse_id(&id)?;
 
         // Nice try, Satan
         if user_id != context.user_id {
@@ -43,16 +43,14 @@ impl Query {
                 let item_opt = context.spotify.get_item(&item_uri).await?;
                 item_opt.map(|item| TaggedItemNode { item, tags: None }.into())
             }
-            NodeType::TagNode => {
-                let tag: Tag = Tag::new(value_id).validate("id")?;
-                Some(
-                    TagNode {
-                        tag,
-                        item_uris: None,
-                    }
-                    .into(),
-                )
-            }
+            NodeType::TagNode => Some(
+                // For tags, the value ID is just the tag
+                TagNode {
+                    tag: Tag::new(value_id),
+                    item_uris: None,
+                }
+                .into(),
+            ),
         };
         Ok(node)
     }
@@ -62,7 +60,7 @@ impl Query {
         context: &Context<'_>,
     ) -> ApiResult<PrivateUser> {
         context
-            .data::<RequestContext>()
+            .data::<RequestContext>()?
             .spotify
             .get_current_user()
             .await
@@ -73,8 +71,7 @@ impl Query {
         context: &Context<'_>,
         uri: SpotifyUri,
     ) -> ApiResult<Option<TaggedItemNode>> {
-        let context = context.data::<RequestContext>();
-        let uri = uri.validate("uri")?;
+        let context = context.data::<RequestContext>()?;
         // Fetch the item from Spotify
         let node = context
             .spotify
@@ -95,7 +92,7 @@ impl Query {
         first: Option<i32>,
         after: Option<Cursor>,
     ) -> ApiResult<ItemSearch> {
-        let context = context.data::<RequestContext>();
+        let context = context.data::<RequestContext>()?;
 
         // Validate params
         let limit_offset = LimitOffset::try_from_first_after(first, after)?;
@@ -156,8 +153,7 @@ impl Query {
     /// pretend like it does and just return a node with no tagged items. Item
     /// data will be loaded lazily, when requested from [TaggedItemConnection].
     async fn tag(&self, context: &Context<'_>, tag: Tag) -> ApiResult<TagNode> {
-        let context = context.data::<RequestContext>();
-        let tag = tag.validate("tag")?;
+        let context = context.data::<RequestContext>()?;
 
         // Look up the relevant items in the DB
         let mut cursor = context

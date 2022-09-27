@@ -9,6 +9,7 @@ use crate::{
     spotify::SpotifyUri,
 };
 use async_graphql::{Context, Object};
+use derive_more::Deref;
 
 /// A user-defined tag. Tags have a many-to-many relationship with Spotify
 /// items, and all tag data is stored in the local DB. The items associated
@@ -30,16 +31,18 @@ pub struct TagNode {
 
 #[Object]
 impl TagNode {
-    async fn id(&self, context: &Context<'_>) -> async_graphql::ID {
-        let user_id = context.data::<RequestContext>()?.user_id;
+    pub async fn id(
+        &self,
+        context: &Context<'_>,
+    ) -> ApiResult<async_graphql::ID> {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
-        node.id(&user_id)
+        Ok(node.id(context).await?)
     }
 
-    async fn tag(&self) -> Tag {
-        (&self.tag).into()
+    async fn tag(&self) -> &Tag {
+        &self.tag
     }
 
     /// Lazily fetch items for this tag node
@@ -59,7 +62,7 @@ impl TagNode {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deref)]
 pub struct TagEdge(GenericEdge<TagNode>);
 
 #[Object]
@@ -139,12 +142,10 @@ impl TagConnection {
             // This variant doesn't support pagination, so offset is always 0
             Self::All { .. } | Self::ByItem { .. } => {
                 // In either case, this will hit the DB to count matches
-                let total_count = self.total_count(&context, 3).await?;
+                let total_count = self.total_count(&context).await??;
                 PageInfo {
                     offset: 0,
-                    // This conversion _shouldn't_ ever fail, but better safe
-                    // than sorry
-                    page_len: total_count.try_into()?,
+                    page_len: total_count,
                     has_previous_page: false,
                     has_next_page: false,
                 }

@@ -5,7 +5,7 @@ mod graphql;
 mod routes;
 mod spotify;
 
-use crate::db::DbHandler;
+use crate::{db::DbHandler, error::ApiResult};
 use oauth2::{
     basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl,
 };
@@ -51,14 +51,15 @@ pub async fn init_spotify_client(config: &LauludConfig) -> BasicClient {
 }
 
 #[rocket::main]
-async fn main() {
+async fn main() -> ApiResult<()> {
     env_logger::init();
     let rocket = rocket::build();
     let config: LauludConfig = rocket.figment().extract().unwrap();
 
     let db_handler = DbHandler::connect(&config).await.unwrap();
     let spotify_oauth_client = init_spotify_client(&config).await;
-    let graphql_schema = graphql::create_graphql_schema().await?;
+    let graphql_schema =
+        graphql::create_graphql_schema("./schema.graphql").await?;
 
     rocket
         .mount(
@@ -80,4 +81,6 @@ async fn main() {
         .launch()
         .await
         .unwrap();
+
+    Ok(())
 }

@@ -26,17 +26,15 @@ pub async fn route_graphql(
     graphql_schema: &State<Arc<GraphQLSchema>>,
     graphql_request: GraphQLRequest,
 ) -> GraphQLResponse {
-    graphql_schema
-        .execute(
-            graphql_request
-                // Use the wrapping RequestContext instead of passing a bunch of
-                // little contexts, so we can get the benefits of static typing
-                .data(RequestContext {
-                    db_handler: Arc::clone(db_handler.inner()),
-                    spotify,
-                    user_id,
-                }),
-        )
+    graphql_request
+        // Use the wrapping RequestContext instead of passing a bunch of
+        // little contexts, so we can get the benefits of static typing
+        .data(RequestContext {
+            db_handler: Arc::clone(db_handler.inner()),
+            spotify,
+            user_id,
+        })
+        .execute(graphql_schema)
         .await
 }
 
