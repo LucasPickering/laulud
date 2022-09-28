@@ -8,7 +8,6 @@ use crate::{
     spotify::SpotifyUri,
 };
 use async_graphql::{Context, FieldResult, Object};
-use derive_more::Deref;
 
 /// A user-defined tag. Tags have a many-to-many relationship with Spotify
 /// items, and all tag data is stored in the local DB. The items associated
@@ -61,17 +60,18 @@ impl TagNode {
     }
 }
 
-#[derive(Clone, Debug, Deref)]
-pub struct TagEdge(GenericEdge<TagNode>);
+// #[derive(Clone, Debug, Deref)]
+// pub struct TagEdge(GenericEdge<TagNode>);
+pub type TagEdge = GenericEdge<TagNode>;
 
 #[Object]
 impl TagEdge {
     async fn node(&self) -> &TagNode {
-        self.0.node()
+        &self.node
     }
 
     async fn cursor(&self) -> &Cursor {
-        self.0.cursor()
+        &self.cursor
     }
 }
 
@@ -177,7 +177,7 @@ impl TagConnection {
         };
 
         // Map individual tags into graphql edges
-        let edges = TagEdge::from_nodes(
+        let edges = GenericEdge::from_nodes(
             tags.into_iter().map(|tag| TagNode {
                 tag,
                 // Defer loading the items for this tag until needed
