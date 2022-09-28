@@ -16,10 +16,7 @@ interface Props
 }
 
 /**
- * Results for an item search. Given a search query, this will execute the
- * search and render the results.
- *
- * TODO update comment
+ * A single selected tab in the item search view.
  */
 const ItemSearchLoader: React.FC<Props> = ({
   itemSearchKey,

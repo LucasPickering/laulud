@@ -3,35 +3,29 @@ import { OpenInNew as IconOpenInNew } from "@mui/icons-material";
 import { IconButton, Tooltip } from "@mui/material";
 import UnstyledLink from "./UnstyledLink";
 import { graphql, useFragment } from "react-relay";
-import { SpotifyLink_taggedItemNode$key } from "./__generated__/SpotifyLink_taggedItemNode.graphql";
+import { SpotifyLink_item$key } from "./__generated__/SpotifyLink_item.graphql";
 
 interface Props {
-  taggedItemNodeKey: SpotifyLink_taggedItemNode$key;
+  itemKey: SpotifyLink_item$key;
 }
 
 /**
  * An icon button that opens an item externally in Spotify
  */
-const SpotifyLink: React.FC<Props> = ({ taggedItemNodeKey }) => {
-  const taggedItemNode = useFragment(
+const SpotifyLink: React.FC<Props> = ({ itemKey }) => {
+  const item = useFragment(
     graphql`
-      # TODO convert to fragment on Item after https://github.com/graphql-rust/juniper/issues/922
-      fragment SpotifyLink_taggedItemNode on TaggedItemNode {
-        item {
-          externalUrls {
-            spotify
-          }
+      fragment SpotifyLink_item on Item {
+        externalUrls {
+          spotify
         }
       }
     `,
-    taggedItemNodeKey
+    itemKey
   );
 
   return (
-    <IconButton
-      component={UnstyledLink}
-      to={taggedItemNode.item.externalUrls.spotify}
-    >
+    <IconButton component={UnstyledLink} to={item.externalUrls.spotify}>
       <Tooltip title="Open in Spotify">
         <IconOpenInNew />
       </Tooltip>

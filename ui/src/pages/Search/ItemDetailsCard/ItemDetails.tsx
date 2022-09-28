@@ -14,11 +14,11 @@ const ItemDetails: React.FC<{
       fragment ItemDetails_taggedItemNode on TaggedItemNode {
         item {
           __typename
+          ...ItemDetailsCardHeader_item
           ... on Track {
             ...TrackDetails_track
           }
         }
-        ...ItemDetailsCardHeader_taggedItemNode
         ...TagChips_taggedItemNode
       }
     `,
@@ -27,7 +27,7 @@ const ItemDetails: React.FC<{
 
   return (
     <>
-      <ItemDetailsCardHeader taggedItemNodeKey={taggedItemNode} />
+      <ItemDetailsCardHeader itemKey={taggedItemNode.item} />
       <CardContent>
         <TagChips taggedItemNodeKey={taggedItemNode} showAdd showDelete />
         {taggedItemNode.item.__typename === "Track" && (

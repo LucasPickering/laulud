@@ -6,26 +6,22 @@ import {
   PersonOutlined as PersonIcon,
 } from "@mui/icons-material";
 import { graphql, useFragment } from "react-relay";
-import { ItemIcon_taggedItemNode$key } from "./__generated__/ItemIcon_taggedItemNode.graphql";
+import { ItemIcon_item$key } from "./__generated__/ItemIcon_item.graphql";
 import { UnknownItemTypeError } from "util/errors";
 
 interface Props {
-  taggedItemNodeKey: ItemIcon_taggedItemNode$key;
+  itemKey: ItemIcon_item$key;
 }
 
-function ItemIcon({ taggedItemNodeKey }: Props): React.ReactElement {
-  const taggedItemNode = useFragment(
+function ItemIcon({ itemKey }: Props): React.ReactElement {
+  const item = useFragment(
     graphql`
-      # TODO convert to fragment on Item after https://github.com/graphql-rust/juniper/issues/922
-      fragment ItemIcon_taggedItemNode on TaggedItemNode {
-        item {
-          __typename
-        }
+      fragment ItemIcon_item on Item {
+        __typename
       }
     `,
-    taggedItemNodeKey
+    itemKey
   );
-  const item = taggedItemNode.item;
 
   switch (item.__typename) {
     case "Track":
