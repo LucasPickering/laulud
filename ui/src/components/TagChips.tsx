@@ -57,7 +57,7 @@ const TagChips: React.FC<Props> = ({
         # from the list in the other tab
         tagEdge {
           node {
-            ...TagDetails_tagNode
+            ...TagDetailsItemList_tagNode
             ...TagList_tagNode
           }
         }
@@ -80,7 +80,7 @@ const TagChips: React.FC<Props> = ({
         # TODO new tags don't get added to the tag list in the other tab
         tagEdge {
           node {
-            ...TagDetails_tagNode
+            ...TagDetailsItemList_tagNode
             ...TagList_tagNode
           }
         }

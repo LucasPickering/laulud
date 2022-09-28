@@ -1,34 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Button, IconButton, Popover } from "@mui/material";
 import { Add as IconAdd } from "@mui/icons-material";
-import ItemList from "components/ItemList";
 import ItemSearchView from "pages/Search/ItemSearchView";
-import { graphql, useFragment } from "react-relay";
-import { TagDetails_tagNode$key } from "./__generated__/TagDetails_tagNode.graphql";
+import { graphql, useQueryLoader } from "react-relay";
 import { TagDetailsAddTagMutation } from "./__generated__/TagDetailsAddTagMutation.graphql";
 import ErrorSnackbar from "components/generic/ErrorSnackbar";
 import useMutation from "hooks/useMutation";
+import type { TagDetailsItemListQuery as TagDetailsItemListQueryType } from "./__generated__/TagDetailsItemListQuery.graphql";
+import TagDetailsItemListQuery from "./__generated__/TagDetailsItemListQuery.graphql";
+import TagDetailsItemList from "./TagDetailsItemList";
 
 interface Props {
-  tagNodeKey: TagDetails_tagNode$key;
+  tag: string;
 }
 
 /**
- * Render pre-loaded data about a particular tag, including a list of its items
+ * Render detailed data about a particular tag, including a list of its items
  */
-const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
+const TagDetails: React.FC<Props> = ({ tag }) => {
   const anchorEl = React.useRef<HTMLButtonElement>(null);
-  const tagNode = useFragment(
-    graphql`
-      fragment TagDetails_tagNode on TagNode {
-        tag
-        items {
-          ...ItemList_taggedItemConnection
-        }
-      }
-    `,
-    tagNodeKey
+  const [queryRef, loadQuery] = useQueryLoader<TagDetailsItemListQueryType>(
+    TagDetailsItemListQuery
   );
+
+  // Load data
+  useEffect(() => {
+    loadQuery({ tag });
+  }, [loadQuery, tag]);
 
   // Stuff to allow adding more items to this tag
   const [isAdding, setIsAdding] = useState<boolean>(false);
@@ -47,7 +45,7 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
         }
         tagEdge {
           node {
-            ...TagDetails_tagNode
+            ...TagDetailsItemList_tagNode
             ...TagList_tagNode
           }
         }
@@ -85,8 +83,9 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
                 onClick={() =>
                   addTag({
                     variables: {
-                      input: { itemUri: uri, tag: tagNode.tag },
+                      input: { itemUri: uri, tag },
                     },
+                    // TODO optimisitic update
                   })
                 }
               >
@@ -97,7 +96,7 @@ const TagDetails: React.FC<Props> = ({ tagNodeKey }) => {
         </Box>
       </Popover>
 
-      <ItemList taggedItemConnectionKey={tagNode.items} showIcons />
+      <TagDetailsItemList queryRef={queryRef} />
 
       <ErrorSnackbar
         message="Error adding tag"

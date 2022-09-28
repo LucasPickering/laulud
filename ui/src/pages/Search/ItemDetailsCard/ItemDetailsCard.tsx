@@ -17,7 +17,6 @@ const ItemDetailsCard: React.FC<Props> = ({ uri }) => {
   const [queryRef, loadQuery] =
     useQueryLoader<ItemDetailsQueryType>(ItemDetailsQuery);
 
-  // Kick off query on first load
   useEffect(() => {
     loadQuery({ uri });
   }, [loadQuery, uri]);

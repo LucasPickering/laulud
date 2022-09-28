@@ -56,5 +56,6 @@ export default withQuery<ItemSearchTabContentQuery, Props, "itemSearchKey">({
     }
   `,
   dataToProps: (data) => data.itemSearch && { itemSearchKey: data.itemSearch },
+  // Lists are ugly af w/ skeleton, so stick to loading icon for now
   fallbackElement: <Loading margin={2} />,
 })(ItemSearchTabContent);
