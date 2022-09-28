@@ -28,6 +28,13 @@ impl Cursor {
         self.offset
     }
 
+    /// Get the offset used when this cursor is provided as an `after`
+    /// pagination param. In other words, get the offset of the item directly
+    /// *after* this cursor in the sequence.
+    pub fn after_offset(&self) -> usize {
+        self.offset() + 1
+    }
+
     /// Get a cursor for an edge based on the offset of the page that if came
     /// from and the index of the edge _within that page_. These two values
     /// together tell us the total offset of the edge, which is used to

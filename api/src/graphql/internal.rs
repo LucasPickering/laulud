@@ -6,69 +6,12 @@
 
 use crate::{
     auth::UserId,
-    error::{ApiResult, InputValidationError, ParseError},
+    error::{ApiResult, ParseError},
     graphql::{Cursor, TagNode, TaggedItemNode},
 };
 use async_graphql::Interface;
 use derive_more::Display;
-use std::convert::TryInto;
 use strum::{EnumDiscriminants, EnumString};
-
-/// A parsed version of user pagination params, to make it easy to paginate
-/// through Mongo or Spotify data. This struct is guaranteed to hold valid
-/// values, so it can be passed around internally. To map from user pagination
-/// input into this struct, use [Self::try_from_first_after].
-#[derive(Clone, Debug)]
-pub struct LimitOffset {
-    limit: Option<usize>,
-    offset: Option<usize>,
-}
-
-impl LimitOffset {
-    /// Map from a user's `first` and `after` pagination params to limit/offset
-    /// values that we can use internally with Spotify and Mongo. If either of
-    /// the input values are invalid, an error will be returned here so it can
-    /// be propagated to the user.
-    ///
-    /// See the [GraphQL spec](https://relay.dev/graphql/connections.htm) for
-    /// more info on first/after.
-    ///
-    /// TODO replace this with a custom validator
-    /// https://async-graphql.github.io/async-graphql/en/input_value_validators.html#custom-validator
-    pub fn try_from_first_after(
-        first: Option<i32>,
-        after: Option<Cursor>,
-    ) -> Result<Self, InputValidationError> {
-        // Convert `first` to a usize
-        let limit: Option<usize> = match first {
-            Some(first) => {
-                let limit: usize =
-                    first.try_into().map_err(|_| InputValidationError {
-                        field: "first".into(),
-                        message:
-                            "Invalid quantity, must be non-negative integer"
-                                .into(),
-                        value: first,
-                    })?;
-                Some(limit)
-            }
-            None => None,
-        };
-
-        // Parse `after` as a cursor then convert to a number
-        let offset: Option<usize> = after.map(|cursor| cursor.offset() + 1);
-
-        Ok(Self { limit, offset })
-    }
-
-    pub fn limit(&self) -> Option<usize> {
-        self.limit
-    }
-
-    pub fn offset(&self) -> Option<usize> {
-        self.offset
-    }
-}
 
 #[derive(Clone, Debug, EnumDiscriminants, Interface)]
 #[graphql(field(name = "id", type = "async_graphql::ID"))]
