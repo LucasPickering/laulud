@@ -85,7 +85,6 @@ const TagDetails: React.FC<Props> = ({ tag }) => {
                     variables: {
                       input: { itemUri: uri, tag },
                     },
-                    // TODO optimisitic update
                   })
                 }
               >

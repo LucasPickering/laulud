@@ -1,8 +1,8 @@
-import React from "react";
-import { graphql, useLazyLoadQuery } from "react-relay";
-import withSuspense from "util/withSuspense";
+import React, { useEffect } from "react";
+import { useQueryLoader } from "react-relay";
 import TagList from "./TagList";
-import { TagListLoaderQuery } from "./__generated__/TagListLoaderQuery.graphql";
+import type { TagListQuery as TagListQueryType } from "./__generated__/TagListQuery.graphql";
+import TagListQuery from "./__generated__/TagListQuery.graphql";
 
 interface Props {
   selectedTag?: string;
@@ -14,21 +14,14 @@ interface Props {
  * rendering details for the tag).
  */
 const TagListLoader: React.FC<Props> = ({ selectedTag }) => {
-  // useLazyLoad is discouraged in the relay docs, but it works "well enough"
-  // so let's just run with it. For Optimal Peformance™ we could switch to
-  // usePreloadedQuery and trigger the query when the new tag is selected
-  const data = useLazyLoadQuery<TagListLoaderQuery>(
-    graphql`
-      query TagListLoaderQuery {
-        tags {
-          ...TagList_tagConnection
-        }
-      }
-    `,
-    {}
-  );
+  const [queryRef, loadQuery] = useQueryLoader<TagListQueryType>(TagListQuery);
 
-  return <TagList tagConnectionKey={data.tags} selectedTag={selectedTag} />;
+  // Load data
+  useEffect(() => {
+    loadQuery({});
+  }, [loadQuery]);
+
+  return <TagList queryRef={queryRef} selectedTag={selectedTag} />;
 };
 
-export default withSuspense(TagListLoader);
+export default TagListLoader;

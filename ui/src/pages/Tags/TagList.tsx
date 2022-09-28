@@ -7,6 +7,9 @@ import Link from "components/generic/Link";
 import { graphql, useFragment } from "react-relay";
 import { TagList_tagConnection$key } from "./__generated__/TagList_tagConnection.graphql";
 import { TagList_tagNode$key } from "./__generated__/TagList_tagNode.graphql";
+import withQuery from "util/withQuery";
+import { TagListQuery } from "./__generated__/TagListQuery.graphql";
+import Loading from "components/Loading";
 
 interface Props {
   tagConnectionKey: TagList_tagConnection$key;
@@ -93,4 +96,15 @@ const TagListItem: React.FC<{
   );
 };
 
-export default TagList;
+export default withQuery<TagListQuery, Props, "tagConnectionKey">({
+  query: graphql`
+    query TagListQuery {
+      tags {
+        ...TagList_tagConnection
+      }
+    }
+  `,
+  dataToProps: (data) => data.tags && { tagConnectionKey: data.tags },
+  // Lists are ugly af w/ skeleton, so stick to loading icon for now
+  fallbackElement: <Loading />,
+})(TagList);
