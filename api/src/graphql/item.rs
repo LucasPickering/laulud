@@ -55,17 +55,16 @@ impl TaggedItemNode {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct TaggedItemEdge(GenericEdge<TaggedItemNode>);
+pub type TaggedItemEdge = GenericEdge<TaggedItemNode>;
 
 #[Object]
 impl TaggedItemEdge {
     async fn node(&self) -> &TaggedItemNode {
-        self.0.node()
+        &self.node
     }
 
     async fn cursor(&self) -> &Cursor {
-        self.0.cursor()
+        &self.cursor
     }
 }
 

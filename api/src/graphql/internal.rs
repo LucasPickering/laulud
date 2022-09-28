@@ -243,21 +243,11 @@ impl FromStr for NodeType {
 /// the edge within a Connection, and an associated node.
 #[derive(Clone, Debug)]
 pub struct GenericEdge<N> {
-    node: N,
-    // If we end up needing to use this value as an offset, we can replace this
-    // with `ValidCursor`, but using `Cursor` here seems to be simpler for now
-    cursor: Cursor,
+    pub node: N,
+    pub cursor: Cursor,
 }
 
 impl<N> GenericEdge<N> {
-    pub fn node(&self) -> &N {
-        &self.node
-    }
-
-    pub fn cursor(&self) -> &Cursor {
-        &self.cursor
-    }
-
     /// Convert a list of nodes into edges. The edges will keep the same
     /// ordering, and each edge will be generated a cursor based on the given
     /// offset plus that edge's location in the list.
