@@ -1,3 +1,7 @@
+#![feature(error_generic_member_access)]
+#![feature(error_reporter)]
+#![feature(provide_any)]
+
 mod auth;
 mod db;
 mod error;

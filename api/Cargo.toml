@@ -10,8 +10,8 @@ version = "1.0.0"
 split-debuginfo = "unpacked"
 
 [dependencies]
-async-graphql = {version = "4.0.13", default-features = false, features = ["log"]}
-async-graphql-rocket = "4.0.13"
+async-graphql = {version = "4.0.14", default-features = false, features = ["log"]}
+async-graphql-rocket = "4.0.14"
 derive_more = "0.99"
 env_logger = "0.8"
 futures = "0.3.24"

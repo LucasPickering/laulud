@@ -1,14 +1,13 @@
 use std::convert::TryInto;
 
 use crate::{
-    error::ApiResult,
     graphql::{
         core::PageInfo, internal::GenericEdge, item::TaggedItemConnection,
         Cursor, Node, RequestContext, Tag,
     },
     spotify::SpotifyUri,
 };
-use async_graphql::{Context, Object};
+use async_graphql::{Context, FieldResult, Object};
 use derive_more::Deref;
 
 /// A user-defined tag. Tags have a many-to-many relationship with Spotify
@@ -34,11 +33,11 @@ impl TagNode {
     pub async fn id(
         &self,
         context: &Context<'_>,
-    ) -> ApiResult<async_graphql::ID> {
+    ) -> FieldResult<async_graphql::ID> {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
-        Ok(node.id(context).await?)
+        Ok(node.get_id(context).await?)
     }
 
     async fn tag(&self) -> &Tag {
@@ -108,7 +107,7 @@ pub enum TagConnection {
 
 #[Object]
 impl TagConnection {
-    async fn total_count(&self, context: &Context<'_>) -> ApiResult<usize> {
+    async fn total_count(&self, context: &Context<'_>) -> FieldResult<usize> {
         let context = context.data::<RequestContext>()?;
         let collection = context.db_handler.collection_tagged_items();
 
@@ -128,7 +127,7 @@ impl TagConnection {
         Ok(total_count)
     }
 
-    async fn page_info(&self, context: &Context<'_>) -> ApiResult<PageInfo> {
+    async fn page_info(&self, context: &Context<'_>) -> FieldResult<PageInfo> {
         // We don't actually support paginating through tags in any way yet,
         // so the offset is always 0 on these
         let page_info = match self {
@@ -142,7 +141,7 @@ impl TagConnection {
             // This variant doesn't support pagination, so offset is always 0
             Self::All { .. } | Self::ByItem { .. } => {
                 // In either case, this will hit the DB to count matches
-                let total_count = self.total_count(&context).await??;
+                let total_count = self.total_count(&context).await?;
                 PageInfo {
                     offset: 0,
                     page_len: total_count,
@@ -155,7 +154,7 @@ impl TagConnection {
         Ok(page_info)
     }
 
-    async fn edges(&self, context: &Context<'_>) -> ApiResult<Vec<TagEdge>> {
+    async fn edges(&self, context: &Context<'_>) -> FieldResult<Vec<TagEdge>> {
         let context = context.data::<RequestContext>()?;
         let collection = context.db_handler.collection_tagged_items();
 

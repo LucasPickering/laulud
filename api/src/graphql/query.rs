@@ -10,7 +10,7 @@ use crate::{
     },
     spotify::{Item, PaginatedResponse, PrivateUser, SpotifyUri},
 };
-use async_graphql::{Context, Object};
+use async_graphql::{Context, FieldResult, Object};
 use futures::StreamExt;
 use mongodb::bson::doc;
 use std::backtrace::Backtrace;
@@ -25,7 +25,7 @@ impl Query {
         &self,
         context: &Context<'_>,
         id: async_graphql::ID,
-    ) -> ApiResult<Option<Node>> {
+    ) -> FieldResult<Option<Node>> {
         let context = context.data::<RequestContext>()?;
         let (node_type, value_id, user_id) = NodeType::parse_id(&id)?;
 
@@ -58,19 +58,19 @@ impl Query {
     async fn current_user(
         &self,
         context: &Context<'_>,
-    ) -> ApiResult<PrivateUser> {
-        context
+    ) -> FieldResult<PrivateUser> {
+        Ok(context
             .data::<RequestContext>()?
             .spotify
             .get_current_user()
-            .await
+            .await?)
     }
 
     async fn item(
         &self,
         context: &Context<'_>,
         uri: SpotifyUri,
-    ) -> ApiResult<Option<TaggedItemNode>> {
+    ) -> FieldResult<Option<TaggedItemNode>> {
         let context = context.data::<RequestContext>()?;
         // Fetch the item from Spotify
         let node = context
@@ -91,7 +91,7 @@ impl Query {
         #[graphql(validator(min_length = 1))] query: String,
         first: Option<i32>,
         after: Option<Cursor>,
-    ) -> ApiResult<ItemSearch> {
+    ) -> FieldResult<ItemSearch> {
         let context = context.data::<RequestContext>()?;
 
         // Validate params
@@ -152,7 +152,11 @@ impl Query {
     /// Get info for a particular tag. If the tag doesn't exist in the DB, we'll
     /// pretend like it does and just return a node with no tagged items. Item
     /// data will be loaded lazily, when requested from [TaggedItemConnection].
-    async fn tag(&self, context: &Context<'_>, tag: Tag) -> ApiResult<TagNode> {
+    async fn tag(
+        &self,
+        context: &Context<'_>,
+        tag: Tag,
+    ) -> FieldResult<TagNode> {
         let context = context.data::<RequestContext>()?;
 
         // Look up the relevant items in the DB

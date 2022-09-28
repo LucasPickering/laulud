@@ -1,14 +1,13 @@
 use std::convert::TryInto;
 
 use crate::{
-    error::ApiResult,
     graphql::{
         internal::GenericEdge, Cursor, Node, PageInfo, RequestContext, Tag,
         TagConnection,
     },
     spotify::{Item, PaginatedResponse, SpotifyUri},
 };
-use async_graphql::{Context, Object, SimpleObject};
+use async_graphql::{Context, FieldResult, Object, SimpleObject};
 use futures::TryStreamExt;
 use mongodb::bson::doc;
 
@@ -30,7 +29,7 @@ impl TaggedItemNode {
     pub async fn id(
         &self,
         context: &Context<'_>,
-    ) -> ApiResult<async_graphql::ID> {
+    ) -> FieldResult<async_graphql::ID> {
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
@@ -41,7 +40,7 @@ impl TaggedItemNode {
         &self.item
     }
 
-    async fn tags(&self, context: &Context<'_>) -> ApiResult<TagConnection> {
+    async fn tags(&self, context: &Context<'_>) -> FieldResult<TagConnection> {
         // If we've already loaded the tags for this item, then we can pass them
         // to the TagConnection and skip a DB query. In some scenarios (e.g.
         // mutations), we can preload tags for free, but in others we
@@ -111,7 +110,7 @@ impl TaggedItemConnection {
     /// Get the total number of items in this connection, across all pages. If
     /// item data is preloaded, this will be fast. If we're in lazy mode, this
     /// will require a DB query.
-    async fn total_count(&self, context: &Context<'_>) -> ApiResult<usize> {
+    async fn total_count(&self, context: &Context<'_>) -> FieldResult<usize> {
         let context = context.data::<RequestContext>()?;
         let total_count = match self {
             Self::Preloaded { paginated_response } => paginated_response.total,
@@ -130,7 +129,7 @@ impl TaggedItemConnection {
 
     /// Get page info for these items. If item data is preloaded, this will
     /// be fast. If we're in lazy mode, this will require a DB query.
-    async fn page_info(&self, context: &Context<'_>) -> ApiResult<PageInfo> {
+    async fn page_info(&self, context: &Context<'_>) -> FieldResult<PageInfo> {
         let page_info = match self {
             // This variant supports pagination via the Spotify API
             Self::Preloaded { paginated_response } => PageInfo {
@@ -151,7 +150,7 @@ impl TaggedItemConnection {
             // This variant doesn't support pagination, so offset is always 0
             Self::ByTag { .. } => {
                 // This will hit the DB to count matching records
-                let total_count = self.total_count(context).await??;
+                let total_count = self.total_count(context).await?;
                 PageInfo {
                     offset: 0,
                     // This conversion _shouldn't_ ever fail, but better safe
@@ -169,7 +168,7 @@ impl TaggedItemConnection {
     async fn edges(
         &self,
         context: &Context<'_>,
-    ) -> ApiResult<Vec<TaggedItemEdge>> {
+    ) -> FieldResult<Vec<TaggedItemEdge>> {
         let context = context.data::<RequestContext>()?;
 
         let (items, offset): (Vec<Item>, usize) = match self {
