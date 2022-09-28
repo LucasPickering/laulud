@@ -46,9 +46,10 @@ impl TaggedItemNode {
         // mutations), we can preload tags for free, but in others we
         // want to defer the DB query until it's actually necessary.
         let tag_connection = match &self.tags {
+            // TODO can we remove clone by using lifetimes?
             Some(tags) => TagConnection::Preloaded { tags: tags.clone() },
             None => TagConnection::ByItem {
-                item_uri: self.item.uri(context).await?.clone(),
+                item_uri: self.item.uri(context).await?,
             },
         };
         Ok(tag_connection)

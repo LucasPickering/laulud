@@ -103,7 +103,7 @@ impl LimitOffset {
                         message:
                             "Invalid quantity, must be non-negative integer"
                                 .into(),
-                        value: first.into(),
+                        value: first,
                     })?;
                 Some(limit)
             }
@@ -111,16 +111,7 @@ impl LimitOffset {
         };
 
         // Parse `after` as a cursor then convert to a number
-        let offset: Option<usize> = match after {
-            Some(cursor) => {
-                // We want to include the first element _after_ the cursor, so
-                // add 1 to the offset. E.g. if we request `after: "cursor-0"`,
-                // then the first element we want to show is #1, so offset
-                // should be 1
-                Some(cursor.offset() + 1)
-            }
-            None => None,
-        };
+        let offset: Option<usize> = after.map(|cursor| cursor.offset() + 1);
 
         Ok(Self { limit, offset })
     }
@@ -144,6 +135,7 @@ impl LimitOffset {
 
 #[derive(Clone, Debug, Interface)]
 #[graphql(field(name = "id", type = "async_graphql::ID"))]
+#[allow(clippy::large_enum_variant)] // tough shit clippy, get over it
 pub enum Node {
     TaggedItemNode(TaggedItemNode),
     TagNode(TagNode),
@@ -258,7 +250,7 @@ impl<N> GenericEdge<N> {
         rows.enumerate()
             .map(|(index, node)| Self {
                 node,
-                cursor: Cursor::from_offset_index(offset, index).into(),
+                cursor: Cursor::from_offset_index(offset, index),
             })
             .collect()
     }
@@ -271,7 +263,7 @@ impl<N> From<N> for GenericEdge<N> {
         Self {
             node,
             // Use a bullshit cursor, this seems to work so ¯\_(ツ)_/¯
-            cursor: Cursor::from_offset_index(0, 0).into(),
+            cursor: Cursor::from_offset_index(0, 0),
         }
     }
 }

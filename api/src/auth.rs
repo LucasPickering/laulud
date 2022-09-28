@@ -140,7 +140,9 @@ impl From<BasicTokenResponse> for AuthenticationToken {
 
 /// A user's unique Spotify ID. We use a newtype so we can implement
 /// `FromRequest`.
-#[derive(Clone, Debug, Display, From, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Clone, Debug, Display, Eq, From, PartialEq, Serialize, Deserialize,
+)]
 #[from(forward)]
 pub struct UserId(pub String);
 

@@ -198,9 +198,9 @@ impl<'r> Responder<'r, 'static> for ApiError {
 
 impl ErrorExtensions for ApiError {
     fn extend(&self) -> FieldError {
-        self.extend_with(|err, e| match err {
-            _ => todo!(),
-        })
+        // TODO see if there's any more info we can add here
+        // TODO log errors
+        FieldError::new(self.to_string())
     }
 }
 
@@ -208,6 +208,8 @@ impl ErrorExtensions for ApiError {
 /// is its own type so we can be more specific about what errors we return from
 /// validation procedures. This has a corresponding variant on [ApiError], so
 /// it can easily be returned from the API.
+///
+/// TODO remove this in favor of proper input validation
 #[derive(Debug, Error)]
 #[error("Invalid input on field {field}: {message}")]
 pub struct InputValidationError {

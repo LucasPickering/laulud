@@ -305,7 +305,7 @@ impl Spotify {
     /// doesn't refer to a valid track, then this will error.
     ///
     /// https://developer.spotify.com/documentation/web-api/reference/#endpoint-get-audio-features
-    pub async fn get_track_features(
+    pub async fn get_audio_features(
         &self,
         id: &str,
     ) -> ApiResult<AudioFeatures> {

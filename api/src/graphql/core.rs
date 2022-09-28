@@ -6,7 +6,7 @@ use async_graphql::Object;
 
 /// GQL type to display information about a page of data. See the Relay
 /// Connections spec: https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PageInfo {
     pub offset: usize,
     pub page_len: usize,
@@ -22,7 +22,7 @@ impl PageInfo {
     /// the page is empty.
     async fn cursor(&self) -> Option<Cursor> {
         if self.page_len > 0 {
-            Some(Cursor::from_offset_index(self.offset, 0).into())
+            Some(Cursor::from_offset_index(self.offset, 0))
         } else {
             None
         }
@@ -31,10 +31,7 @@ impl PageInfo {
     /// See start_cursor resolver above for why this is an option
     async fn end_cursor(&self) -> Option<Cursor> {
         if self.page_len > 0 {
-            Some(
-                Cursor::from_offset_index(self.offset, self.page_len - 1)
-                    .into(),
-            )
+            Some(Cursor::from_offset_index(self.offset, self.page_len - 1))
         } else {
             None
         }
