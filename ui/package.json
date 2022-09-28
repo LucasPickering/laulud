@@ -39,7 +39,6 @@
     "eslint-plugin-react": "^7.31.8",
     "eslint-plugin-react-hooks": "^4.6.0",
     "graphql": "^16.6.0",
-    "graphql-schema-linter": "^3.0.1",
     "html-webpack-plugin": "^5.5.0",
     "http-proxy-middleware": "^2.0.6",
     "prettier": "^2.7.1",
@@ -60,11 +59,9 @@
     "analyze": "NODE_ENV=production WEBPACK_BUNDLE_ANALYZER_MODE=server webpack",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
-    "lint:gql": "graphql-schema-linter",
     "clean": "rm -rf node_modules **/__generated__",
     "pretype-check": "npm run relay",
     "type-check": "tsc",
-    "prerelay": "./scripts/build_schema.sh",
     "relay": "relay-compiler"
   },
   "browserslist": {

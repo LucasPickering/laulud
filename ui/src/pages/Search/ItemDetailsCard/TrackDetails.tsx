@@ -13,10 +13,10 @@ const TrackDetails: React.FC<{
   // For details on all these fields:
   // https://developer.spotify.com/documentation/web-api/reference/#object-audiofeaturesobject
 
-  const { features } = useFragment(
+  const { audioFeatures: features } = useFragment(
     graphql`
       fragment TrackDetails_track on Track {
-        features {
+        audioFeatures {
           acousticness
           danceability
           durationMs
