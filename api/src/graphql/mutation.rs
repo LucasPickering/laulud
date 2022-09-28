@@ -1,13 +1,13 @@
 //! All types that are unique to GraphQL mutations
 
 use crate::{
-    error::{ApiError, ApiResult},
+    error::ApiError,
     graphql::{
         RequestContext, Tag, TagEdge, TagNode, TaggedItemEdge, TaggedItemNode,
     },
     spotify::SpotifyUri,
 };
-use async_graphql::{InputObject, Object, SimpleObject};
+use async_graphql::{Context, FieldResult, InputObject, Object, SimpleObject};
 use mongodb::{
     bson::doc,
     options::{FindOneAndUpdateOptions, ReturnDocument},
@@ -19,20 +19,24 @@ pub struct Mutation;
 
 #[Object]
 impl Mutation {
-    async fn add_tag(&self, input: AddTagInput) -> ApiResult<AddTagPayload> {
-        let context = executor.context();
+    async fn add_tag(
+        &self,
+        context: &Context<'_>,
+        input: AddTagInput,
+    ) -> FieldResult<AddTagPayload> {
+        let context = context.data::<RequestContext>()?;
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
-        let item_node = match context.spotify.get_item(&uri).await? {
+        let item_node = match context.spotify.get_item(&input.item_uri).await? {
             Some(spotify_item) => {
                 // Do the update query
                 let item_doc = context
                     .db_handler
                     .collection_tagged_items()
                     .find_one_and_update(
-                        doc! {"uri": &uri, "user_id": &context.user_id},
+                        doc! {"uri": &input.item_uri, "user_id": &context.user_id},
                         // Add each tag to the doc if it isn't present already
-                        doc! {"$addToSet": {"tags": &tag}},
+                        doc! {"$addToSet": {"tags": &input.tag}},
                         Some(
                             FindOneAndUpdateOptions::builder()
                                 .upsert(true)
@@ -58,7 +62,7 @@ impl Mutation {
             None => None,
         };
         let tag_node = TagNode {
-            tag,
+            tag: input.tag,
             item_uris: None,
         };
 
@@ -70,14 +74,13 @@ impl Mutation {
 
     async fn delete_tag(
         &self,
+        context: &Context<'_>,
         input: DeleteTagInput,
-    ) -> ApiResult<DeleteTagPayload> {
-        let context = executor.context();
-        let tag = input.tag.validate("tag")?;
+    ) -> FieldResult<DeleteTagPayload> {
+        let context = context.data::<RequestContext>()?;
 
         // Look up the item in Spotify first, to get metadata/confirm it's real
-        let uri = input.item_uri.validate("input.item_uri")?;
-        let item_node = match context.spotify.get_item(&uri).await? {
+        let item_node = match context.spotify.get_item(&input.item_uri).await? {
             Some(spotify_item) => {
                 // Look up tags in mongo - will return None if item doesn't
                 // exist
@@ -85,9 +88,9 @@ impl Mutation {
                     .db_handler
                     .collection_tagged_items()
                     .find_one_and_update(
-                        doc! {"uri": &uri, "user_id": &context.user_id},
+                        doc! {"uri": &input.item_uri, "user_id": &context.user_id},
                         // Remove the tag from the doc
-                        doc! {"$pull": {"tags": &tag}},
+                        doc! {"$pull": {"tags": &input.tag}},
                         Some(
                             FindOneAndUpdateOptions::builder()
                                 .return_document(ReturnDocument::After)
@@ -111,7 +114,7 @@ impl Mutation {
             None => None,
         };
         let tag_node = TagNode {
-            tag,
+            tag: input.tag,
             item_uris: None,
         };
 

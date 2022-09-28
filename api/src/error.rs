@@ -1,9 +1,10 @@
 use crate::spotify::SpotifyItemType;
+use async_graphql::{ErrorExtensions, FieldError};
 use log::{log, Level};
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
-use std::{backtrace::Backtrace, num::TryFromIntError};
+use std::{backtrace::Backtrace, error::Report, num::TryFromIntError};
 use thiserror::Error;
 
 pub type ApiResult<T> = Result<T, ApiError>;
@@ -11,13 +12,6 @@ pub type ApiResult<T> = Result<T, ApiError>;
 /// Type to capture all errors that can happen throughout the app.
 #[derive(Debug, Error)]
 pub enum ApiError {
-    #[error("TODO")]
-    Graphql {
-        #[from]
-        source: async_graphql::Error,
-        backtrace: Backtrace,
-    },
-
     /// Error deserializing BSON data, which most likely came from the DB. This
     /// is a server error because it indicates a mismatch between what's store
     /// in the DB and what we expected.
@@ -140,8 +134,7 @@ impl ApiError {
     pub fn to_status(&self) -> Status {
         match self {
             // 400
-            Self::Graphql { .. }|
-             Self::UnsupportedItemType { .. } => Status::BadRequest,
+            Self::UnsupportedItemType { .. } => Status::BadRequest,
 
             // 401
             Self::Unauthenticated { .. }
@@ -174,14 +167,14 @@ impl ApiError {
             Level::Debug
         };
 
-        log!(
-            log_level,
-            "API Error: {}\n{}",
-            self,
-            self.backtrace()
-                .map(|bt| bt.to_string())
-                .unwrap_or_else(String::new)
-        );
+        let report = Report::new(self).pretty(true).show_backtrace(true);
+        log!(log_level, "API Error: {}", report);
+    }
+}
+
+impl From<async_graphql::Error> for ApiError {
+    fn from(_: async_graphql::Error) -> Self {
+        todo!()
     }
 }
 
@@ -192,6 +185,7 @@ impl From<mongodb::error::Error> for ApiError {
     }
 }
 
+// Allow error to be used in Rocket response
 impl<'r> Responder<'r, 'static> for ApiError {
     fn respond_to(
         self,
@@ -199,6 +193,14 @@ impl<'r> Responder<'r, 'static> for ApiError {
     ) -> rocket::response::Result<'static> {
         self.log();
         Err(self.to_status())
+    }
+}
+
+impl ErrorExtensions for ApiError {
+    fn extend(&self) -> FieldError {
+        self.extend_with(|err, e| match err {
+            _ => todo!(),
+        })
     }
 }
 
@@ -230,5 +232,3 @@ pub struct ParseError {
     /// The value being parsed
     pub value: String,
 }
-
-// TODO error extensions https://async-graphql.github.io/async-graphql/en/error_extensions.html
