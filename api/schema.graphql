@@ -1,0 +1,287 @@
+"""
+Input for the `addTag` mutation
+"""
+input AddTagInput {
+	itemUri: SpotifyUri!
+	tag: Tag!
+}
+
+"""
+Output for the `addTag` mutation
+"""
+type AddTagPayload {
+	itemEdge: TaggedItemEdge
+	tagEdge: TagEdge!
+}
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/object-model/#album-object-simplified
+"""
+type AlbumSimplified implements Item {
+	albumGroup: String
+	albumType: String!
+	artists: [ArtistSimplified!]!
+	availableMarkets: [String!]!
+	externalUrls: ExternalUrls!
+	href: String!
+	id: String!
+	images: [Image!]!
+	name: String!
+	releaseDate: String!
+	releaseDatePrecision: String!
+	uri: SpotifyUri!
+}
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-full
+"""
+type Artist implements Item {
+	externalUrls: ExternalUrls!
+	genres: [String!]!
+	href: String!
+	id: String!
+	images: [Image!]!
+	name: String!
+	popularity: Int!
+	uri: SpotifyUri!
+}
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/object-model/#artist-object-simplified
+"""
+type ArtistSimplified {
+	externalUrls: ExternalUrls!
+	href: String!
+	id: String!
+	name: String!
+	uri: SpotifyUri!
+}
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/#object-audiofeaturesobject
+"""
+type AudioFeatures {
+	acousticness: Float!
+	analysisUrl: String!
+	danceability: Float!
+	durationMs: Int!
+	energy: Float!
+	id: String!
+	instrumentalness: Float!
+	key: Int!
+	liveness: Float!
+	loudness: Float!
+	mode: Int!
+	speechiness: Float!
+	tempo: Float!
+	timeSignature: Int!
+	trackHref: String!
+	uri: SpotifyUri!
+	valence: Float!
+}
+
+
+scalar Cursor
+
+"""
+Input for the `deleteTag` mutation
+"""
+input DeleteTagInput {
+	itemUri: SpotifyUri!
+	tag: Tag!
+}
+
+"""
+Output for the `deleteTag` mutation
+"""
+type DeleteTagPayload {
+	itemEdge: TaggedItemEdge
+	tagEdge: TagEdge!
+}
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/#object-externalurlobject
+"""
+type ExternalUrls {
+	spotify: String!
+}
+
+
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/object-model/#image-object
+"""
+type Image {
+	url: String!
+	width: Int
+	height: Int
+}
+
+
+"""
+An item is a polymorphic type that includes anything that can be fetched
+from Spotify and tagged in the API.
+"""
+interface Item {
+	externalUrls: ExternalUrls!
+	href: String!
+	id: String!
+	uri: SpotifyUri!
+}
+
+"""
+Result of running a search query among taggable items. This is the result of
+a single Spotify API request, but Spotify returns the items grouped by type
+so that's what we'll do. The 3 connections pagination in lockstep, i.e. they
+use the same limit/offset.
+https://developer.spotify.com/documentation/web-api/reference/#category-search
+"""
+type ItemSearch {
+	tracks: TaggedItemConnection!
+	albums: TaggedItemConnection!
+	artists: TaggedItemConnection!
+}
+
+type Mutation {
+	addTag(input: AddTagInput!): AddTagPayload!
+	deleteTag(input: DeleteTagInput!): DeleteTagPayload!
+}
+
+interface Node {
+	id: ID!
+}
+
+type PageInfo {
+	"""
+	The spec says that the start and end cursors must be non-null, but that
+	doesn't make sense because if the page is empty, then there is no
+	possible value for either. So those fields should only be `None` iff
+	the page is empty.
+	"""
+	cursor: Cursor
+	"""
+	See start_cursor resolver above for why this is an option
+	"""
+	endCursor: Cursor
+	previousPage: Boolean!
+	nextPage: Boolean!
+}
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/#object-privateuserobject
+"""
+type PrivateUser {
+	id: String!
+	href: String!
+	uri: SpotifyUri!
+	displayName: String
+	images: [Image!]!
+}
+
+type Query {
+	"""
+	Get a node of any type by UUID.
+	"""
+	node(id: ID!): Node
+	currentUser: PrivateUser!
+	item(uri: SpotifyUri!): TaggedItemNode
+	"""
+	Run a search term through spotify. We'll return items grouped by
+	their type, which is how we get the data from Spotify. This only touches
+	the Spotify API (not the DB), meaning we defer loading tags down the
+	line.
+	"""
+	itemSearch(query: String!, first: Int, after: Cursor): ItemSearch!
+	"""
+	Get all tags. These are loaded lazily by [TagConnection]
+	"""
+	tags: TagConnection!
+	"""
+	Get info for a particular tag. If the tag doesn't exist in the DB, we'll
+	pretend like it does and just return a node with no tagged items. Item
+	data will be loaded lazily, when requested from [TaggedItemConnection].
+	"""
+	tag(tag: Tag!): TagNode!
+}
+
+scalar SpotifyUri
+
+
+scalar Tag
+
+type TagConnection {
+	totalCount: Int!
+	pageInfo: PageInfo!
+	edges: [TagEdge!]!
+}
+
+type TagEdge {
+	node: TagNode!
+	cursor: Cursor!
+}
+
+type TagNode implements Node {
+	id: ID!
+	tag: Tag!
+	"""
+	Lazily fetch items for this tag node
+	TODO support pagination on this
+	"""
+	items: TaggedItemConnection!
+}
+
+type TaggedItemConnection {
+	"""
+	Get the total number of items in this connection, across all pages. If
+	item data is preloaded, this will be fast. If we're in lazy mode, this
+	will require a DB query.
+	"""
+	totalCount: Int!
+	"""
+	Get page info for these items. If item data is preloaded, this will
+	be fast. If we're in lazy mode, this will require a DB query.
+	"""
+	pageInfo: PageInfo!
+	edges: [TaggedItemEdge!]!
+}
+
+type TaggedItemEdge {
+	node: TaggedItemNode!
+	cursor: Cursor!
+}
+
+type TaggedItemNode implements Node {
+	id: ID!
+	item: Item!
+	tags: TagConnection!
+}
+
+"""
+https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
+"""
+type Track implements Item {
+	album: AlbumSimplified!
+	artists: [ArtistSimplified!]!
+	availableMarkets: [String!]!
+	discNumber: Int!
+	durationMs: Int!
+	explicit: Boolean!
+	externalUrls: ExternalUrls!
+	href: String!
+	id: String!
+	isPlayable: Boolean
+	name: String!
+	popularity: Int!
+	previewUrl: String
+	trackNumber: Int!
+	uri: SpotifyUri!
+	"""
+	Detailed audio analysis result for this track
+	"""
+	audioFeatures: AudioFeatures!
+}
+
+schema {
+	query: Query
+	mutation: Mutation
+}

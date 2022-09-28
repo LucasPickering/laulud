@@ -15,7 +15,7 @@ services:
   api:
     build: ./api
     working_dir: /app/api
-    command: cargo watch -x run
+    command: cargo watch -w Cargo.toml -w Cargo.lock -w src/ -x run
     init: true # Fixes slow shutdown
     tty: true # Colorize output
     volumes:
@@ -45,7 +45,7 @@ services:
       LAULUD_API_HOST: http://api:8000
     volumes:
       - ./ui:/app/ui
-      - ./api/schema:/app/api/schema
+      - ./api/schema.graphql:/app/ui/schema.graphql
       - ui_node_modules:/app/ui/node_modules
     ports:
       - "3000:3000"

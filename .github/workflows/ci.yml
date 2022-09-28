@@ -63,10 +63,6 @@ jobs:
         working-directory: ui/
         run: npm install
 
-      - name: Lint GraphQL schema
-        working-directory: ui/
-        run: npm run lint:gql
-
       - name: Type-check
         working-directory: ui/
         run: npm run type-check
