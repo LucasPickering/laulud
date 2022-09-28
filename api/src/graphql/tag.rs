@@ -49,11 +49,13 @@ impl TagNode {
         match &self.item_uris {
             // We have URIs already, so we can skip the DB query to fetch them
             Some(item_uris) => TaggedItemConnection::ByUris {
+                // TODO can we remove clone by using lifetimes?
                 uris: item_uris.clone(),
             },
             // URIs haven't been loaded yet, TaggedItemConnection will have to
             // do a DB query to get them before doing anything else
             None => TaggedItemConnection::ByTag {
+                // TODO can we remove clone by using lifetimes?
                 tag: self.tag.clone(),
             },
         }
@@ -141,7 +143,7 @@ impl TagConnection {
             // This variant doesn't support pagination, so offset is always 0
             Self::All { .. } | Self::ByItem { .. } => {
                 // In either case, this will hit the DB to count matches
-                let total_count = self.total_count(&context).await?;
+                let total_count = self.total_count(context).await?;
                 PageInfo {
                     offset: 0,
                     page_len: total_count,

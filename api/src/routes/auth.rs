@@ -79,11 +79,13 @@ pub async fn route_auth_callback(
 /// endpoint provides an easy way to check if we're allowed to make GraphQL
 /// requests.
 #[get("/auth-check")]
-pub async fn route_auth_check(_user_id: UserId) {
+pub async fn route_auth_check(_user_id: UserId) -> &'static str {
     // grabbing the user ID is enough to know that we're authed
+    "OK"
 }
 
 #[post("/logout")]
-pub async fn route_logout(cookies: &CookieJar<'_>) {
+pub async fn route_logout(cookies: &CookieJar<'_>) -> &'static str {
     IdentityState::remove_cookie(cookies);
+    "OK"
 }

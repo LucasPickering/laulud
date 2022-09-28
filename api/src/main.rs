@@ -9,11 +9,11 @@ mod graphql;
 mod routes;
 mod spotify;
 
-use crate::{db::DbHandler, error::ApiResult};
+use crate::db::DbHandler;
 use oauth2::{
     basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl,
 };
-use rocket::routes;
+use rocket::{routes, Build, Rocket};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -54,16 +54,19 @@ pub async fn init_spotify_client(config: &LauludConfig) -> BasicClient {
     )
 }
 
-#[rocket::main]
-async fn main() -> ApiResult<()> {
+#[rocket::launch]
+async fn launch() -> Rocket<Build> {
+    // All the Results in there are safe to unwrap, because they occur before
+    // the server is actually running
     env_logger::init();
     let rocket = rocket::build();
     let config: LauludConfig = rocket.figment().extract().unwrap();
 
     let db_handler = DbHandler::connect(&config).await.unwrap();
     let spotify_oauth_client = init_spotify_client(&config).await;
-    let graphql_schema =
-        graphql::create_graphql_schema("./schema.graphql").await?;
+    let graphql_schema = graphql::create_graphql_schema("./schema.graphql")
+        .await
+        .unwrap();
 
     rocket
         .mount(
@@ -82,9 +85,4 @@ async fn main() -> ApiResult<()> {
         .manage(Arc::new(db_handler))
         .manage(Arc::new(spotify_oauth_client))
         .manage(Arc::new(graphql_schema))
-        .launch()
-        .await
-        .unwrap();
-
-    Ok(())
 }

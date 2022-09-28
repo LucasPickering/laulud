@@ -2,8 +2,10 @@
 //! relate closely to the Spotify API. Everything in this module will be
 //! exported to the entire crate!
 
-use crate::error::ParseError;
-use async_graphql::{scalar, Interface, SimpleObject};
+use crate::{error::ParseError, graphql::RequestContext};
+use async_graphql::{
+    scalar, ComplexObject, Context, FieldResult, Interface, SimpleObject,
+};
 use derive_more::Display;
 use mongodb::bson::Bson;
 use serde::{Deserialize, Serialize};
@@ -73,6 +75,7 @@ pub struct AudioFeatures {
 
 /// https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full
 #[derive(Clone, Debug, Deserialize, SimpleObject)]
+#[graphql(complex)]
 pub struct Track {
     pub album: AlbumSimplified,
     pub artists: Vec<ArtistSimplified>,
@@ -89,6 +92,18 @@ pub struct Track {
     pub preview_url: Option<String>,
     pub track_number: i32,
     pub uri: SpotifyUri,
+}
+
+#[ComplexObject]
+impl Track {
+    /// Detailed audio analysis result for this track
+    async fn audio_features(
+        &self,
+        context: &Context<'_>,
+    ) -> FieldResult<AudioFeatures> {
+        let context = context.data::<RequestContext>()?;
+        Ok(context.spotify.get_audio_features(&self.id).await?)
+    }
 }
 
 /// https://developer.spotify.com/documentation/web-api/reference/#object-externalurlobject
@@ -165,27 +180,6 @@ pub struct PaginatedResponse<T> {
     pub items: Vec<T>,
 }
 
-impl<T> PaginatedResponse<T> {
-    /// Create a new struct instance that has all the same values as this
-    /// instance, except the `items` field has had the mapper function applied
-    /// to it. Useful for type transformations on the `items` field.
-    pub fn map_items<U>(
-        self,
-        mut mapper: impl FnMut(Vec<T>) -> Vec<U>,
-    ) -> PaginatedResponse<U> {
-        PaginatedResponse {
-            // Can't use .. syntax because the generic param changes
-            href: self.href,
-            limit: self.limit,
-            offset: self.offset,
-            total: self.total,
-            next: self.next,
-            previous: self.previous,
-            items: mapper(self.items),
-        }
-    }
-}
-
 /// Any item type that can get a URI
 ///
 /// Note: we don't actually support every Spotify type here yet, just the ones
@@ -222,15 +216,10 @@ impl FromStr for SpotifyItemType {
     }
 }
 
-/// A parsed and validated Spotify URI. This should be used for any internal
-/// logic that passes around URIs, so that we always know they're valid. It
-/// can be converted _from_ [SpotifyUri] fallibly, and _to_ [SpotifyUri]
-/// infallibly. Note that in this context, "valid" just means it's not
-/// _malformed_. It **doesn't** mean that the URI actually exists in Spotify.
-///
-/// This can only be constructed via its [Validate] implementation.
-///
-/// TODO update comment
+/// A parsed and validated Spotify URI. A URI uniquely identifies a Spotify
+/// item, and also includes its type. Note that in this context, "valid" just
+/// means it's not _malformed_. It **doesn't** mean that the URI actually exists
+/// in Spotify.
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 #[display(fmt = "spotify:{}:{}", item_type, id)]
 #[serde(try_from = "String", into = "String")]
