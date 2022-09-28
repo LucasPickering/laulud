@@ -1,11 +1,14 @@
 import React from "react";
 import { graphql, useFragment } from "react-relay";
-import { CardHeader } from "@mui/material";
+import { CardHeader, Skeleton } from "@mui/material";
 import SpotifyLink from "components/generic/SpotifyLink";
-import ItemArt from "components/generic/ItemArt";
+import ItemArt, { ItemArtSkeleton } from "components/generic/ItemArt";
 import { UnknownItemTypeError } from "util/errors";
 import { ItemDetailsCardHeader_item$key } from "./__generated__/ItemDetailsCardHeader_item.graphql";
 
+/**
+ * Top content of an Item Details card. Shows the title, subtitle, art, etc.
+ */
 const ItemDetailsCardHeader: React.FC<{
   itemKey: ItemDetailsCardHeader_item$key;
 }> = ({ itemKey }) => {
@@ -76,5 +79,15 @@ const ItemDetailsCardHeader: React.FC<{
       throw new UnknownItemTypeError(item.__typename);
   }
 };
+
+/**
+ * Placeholder equivalent of the main component
+ */
+export const ItemDetailsCardHeaderSkeleton: React.FC = () => (
+  <CardHeader
+    title={<Skeleton variant="rectangular" width={60} />}
+    avatar={<ItemArtSkeleton />}
+  />
+);
 
 export default ItemDetailsCardHeader;

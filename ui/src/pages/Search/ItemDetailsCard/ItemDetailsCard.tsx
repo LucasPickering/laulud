@@ -1,9 +1,9 @@
-import React, { Suspense } from "react";
-import { Card, CardContent, Typography } from "@mui/material";
-import { graphql, useLazyLoadQuery } from "react-relay";
+import React, { useEffect } from "react";
+import { Card } from "@mui/material";
+import { useQueryLoader } from "react-relay";
 import ItemDetails from "./ItemDetails";
-import { ItemDetailsCardQuery } from "./__generated__/ItemDetailsCardQuery.graphql";
-import Loading from "components/Loading";
+import type { ItemDetailsQuery as ItemDetailsQueryType } from "./__generated__/ItemDetailsQuery.graphql";
+import ItemDetailsQuery from "./__generated__/ItemDetailsQuery.graphql";
 
 interface Props {
   uri: string;
@@ -11,42 +11,22 @@ interface Props {
 
 /**
  * The main component to render details for a particular item. This handles
- * all the data loading, loading state, etc. needed
+ * all the data loading needed
  */
-const ItemDetailsCard: React.FC<Props> = ({ uri }) => (
-  <Card>
-    <Suspense
-      fallback={
-        <CardContent>
-          <Loading />
-        </CardContent>
-      }
-    >
-      <ItemDetailsCardLoader uri={uri} />
-    </Suspense>
-  </Card>
-);
+const ItemDetailsCard: React.FC<Props> = ({ uri }) => {
+  const [queryRef, loadQuery] =
+    useQueryLoader<ItemDetailsQueryType>(ItemDetailsQuery);
 
-const ItemDetailsCardLoader: React.FC<Props> = ({ uri }) => {
-  const data = useLazyLoadQuery<ItemDetailsCardQuery>(
-    graphql`
-      query ItemDetailsCardQuery($uri: SpotifyUri!) {
-        item(uri: $uri) {
-          ...ItemDetails_taggedItemNode
-        }
-      }
-    `,
-    {
-      uri,
-    }
+  // Kick off query on first load
+  useEffect(() => {
+    loadQuery({ uri });
+  }, [loadQuery, uri]);
+
+  return (
+    <Card>
+      <ItemDetails queryRef={queryRef} />
+    </Card>
   );
-
-  // URI doesn't match any item
-  if (!data.item) {
-    return <Typography>No such item</Typography>;
-  }
-
-  return <ItemDetails taggedItemNodeKey={data.item} />;
 };
 
 export default ItemDetailsCard;

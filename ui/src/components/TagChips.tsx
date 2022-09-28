@@ -92,7 +92,7 @@ const TagChips: React.FC<Props> = ({
   return (
     <Stack
       direction="row"
-      margin={1}
+      // margin={1}
       flexWrap="wrap"
       // Default stack spacing doesn't work with wrapping, but gap property
       // does. Switch back to spacing after https://github.com/mui/material-ui/issues/28035

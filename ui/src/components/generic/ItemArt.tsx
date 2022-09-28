@@ -1,3 +1,4 @@
+import { Skeleton } from "@mui/material";
 import React from "react";
 import { graphql, useFragment } from "react-relay";
 import { UnknownItemTypeError } from "util/errors";
@@ -77,5 +78,12 @@ function ItemArt({ itemKey, size = "medium" }: Props): React.ReactElement {
       throw new UnknownItemTypeError(item.__typename);
   }
 }
+
+/**
+ * Placeholder equivalent of the main component
+ */
+export const ItemArtSkeleton: React.FC<Pick<Props, "size">> = ({
+  size = "medium",
+}) => <Skeleton variant="rectangular" {...sizes[size]} />;
 
 export default ItemArt;
