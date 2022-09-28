@@ -1,9 +1,9 @@
 import React from "react";
 import ItemList from "components/ItemList";
 import { graphql, useFragment } from "react-relay";
-import { ItemSearchLoaderQuery } from "./__generated__/ItemSearchLoaderQuery.graphql";
+import { ItemSearchTabContentQuery } from "./__generated__/ItemSearchTabContentQuery.graphql";
 import withQuery from "util/withQuery";
-import { ItemSearchLoader_itemSearch$key } from "./__generated__/ItemSearchLoader_itemSearch.graphql";
+import { ItemSearchTabContent_itemSearch$key } from "./__generated__/ItemSearchTabContent_itemSearch.graphql";
 import Loading from "components/Loading";
 
 interface Props
@@ -11,21 +11,21 @@ interface Props
     React.ComponentProps<typeof ItemList>,
     "taggedItemConnectionKey"
   > {
-  itemSearchKey: ItemSearchLoader_itemSearch$key;
+  itemSearchKey: ItemSearchTabContent_itemSearch$key;
   selectedTab: "tracks" | "albums" | "artists";
 }
 
 /**
  * A single selected tab in the item search view.
  */
-const ItemSearchLoader: React.FC<Props> = ({
+const ItemSearchTabContent: React.FC<Props> = ({
   itemSearchKey,
   selectedTab,
   ...rest
 }) => {
   const itemSearch = useFragment(
     graphql`
-      fragment ItemSearchLoader_itemSearch on ItemSearch {
+      fragment ItemSearchTabContent_itemSearch on ItemSearch {
         tracks {
           ...ItemList_taggedItemConnection
         }
@@ -47,14 +47,14 @@ const ItemSearchLoader: React.FC<Props> = ({
   );
 };
 
-export default withQuery<ItemSearchLoaderQuery, Props, "itemSearchKey">({
+export default withQuery<ItemSearchTabContentQuery, Props, "itemSearchKey">({
   query: graphql`
-    query ItemSearchLoaderQuery($searchQuery: String!) {
+    query ItemSearchTabContentQuery($searchQuery: String!) {
       itemSearch(query: $searchQuery) {
-        ...ItemSearchLoader_itemSearch
+        ...ItemSearchTabContent_itemSearch
       }
     }
   `,
   dataToProps: (data) => data.itemSearch && { itemSearchKey: data.itemSearch },
   fallbackElement: <Loading margin={2} />,
-})(ItemSearchLoader);
+})(ItemSearchTabContent);

@@ -4,14 +4,14 @@ import queryString from "query-string";
 import SearchBar from "components/generic/SearchBar";
 import useRouteQuery from "hooks/useRouteQuery";
 import { useNavigate } from "react-router-dom";
-import type { ItemSearchLoaderQuery as ItemSearchLoaderQueryType } from "./__generated__/ItemSearchLoaderQuery.graphql";
-import ItemSearchLoaderQuery from "./__generated__/ItemSearchLoaderQuery.graphql";
-import ItemSearchLoader from "./ItemSearchLoader";
+import type { ItemSearchTabContentQuery as ItemSearchTabContentQueryType } from "./__generated__/ItemSearchTabContentQuery.graphql";
+import ItemSearchTabContentQuery from "./__generated__/ItemSearchTabContentQuery.graphql";
+import ItemSearchTabContent from "./ItemSearchTabContent";
 import { useQueryLoader } from "react-relay";
 
 interface Props
   extends Omit<
-    React.ComponentProps<typeof ItemSearchLoader>,
+    React.ComponentProps<typeof ItemSearchTabContent>,
     "queryRef" | "selectedTab"
   > {
   persistInRoute?: boolean;
@@ -28,7 +28,7 @@ const ItemSearchView: React.FC<Props> = ({
   ...rest
 }) => {
   const [queryRef, loadQuery, disposeQuery] =
-    useQueryLoader<ItemSearchLoaderQueryType>(ItemSearchLoaderQuery);
+    useQueryLoader<ItemSearchTabContentQueryType>(ItemSearchTabContentQuery);
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState<
     "tracks" | "albums" | "artists"
@@ -77,7 +77,7 @@ const ItemSearchView: React.FC<Props> = ({
             <Tab value="albums" label="Albums" />
             <Tab value="artists" label="Artists" />
           </Tabs>
-          <ItemSearchLoader
+          <ItemSearchTabContent
             queryRef={queryRef}
             selectedTab={selectedTab}
             {...rest}
