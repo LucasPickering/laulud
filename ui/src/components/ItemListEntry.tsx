@@ -15,6 +15,7 @@ function ItemListEntry({
       fragment ItemListEntry_taggedItemNode on TaggedItemNode {
         item {
           __typename
+          ...ItemArt_item
           ... on Track {
             name
             artists {
@@ -31,24 +32,22 @@ function ItemListEntry({
             name
           }
         }
-        ...ItemArt_taggedItemNode
       }
     `,
     taggedItemNodeKey
   );
 
-  switch (taggedItemNode.item.__typename) {
+  const item = taggedItemNode.item;
+  switch (item.__typename) {
     case "Track":
       return (
         <>
           <ListItemAvatar>
-            <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
+            <ItemArt itemKey={item} size="small" />
           </ListItemAvatar>
           <ListItemText
-            primary={taggedItemNode.item.name}
-            secondary={taggedItemNode.item.artists
-              ?.map((artist) => artist.name)
-              .join(", ")}
+            primary={item.name}
+            secondary={item.artists?.map((artist) => artist.name).join(", ")}
           />
         </>
       );
@@ -57,13 +56,11 @@ function ItemListEntry({
       return (
         <>
           <ListItemAvatar>
-            <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
+            <ItemArt itemKey={item} size="small" />
           </ListItemAvatar>
           <ListItemText
-            primary={taggedItemNode.item.name}
-            secondary={taggedItemNode.item.artists
-              ?.map((artist) => artist.name)
-              .join(", ")}
+            primary={item.name}
+            secondary={item.artists?.map((artist) => artist.name).join(", ")}
           />
         </>
       );
@@ -72,14 +69,14 @@ function ItemListEntry({
       return (
         <>
           <ListItemAvatar>
-            <ItemArt taggedItemNodeKey={taggedItemNode} size="small" />
+            <ItemArt itemKey={item} size="small" />
           </ListItemAvatar>
-          <ListItemText primary={taggedItemNode.item.name} />
+          <ListItemText primary={item.name} />
         </>
       );
 
     default:
-      throw new UnknownItemTypeError(taggedItemNode.item.__typename);
+      throw new UnknownItemTypeError(item.__typename);
   }
 }
 

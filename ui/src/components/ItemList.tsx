@@ -38,9 +38,9 @@ const ItemList: React.FC<Props> = ({
           node {
             item {
               uri
+              ...ItemIcon_item
+              ...SpotifyLink_item
             }
-            ...ItemIcon_taggedItemNode
-            ...SpotifyLink_taggedItemNode
             ...ItemListEntry_taggedItemNode
             ...TagChips_taggedItemNode
           }
@@ -83,10 +83,10 @@ const ItemList: React.FC<Props> = ({
             {showIcons && (
               <>
                 <ListItemIcon>
-                  <ItemIcon taggedItemNodeKey={node} />
+                  <ItemIcon itemKey={node.item} />
                 </ListItemIcon>
                 <ListItemIcon>
-                  <SpotifyLink taggedItemNodeKey={node} />
+                  <SpotifyLink itemKey={node.item} />
                 </ListItemIcon>
               </>
             )}

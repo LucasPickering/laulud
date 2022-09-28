@@ -1,7 +1,7 @@
 import React from "react";
 import { graphql, useFragment } from "react-relay";
 import { UnknownItemTypeError } from "util/errors";
-import { ItemArt_taggedItemNode$key } from "./__generated__/ItemArt_taggedItemNode.graphql";
+import { ItemArt_item$key } from "./__generated__/ItemArt_item.graphql";
 
 const sizes = {
   small: {
@@ -15,7 +15,7 @@ const sizes = {
 };
 
 interface Props {
-  taggedItemNodeKey: ItemArt_taggedItemNode$key;
+  itemKey: ItemArt_item$key;
   size?: "small" | "medium";
 }
 
@@ -23,42 +23,35 @@ interface Props {
  * Render an image for a Spotify item. For tracks and albums this will be the
  * album art. For artists it's the artist photo.
  */
-function ItemArt({
-  taggedItemNodeKey,
-  size = "medium",
-}: Props): React.ReactElement {
-  const taggedItemNode = useFragment(
+function ItemArt({ itemKey, size = "medium" }: Props): React.ReactElement {
+  const item = useFragment(
     graphql`
-      # TODO convert to fragment on Item after https://github.com/graphql-rust/juniper/issues/922
-      fragment ItemArt_taggedItemNode on TaggedItemNode {
-        item {
-          __typename
-          ... on Track {
-            album {
-              images {
-                url
-              }
-            }
-            name
-          }
-          ... on AlbumSimplified {
+      fragment ItemArt_item on Item {
+        __typename
+        ... on Track {
+          album {
             images {
               url
             }
-            name
           }
-          ... on Artist {
-            images {
-              url
-            }
-            name
+          name
+        }
+        ... on AlbumSimplified {
+          images {
+            url
           }
+          name
+        }
+        ... on Artist {
+          images {
+            url
+          }
+          name
         }
       }
     `,
-    taggedItemNodeKey
+    itemKey
   );
-  const item = taggedItemNode.item;
 
   switch (item.__typename) {
     case "Track":
