@@ -1,8 +1,56 @@
 //! Basic, generic GraphQL types, that aren't specific to any part of the API or
 //! any particular data type
 
-use crate::graphql::internal::Cursor;
-use async_graphql::Object;
+use crate::error::ParseError;
+use async_graphql::{scalar, Object};
+use derive_more::Display;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+
+/// An identifier determining where in a paginated sequence of data we are. A
+/// cursor is just some offset value converted into a string, so this struct
+/// represents the unconverted version.
+#[derive(Copy, Clone, Debug, Display, Serialize, Deserialize)]
+// TODO use a fancy encoding here like hex or base64 to look cool
+#[display(fmt = "{}", self.offset)]
+pub struct Cursor {
+    offset: usize,
+}
+
+scalar!(Cursor);
+
+impl Cursor {
+    /// Get the pre-parsed offset for this cursor. A cursor is just an
+    /// obfuscated number that indicates the element's offset into the
+    /// collection. These offsets can be used with Spotify or Mongo to find
+    /// the element.
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    /// Get a cursor for an edge based on the offset of the page that if came
+    /// from and the index of the edge _within that page_. These two values
+    /// together tell us the total offset of the edge, which is used to
+    /// generate a cursor.
+    pub fn from_offset_index(offset: usize, index: usize) -> Self {
+        Self {
+            offset: offset + index,
+        }
+    }
+}
+
+impl FromStr for Cursor {
+    type Err = ParseError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        // Parse the string as a plain number
+        let offset = value.parse::<usize>().map_err(|_| ParseError {
+            message: "Invalid pagination cursor".into(),
+            value: value.into(),
+        })?;
+        Ok(Cursor { offset })
+    }
+}
 
 /// GQL type to display information about a page of data. See the Relay
 /// Connections spec: https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo

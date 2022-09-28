@@ -30,26 +30,26 @@ impl TaggedItemNode {
         &self,
         context: &Context<'_>,
     ) -> FieldResult<async_graphql::ID> {
+        let context = context.data::<RequestContext>()?;
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
-        Ok(node.get_id(context).await?)
+        Ok(node.id_(&context.user_id))
     }
 
     async fn item(&self) -> &Item {
         &self.item
     }
 
-    async fn tags(&self, context: &Context<'_>) -> FieldResult<TagConnection> {
+    async fn tags(&self) -> FieldResult<TagConnection> {
         // If we've already loaded the tags for this item, then we can pass them
         // to the TagConnection and skip a DB query. In some scenarios (e.g.
         // mutations), we can preload tags for free, but in others we
         // want to defer the DB query until it's actually necessary.
         let tag_connection = match &self.tags {
-            // TODO can we remove clone by using lifetimes?
-            Some(tags) => TagConnection::Preloaded { tags: tags.clone() },
+            Some(tags) => TagConnection::Preloaded { tags },
             None => TagConnection::ByItem {
-                item_uri: self.item.uri(context).await?,
+                item_uri: self.item.uri_(),
             },
         };
         Ok(tag_connection)
@@ -74,7 +74,7 @@ impl TaggedItemEdge {
 /// The data may be loaded eagerly or lazily. See individual variants for the
 /// possible options.
 #[derive(Clone, Debug)]
-pub enum TaggedItemConnection {
+pub enum TaggedItemConnection<'a> {
     /// All item data is preloaded from the Spotify API. The first level of
     /// field resolutions for this variant will be immediate, and not require
     /// any I/O (nested fields may require additional I/O, but that's beyond
@@ -93,7 +93,7 @@ pub enum TaggedItemConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByUris { uris: Vec<SpotifyUri> },
+    ByUris { uris: &'a [SpotifyUri] },
 
     /// Lazily load item data, where the items in the collection are defined by
     /// a single tag. When item data is needed, the list of items that match
@@ -102,11 +102,11 @@ pub enum TaggedItemConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByTag { tag: Tag },
+    ByTag { tag: &'a Tag },
 }
 
 #[Object]
-impl TaggedItemConnection {
+impl<'a> TaggedItemConnection<'a> {
     /// Get the total number of items in this connection, across all pages. If
     /// item data is preloaded, this will be fast. If we're in lazy mode, this
     /// will require a DB query.
@@ -228,8 +228,8 @@ impl TaggedItemConnection {
 /// use the same limit/offset.
 /// https://developer.spotify.com/documentation/web-api/reference/#category-search
 #[derive(Clone, Debug, SimpleObject)]
-pub struct ItemSearch {
-    pub tracks: TaggedItemConnection,
-    pub albums: TaggedItemConnection,
-    pub artists: TaggedItemConnection,
+pub struct ItemSearch<'a> {
+    pub tracks: TaggedItemConnection<'a>,
+    pub albums: TaggedItemConnection<'a>,
+    pub artists: TaggedItemConnection<'a>,
 }

@@ -1,13 +1,73 @@
-use std::convert::TryInto;
-
 use crate::{
+    error::ParseError,
     graphql::{
         core::PageInfo, internal::GenericEdge, item::TaggedItemConnection,
-        Cursor, Node, RequestContext, Tag,
+        Cursor, Node, RequestContext,
     },
     spotify::SpotifyUri,
 };
-use async_graphql::{Context, FieldResult, Object};
+use async_graphql::{scalar, Context, FieldResult, Object};
+use derive_more::Display;
+use mongodb::bson::Bson;
+use serde::{Deserialize, Serialize};
+use std::{
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
+
+/// A user-created tag.
+#[derive(Clone, Debug, Display, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
+pub struct Tag(String);
+
+scalar!(Tag);
+
+impl Tag {
+    pub fn new(tag: String) -> Self {
+        Self(tag)
+    }
+
+    pub fn tag(&self) -> &str {
+        &self.0
+    }
+}
+
+impl FromStr for Tag {
+    type Err = ParseError;
+
+    /// Make sure the tag is non-empty
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        if value.is_empty() {
+            Err(ParseError {
+                message: "Tag cannot be empty".into(),
+                value: value.into(),
+            })
+        } else {
+            Ok(Tag::new(value.into()))
+        }
+    }
+}
+
+// For DB interactions
+impl From<&Tag> for Bson {
+    fn from(uri: &Tag) -> Self {
+        uri.to_string().into()
+    }
+}
+
+// These two impls needed for serde
+impl From<Tag> for String {
+    fn from(tag: Tag) -> Self {
+        tag.to_string()
+    }
+}
+impl TryFrom<String> for Tag {
+    type Error = <Tag as FromStr>::Err;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse()
+    }
+}
 
 /// A user-defined tag. Tags have a many-to-many relationship with Spotify
 /// items, and all tag data is stored in the local DB. The items associated
@@ -33,10 +93,11 @@ impl TagNode {
         &self,
         context: &Context<'_>,
     ) -> FieldResult<async_graphql::ID> {
+        let context = context.data::<RequestContext>()?;
         // We have to wrap this struct in a `Node` first, because that type
         // defines how to map each of its variants to an ID
         let node: Node = self.clone().into();
-        Ok(node.get_id(context).await?)
+        Ok(node.id_(&context.user_id))
     }
 
     async fn tag(&self) -> &Tag {
@@ -44,20 +105,14 @@ impl TagNode {
     }
 
     /// Lazily fetch items for this tag node
-    /// TODO support pagination on this
     async fn items(&self) -> TaggedItemConnection {
+        // TODO support pagination on this
         match &self.item_uris {
             // We have URIs already, so we can skip the DB query to fetch them
-            Some(item_uris) => TaggedItemConnection::ByUris {
-                // TODO can we remove clone by using lifetimes?
-                uris: item_uris.clone(),
-            },
+            Some(item_uris) => TaggedItemConnection::ByUris { uris: item_uris },
             // URIs haven't been loaded yet, TaggedItemConnection will have to
             // do a DB query to get them before doing anything else
-            None => TaggedItemConnection::ByTag {
-                // TODO can we remove clone by using lifetimes?
-                tag: self.tag.clone(),
-            },
+            None => TaggedItemConnection::ByTag { tag: &self.tag },
         }
     }
 }
@@ -81,7 +136,7 @@ impl TagEdge {
 /// This struct provides data about a particular collection of tags. The list
 /// of tags may be loaded eagerly or lazily. See individual variants for the
 /// possible options.
-pub enum TagConnection {
+pub enum TagConnection<'a> {
     /// The list of tags is preloaded from the DB. The first level of
     /// field resolutions for this variant will be immediate, and not require
     /// any I/O (nested fields may require additional I/O, but that beyond
@@ -90,7 +145,7 @@ pub enum TagConnection {
     /// This variant should be used whenever tag data is already present, but
     /// you shouldn't prefetch data just for the purposes of using this
     /// variant. In those cases, use one of the lazily loaded variants instead.
-    Preloaded { tags: Vec<Tag> },
+    Preloaded { tags: &'a [Tag] },
 
     /// Lazily load tag data for **all** tags defined by this user. The list of
     /// tags that this user has created will be fetched lazily, as needed.
@@ -104,11 +159,11 @@ pub enum TagConnection {
     ///
     /// This variant currently doesn't support pagination, but that can be
     /// added if necessary.
-    ByItem { item_uri: SpotifyUri },
+    ByItem { item_uri: &'a SpotifyUri },
 }
 
 #[Object]
-impl TagConnection {
+impl<'a> TagConnection<'a> {
     async fn total_count(&self, context: &Context<'_>) -> FieldResult<usize> {
         let context = context.data::<RequestContext>()?;
         let collection = context.db_handler.collection_tagged_items();
@@ -164,7 +219,7 @@ impl TagConnection {
         // to the DB
         let tags: Vec<Tag> = match self {
             // Tags have been loaded eagerly, so no I/O required here
-            Self::Preloaded { tags } => tags.clone(),
+            Self::Preloaded { tags } => tags.to_vec(),
 
             // Tags haven't been loaded yet, fetch all of them
             Self::All => collection.find_tags(&context.user_id).await?,
