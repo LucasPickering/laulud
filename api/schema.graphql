@@ -225,7 +225,6 @@ type TagNode implements Node {
 	tag: Tag!
 	"""
 	Lazily fetch items for this tag node
-	TODO support pagination on this
 	"""
 	items: TaggedItemConnection!
 }

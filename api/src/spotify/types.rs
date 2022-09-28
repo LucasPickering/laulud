@@ -319,3 +319,15 @@ pub enum Item {
     Album(AlbumSimplified),
     Artist(Artist),
 }
+
+impl Item {
+    /// Get the item's URI. Underscored name is needed to disambiguate from the
+    /// equivalent GraphQL resolver on the interface.
+    pub fn uri_(&self) -> &SpotifyUri {
+        match self {
+            Self::Track(track) => &track.uri,
+            Self::Album(album) => &album.uri,
+            Self::Artist(artist) => &artist.uri,
+        }
+    }
+}

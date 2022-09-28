@@ -4,7 +4,7 @@ use log::{log, Level};
 use mongodb::bson;
 use oauth2::basic::BasicErrorResponse;
 use rocket::{http::Status, response::Responder, Request};
-use std::{backtrace::Backtrace, error::Report, num::TryFromIntError};
+use std::{backtrace::Backtrace, error::Report};
 use thiserror::Error;
 
 pub type ApiResult<T> = Result<T, ApiError>;
@@ -72,6 +72,14 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
+    /// Error parsing
+    #[error("{source}")]
+    Parse {
+        #[from]
+        source: ParseError,
+        backtrace: Backtrace,
+    },
+
     /// Wrapper for an OpenID token error, which can occur while validating a
     /// token submitted by a user.
     #[error("{source}")]
@@ -103,19 +111,6 @@ pub enum ApiError {
         backtrace: Backtrace,
     },
 
-    /// Tried to convert an int to a different type but it didn't fit in the
-    /// output type. Usually this indicates either an extremely large value
-    /// (beyond what we ever expect to support, so that will never actually
-    /// happen) or a failed assumption somewhere. Either way, safe to treat
-    /// this as a server error.
-    /// TODO still needed?
-    #[error("Number conversion error")]
-    TryFromInt {
-        #[from]
-        source: TryFromIntError,
-        backtrace: Backtrace,
-    },
-
     /// Catch-all error, should have a descriptive message
     #[error("Unknown error: {message}")]
     Unknown {
@@ -134,7 +129,8 @@ impl ApiError {
     pub fn to_status(&self) -> Status {
         match self {
             // 400
-            Self::UnsupportedItemType { .. } => Status::BadRequest,
+            Self::UnsupportedItemType { .. }
+            | Self::Parse { .. } => Status::BadRequest,
 
             // 401
             Self::Unauthenticated { .. }
@@ -153,8 +149,7 @@ impl ApiError {
             // 500s
             | Self::SpotifyApiHttp { .. }
             | Self::InvalidHeaderValue { .. }
-            |Self::InputOutput { .. }
-            | Self::TryFromInt { .. }
+            | Self::InputOutput { .. }
             | Self::Unknown { .. } => Status::InternalServerError,
         }
     }
@@ -169,12 +164,6 @@ impl ApiError {
 
         let report = Report::new(self).pretty(true).show_backtrace(true);
         log!(log_level, "API Error: {}", report);
-    }
-}
-
-impl From<async_graphql::Error> for ApiError {
-    fn from(_: async_graphql::Error) -> Self {
-        todo!()
     }
 }
 

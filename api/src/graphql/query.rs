@@ -27,7 +27,7 @@ impl Query {
         id: async_graphql::ID,
     ) -> FieldResult<Option<Node>> {
         let context = context.data::<RequestContext>()?;
-        let (node_type, value_id, user_id) = NodeType::parse_id(&id)?;
+        let (node_type, value_id, user_id) = Node::parse_id(&id)?;
 
         // Nice try, Satan
         if user_id != context.user_id {
