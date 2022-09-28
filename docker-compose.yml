@@ -25,7 +25,7 @@ services:
       - db
     environment:
       RUST_BACKTRACE: 1
-      RUST_LOG: ${RUST_LOG:-info}
+      RUST_LOG: ${RUST_LOG:-info,laulud_api=debug}
       # Grab these from the .env file
       ROCKET_SPOTIFY_CLIENT_ID:
       ROCKET_SPOTIFY_CLIENT_SECRET:
