@@ -4,9 +4,8 @@
 use crate::{
     error::{ApiError, ApiResult},
     graphql::{
-        internal::{LimitOffset, NodeType},
-        Cursor, ItemSearch, Node, RequestContext, Tag, TagConnection, TagNode,
-        TaggedItemConnection, TaggedItemNode,
+        internal::NodeType, Cursor, ItemSearch, Node, RequestContext, Tag,
+        TagConnection, TagNode, TaggedItemConnection, TaggedItemNode,
     },
     spotify::{Item, PaginatedResponse, PrivateUser, SpotifyUri},
 };
@@ -89,20 +88,21 @@ impl Query {
         &self,
         context: &Context<'_>,
         #[graphql(validator(min_length = 1))] query: String,
-        first: Option<i32>,
+        first: Option<usize>,
         after: Option<Cursor>,
     ) -> FieldResult<ItemSearch> {
         let context = context.data::<RequestContext>()?;
-
-        // Validate params
-        let limit_offset = LimitOffset::try_from_first_after(first, after)?;
 
         // Run the search query through spotify. This returns a mapping of
         // results, grouped by item type. i.e. one PaginatedResponse for each
         // type (track/album/artist)
         let mut search_response = context
             .spotify
-            .search_items(&query, limit_offset.limit(), limit_offset.offset())
+            .search_items(
+                &query,
+                first,
+                after.map(|cursor| cursor.after_offset()),
+            )
             .await?;
 
         // Helper to pull a type out of the search response and error if missing
