@@ -9,16 +9,20 @@ interface Props extends React.ComponentProps<typeof Chip> {
 }
 
 const NewTagChip: React.FC<Props> = ({ status, addTag, ...rest }) => {
-  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [newTagText, setNewTagText] = useState<string>("");
 
   // After successfully creating a tag, reset state here
   useEffect(() => {
     if (status === "success") {
-      setIsEditing(false);
       setNewTagText("");
     }
   }, [status]);
+
+  const onSave = (): void => {
+    if (newTagText) {
+      addTag(newTagText);
+    }
+  };
 
   return (
     <Tooltip title="Add Tag">
@@ -32,27 +36,25 @@ const NewTagChip: React.FC<Props> = ({ status, addTag, ...rest }) => {
           )
         }
         label={
-          isEditing ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addTag(newTagText);
-                setIsEditing(false);
-              }}
-            >
-              <InputBase
-                autoFocus
-                value={newTagText}
-                onBlur={() => setIsEditing(false)}
-                onChange={(e) => setNewTagText(e.target.value)}
-              />
-            </form>
-          ) : (
-            newTagText || null
-          )
+          <form
+            onSubmit={(e) => {
+              e.preventDefault(); // Don't reload the page
+              onSave();
+            }}
+          >
+            <InputBase
+              placeholder="New Tag"
+              value={newTagText}
+              onBlur={() => onSave()}
+              onChange={(e) => setNewTagText(e.target.value)}
+              sx={({ palette }) => ({
+                width: 80,
+                input: { color: palette.primary.contrastText },
+              })}
+            />
+          </form>
         }
         clickable
-        onClick={() => setIsEditing(true)}
       />
     </Tooltip>
   );
