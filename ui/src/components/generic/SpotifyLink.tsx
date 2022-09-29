@@ -25,11 +25,11 @@ const SpotifyLink: React.FC<Props> = ({ itemKey }) => {
   );
 
   return (
-    <IconButton component={UnstyledLink} to={item.externalUrls.spotify}>
-      <Tooltip title="Open in Spotify">
+    <Tooltip title="Open in Spotify">
+      <IconButton component={UnstyledLink} to={item.externalUrls.spotify}>
         <IconOpenInNew />
-      </Tooltip>
-    </IconButton>
+      </IconButton>
+    </Tooltip>
   );
 };
 

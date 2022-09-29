@@ -131,7 +131,7 @@ const TagChips: React.FC<Props> = ({
 
       {/* Errors! */}
       <ErrorSnackbar
-        message="Error deleting tag"
+        message="Error removing tag"
         status={deleteTagStatus}
         resetStatus={resetDeleteTagStatus}
       />

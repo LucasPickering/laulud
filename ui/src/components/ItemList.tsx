@@ -12,7 +12,7 @@ import { To } from "react-router-dom";
 interface Props {
   taggedItemConnectionKey: ItemList_taggedItemConnection$key;
   selectedUri?: string;
-  showIcons?: boolean;
+  showLink?: boolean;
   showTags?: boolean;
   mapAction?: (uri: string) => React.ReactNode;
   mapRoute?: (uri: string) => To;
@@ -25,7 +25,7 @@ interface Props {
 const ItemList: React.FC<Props> = ({
   taggedItemConnectionKey,
   selectedUri,
-  showIcons = false,
+  showLink = false,
   showTags = false,
   mapAction,
   mapRoute,
@@ -77,20 +77,18 @@ const ItemList: React.FC<Props> = ({
             key={uri.toString()}
             // Wrapping makes tags render correctly
             sx={{ flexWrap: "wrap" }}
+            secondaryAction={
+              <>
+                {showLink && <SpotifyLink itemKey={node.item} />}
+                {action}
+              </>
+            }
             {...buttonProps}
           >
+            <ListItemIcon>
+              <ItemIcon itemKey={node.item} />
+            </ListItemIcon>
             <ItemListEntry taggedItemNodeKey={node} />
-            {showIcons && (
-              <>
-                <ListItemIcon>
-                  <ItemIcon itemKey={node.item} />
-                </ListItemIcon>
-                <ListItemIcon>
-                  <SpotifyLink itemKey={node.item} />
-                </ListItemIcon>
-              </>
-            )}
-            {action}
 
             {showTags && (
               <Box flexBasis="100%">

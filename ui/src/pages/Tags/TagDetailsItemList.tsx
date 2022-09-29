@@ -5,18 +5,25 @@ import withQuery from "util/withQuery";
 import Loading from "components/Loading";
 import { TagDetailsItemListQuery } from "./__generated__/TagDetailsItemListQuery.graphql";
 import { TagDetailsItemList_tagNode$key } from "./__generated__/TagDetailsItemList_tagNode.graphql";
+import { IconButton, Tooltip } from "@mui/material";
+import { Clear as IconClear } from "@mui/icons-material";
+import ErrorSnackbar from "components/generic/ErrorSnackbar";
+import useMutation from "hooks/useMutation";
+import { TagDetailsItemListDeleteTagMutation } from "./__generated__/TagDetailsItemListDeleteTagMutation.graphql";
 
 interface Props {
   tagNodeKey: TagDetailsItemList_tagNode$key;
 }
 
 /**
- * The list of items that a tag has been applied to
+ * The list of items that a tag has been applied to, within the scope of the
+ * TagDetails component.
  */
 const TagDetailsItemList: React.FC<Props> = ({ tagNodeKey }) => {
   const tagNode = useFragment(
     graphql`
       fragment TagDetailsItemList_tagNode on TagNode {
+        tag
         items {
           ...ItemList_taggedItemConnection
         }
@@ -25,7 +32,49 @@ const TagDetailsItemList: React.FC<Props> = ({ tagNodeKey }) => {
     tagNodeKey
   );
 
-  return <ItemList taggedItemConnectionKey={tagNode.items} showIcons />;
+  const {
+    commit: deleteTag,
+    status: deleteTagStatus,
+    resetStatus: resetDeleteTagStatus,
+  } = useMutation<TagDetailsItemListDeleteTagMutation>(graphql`
+    mutation TagDetailsItemListDeleteTagMutation($input: DeleteTagInput!) {
+      deleteTag(input: $input) {
+        tagEdge {
+          node {
+            ...TagDetailsItemList_tagNode
+            ...TagList_tagNode
+          }
+        }
+      }
+    }
+  `);
+
+  return (
+    <>
+      <ItemList
+        taggedItemConnectionKey={tagNode.items}
+        showLink
+        mapAction={(uri) => (
+          <Tooltip title="Remove tag">
+            <IconButton
+              onClick={() => {
+                deleteTag({
+                  variables: { input: { itemUri: uri, tag: tagNode.tag } },
+                });
+              }}
+            >
+              <IconClear />
+            </IconButton>
+          </Tooltip>
+        )}
+      />
+      <ErrorSnackbar
+        message="Error removing tag"
+        status={deleteTagStatus}
+        resetStatus={resetDeleteTagStatus}
+      />
+    </>
+  );
 };
 
 export default withQuery<TagDetailsItemListQuery, Props, "tagNodeKey">({
