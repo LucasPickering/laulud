@@ -14,9 +14,9 @@ interface Props {
   selectedUri?: string;
   showLink?: boolean;
   showTags?: boolean;
-  mapAction?: (uri: string) => React.ReactNode;
-  mapRoute?: (uri: string) => To;
-  onSelect?: (uri: string) => void;
+  mapAction?: (uri: string, nodeId: string) => React.ReactNode;
+  mapRoute?: (uri: string, nodeId: string) => To;
+  onSelect?: (uri: string, nodeId: string) => void;
 }
 
 /**
@@ -36,6 +36,7 @@ const ItemList: React.FC<Props> = ({
       fragment ItemList_taggedItemConnection on TaggedItemConnection {
         edges {
           node {
+            id
             item {
               uri
               ...ItemIcon_item
@@ -54,7 +55,8 @@ const ItemList: React.FC<Props> = ({
     <List>
       {taggedItemConnection.edges.map(({ node }) => {
         const uri = node.item.uri;
-        const action = mapAction && mapAction(uri);
+        const nodeId = node.id;
+        const action = mapAction && mapAction(uri, nodeId);
 
         // Render as a button if we have a link or onSelect
         // The typing on ListItem is really shitty so this has to be super jank
@@ -64,11 +66,11 @@ const ItemList: React.FC<Props> = ({
           buttonProps.selected = uri === selectedUri;
 
           if (onSelect) {
-            buttonProps.onClick = () => onSelect(uri);
+            buttonProps.onClick = () => onSelect(uri, nodeId);
           }
           if (mapRoute) {
             buttonProps.component = UnstyledLink;
-            buttonProps.to = mapRoute(uri);
+            buttonProps.to = mapRoute(uri, nodeId);
           }
         }
 

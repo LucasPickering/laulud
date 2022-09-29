@@ -25,6 +25,7 @@ const TagDetailsItemList: React.FC<Props> = ({ tagNodeKey }) => {
       fragment TagDetailsItemList_tagNode on TagNode {
         tag
         items {
+          __id
           ...ItemList_taggedItemConnection
         }
       }
@@ -37,12 +38,14 @@ const TagDetailsItemList: React.FC<Props> = ({ tagNodeKey }) => {
     status: deleteTagStatus,
     resetStatus: resetDeleteTagStatus,
   } = useMutation<TagDetailsItemListDeleteTagMutation>(graphql`
-    mutation TagDetailsItemListDeleteTagMutation($input: DeleteTagInput!) {
+    mutation TagDetailsItemListDeleteTagMutation(
+      $input: DeleteTagInput!
+      $connections: [ID!]!
+    ) {
       deleteTag(input: $input) {
-        tagEdge {
+        itemEdge {
           node {
-            ...TagDetailsItemList_tagNode
-            ...TagList_tagNode
+            id @deleteEdge(connections: $connections)
           }
         }
       }
@@ -54,12 +57,18 @@ const TagDetailsItemList: React.FC<Props> = ({ tagNodeKey }) => {
       <ItemList
         taggedItemConnectionKey={tagNode.items}
         showLink
-        mapAction={(uri) => (
+        mapAction={(uri, nodeId) => (
           <Tooltip title="Remove tag">
             <IconButton
               onClick={() => {
                 deleteTag({
-                  variables: { input: { itemUri: uri, tag: tagNode.tag } },
+                  variables: {
+                    input: { itemUri: uri, tag: tagNode.tag },
+                    connections: [tagNode.items.__id],
+                  },
+                  optimisticResponse: {
+                    deleteTag: { itemEdge: { node: { id: nodeId } } },
+                  },
                 });
               }}
             >
