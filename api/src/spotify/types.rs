@@ -309,7 +309,9 @@ impl FromStr for SpotifyUri {
 #[graphql(
     field(name = "external_urls", type = "ExternalUrls"),
     field(name = "href", type = "String"),
-    field(name = "id", type = "String"),
+    // Rename this field to prevent Relay from thinking it's a node ID (which
+    // it will do, even though the type isn't ID)
+    field(name = "spotifyId", method = "id", type = "String"),
     field(name = "uri", type = "SpotifyUri")
 )]
 #[serde(tag = "type", rename_all = "snake_case")]

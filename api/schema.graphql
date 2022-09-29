@@ -125,7 +125,7 @@ from Spotify and tagged in the API.
 interface Item {
 	externalUrls: ExternalUrls!
 	href: String!
-	id: String!
+	spotifyId: String!
 	uri: SpotifyUri!
 }
 
