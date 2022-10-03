@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, List, ListItem, ListItemIcon } from "@mui/material";
+import { Box, List, ListItem, ListItemIcon, Stack } from "@mui/material";
 import UnstyledLink from "components/generic/UnstyledLink";
 import TagChips from "./TagChips";
 import ItemIcon from "./generic/ItemIcon";
@@ -12,6 +12,7 @@ import { To } from "react-router-dom";
 interface Props {
   taggedItemConnectionKey: ItemList_taggedItemConnection$key;
   selectedUri?: string;
+  showIcon?: boolean;
   showLink?: boolean;
   showTags?: boolean;
   mapAction?: (uri: string, nodeId: string) => React.ReactNode;
@@ -25,6 +26,7 @@ interface Props {
 const ItemList: React.FC<Props> = ({
   taggedItemConnectionKey,
   selectedUri,
+  showIcon = false,
   showLink = false,
   showTags = false,
   mapAction,
@@ -77,20 +79,24 @@ const ItemList: React.FC<Props> = ({
         return (
           <ListItem
             key={uri.toString()}
-            // Wrapping makes tags render correctly
-            sx={{ flexWrap: "wrap" }}
             secondaryAction={
               <>
                 {showLink && <SpotifyLink itemKey={node.item} />}
                 {action}
               </>
             }
+            // Make sure tags render under the main content (icon/art/name/etc.)
+            sx={{ flexDirection: "column" }}
             {...buttonProps}
           >
-            <ListItemIcon>
-              <ItemIcon itemKey={node.item} />
-            </ListItemIcon>
-            <ItemListEntry taggedItemNodeKey={node} />
+            <Stack direction="row" width="100%" alignItems="center">
+              {showIcon && (
+                <ListItemIcon>
+                  <ItemIcon itemKey={node.item} />
+                </ListItemIcon>
+              )}
+              <ItemListEntry taggedItemNodeKey={node} />
+            </Stack>
 
             {showTags && (
               <Box flexBasis="100%">

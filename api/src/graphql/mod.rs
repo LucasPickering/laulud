@@ -24,7 +24,8 @@ pub use crate::graphql::{
 };
 use crate::{auth::UserId, db::DbHandler, error::ApiResult, spotify::Spotify};
 use async_graphql::{EmptySubscription, Schema};
-use std::{path::Path, sync::Arc};
+use log::info;
+use std::{fmt::Display, path::Path, sync::Arc};
 use tokio::{fs::File, io::AsyncWriteExt};
 
 // This file holds GraphQL setup/implementation details, but no external GraphQL
@@ -45,11 +46,12 @@ pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
 
 /// Create GraphQL schema object and export it to an external file
 pub async fn create_graphql_schema(
-    export_path: impl AsRef<Path>,
+    export_path: impl AsRef<Path> + Display,
 ) -> ApiResult<GraphQLSchema> {
     let schema =
         GraphQLSchema::build(Query, Mutation, EmptySubscription).finish();
-    let mut file = File::create(export_path).await?;
+    let mut file = File::create(export_path.as_ref()).await?;
     file.write_all(schema.sdl().as_bytes()).await?;
+    info!("Wrote schema to {}", export_path);
     Ok(schema)
 }

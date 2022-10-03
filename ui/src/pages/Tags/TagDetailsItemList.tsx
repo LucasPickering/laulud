@@ -56,6 +56,7 @@ const TagDetailsItemList: React.FC<Props> = ({ tagNodeKey }) => {
     <>
       <ItemList
         taggedItemConnectionKey={tagNode.items}
+        showIcon
         showLink
         mapAction={(uri, nodeId) => (
           <Tooltip title="Remove tag">

@@ -41,9 +41,7 @@ const ItemSearchTabContent: React.FC<Props> = ({
   );
 
   return (
-    <>
-      <ItemList taggedItemConnectionKey={itemSearch[selectedTab]} {...rest} />
-    </>
+    <ItemList taggedItemConnectionKey={itemSearch[selectedTab]} {...rest} />
   );
 };
 
