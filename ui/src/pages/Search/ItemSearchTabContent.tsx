@@ -2,7 +2,7 @@ import React from "react";
 import ItemList from "components/ItemList";
 import { graphql, useFragment } from "react-relay";
 import { ItemSearchTabContentQuery } from "./__generated__/ItemSearchTabContentQuery.graphql";
-import withQuery from "util/withQuery";
+import { withQuery } from "relay-query-wrapper";
 import { ItemSearchTabContent_itemSearch$key } from "./__generated__/ItemSearchTabContent_itemSearch.graphql";
 import Loading from "components/Loading";
 

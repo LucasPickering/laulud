@@ -7,7 +7,7 @@ import ItemDetailsCardHeader, {
   ItemDetailsCardHeaderSkeleton,
 } from "./ItemDetailsCardHeader";
 import TrackDetails from "./TrackDetails";
-import withQuery from "util/withQuery";
+import { withQuery } from "relay-query-wrapper";
 import { ItemDetailsQuery } from "./__generated__/ItemDetailsQuery.graphql";
 
 interface Props {

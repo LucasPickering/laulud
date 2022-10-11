@@ -7,7 +7,7 @@ import Link from "components/generic/Link";
 import { graphql, useFragment } from "react-relay";
 import { TagList_tagConnection$key } from "./__generated__/TagList_tagConnection.graphql";
 import { TagList_tagNode$key } from "./__generated__/TagList_tagNode.graphql";
-import withQuery from "util/withQuery";
+import { withQuery } from "relay-query-wrapper";
 import { TagListQuery } from "./__generated__/TagListQuery.graphql";
 import Loading from "components/Loading";
 

@@ -1,7 +1,7 @@
 import React from "react";
 import ItemList from "components/ItemList";
 import { graphql, useFragment } from "react-relay";
-import withQuery from "util/withQuery";
+import { withQuery } from "relay-query-wrapper";
 import Loading from "components/Loading";
 import { TagDetailsItemListQuery } from "./__generated__/TagDetailsItemListQuery.graphql";
 import { TagDetailsItemList_tagNode$key } from "./__generated__/TagDetailsItemList_tagNode.graphql";
