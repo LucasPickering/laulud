@@ -99,7 +99,7 @@ const ItemList: React.FC<Props> = ({
             </Stack>
 
             {showTags && (
-              <Box flexBasis="100%">
+              <Box width="100%">
                 <TagChips taggedItemNodeKey={node} />
               </Box>
             )}
